@@ -1,0 +1,25 @@
+Package: STADyUM
+Type: Package
+Title: Statistical Transcriptome Analysis under a Dynamic Unified Model
+Version: 1.0.0
+Authors@R: c(person("Yixin", "Zhao", email = "",
+  role = c("aut")),
+  person("Lingjie", "Liu", email = "",
+  role = c("aut")),
+  person("Rebecca", "Hassett", email = "hassett@cshl.edu",
+  role = c("aut", "cre")))
+Description: STADyUM is a package with functionality for analyzing nascent
+  RNA read counts to infer transcription rates. This includes utilities for processing
+  experimental nascent RNA read counts as well as for simulating PRO-seq data. Rates 
+  such as initiation, pause release and landing pad occupancy are estimated 
+  from either synthetic or experimental data. There are also options for varying pause sites and including 
+  steric hindrance of initiation in the model. 
+bioCviews:
+  Software,
+  StatisticalMethod,
+  Transcriptomics
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
