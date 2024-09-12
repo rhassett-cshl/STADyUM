@@ -1,25 +1,18 @@
-#' @title Group transcripts
+#' @title Process bigwigs
 #'
 #' @description
-#' Creates groups of transcripts on the same strand based on
-#' proximity. The groups are constructed of connected transcripts
-#' such that a pair of transcripts are considered connected if
-#' they are within a given distance \emph{d} of each other. The
-#' group then consists of all transcripts that are connected to
-#' at least one other member.
+#' Creates GRanges object with strand information and counts set to single basepair resolution and 
+#' absolute value. Keeps only standard chromosome information and excludes count regions set to 0.
 #'
-#' @param transcript_granges \code{\link[GenomicRanges]{GRanges-class}}
-#' object
-#' @param distance the distance within which two transcripts are
-#' considered connected
+#' @param bw \code{\link[GenomicRanges]{GRanges-class}} object representing pro-seq counts 
+#' @param strand a string representing if counts are on the plus strand with '+' or the minus
+#' strand with '-'
 #'
-#' @return A \code{\link[GenomicRanges]{GenomicRangesList-class}}
-#' object
+#' @return A \code{\link[GenomicRanges]{GenomicRanges-class}} object with single basepair 
+#' resolution
 #'
-#' @rdname group_transcripts
+#' @rdname process_bw
 #' @export
-
-# process bigwig file and convert it into single base resolution
 process_bw <- function(bw, strand) {
   strand(bw) <- strand
   bw$score <- abs(bw$score)
@@ -29,28 +22,20 @@ process_bw <- function(bw, strand) {
   return(bw)
 }
 
-#' @title Group transcripts
+#' @title Summarize Bigwigs
 #'
 #' @description
-#' Creates groups of transcripts on the same strand based on
-#' proximity. The groups are constructed of connected transcripts
-#' such that a pair of transcripts are considered connected if
-#' they are within a given distance \emph{d} of each other. The
-#' group then consists of all transcripts that are connected to
-#' at least one other member.
+#' Creates GRanges object with column of read counts summarized over regions of genes
 #'
-#' @param transcript_granges \code{\link[GenomicRanges]{GRanges-class}}
-#' object
-#' @param distance the distance within which two transcripts are
-#' considered connected
+#' @param bw \code{\link[GenomicRanges]{GRanges-class}} object of read counts
+#' @param grng \code{\link[GenomicRanges]{GRanges-class}} object of regions to 
+#' summarize read count
+#' @param col_name string for the column name for the summarized read counts
 #'
-#' @return A \code{\link[GenomicRanges]{GenomicRangesList-class}}
-#' object
+#' @return A \code{\link[GenomicRanges]{GenomicRanges-class}} object
 #'
-#' @rdname group_transcripts
+#' @rdname summarise_bw
 #' @export
-
-# get the sum of read counts for regions within a gene
 summarise_bw <-
   function(bw, grng, col_name) {
     rc <- bw %>%
@@ -110,25 +95,24 @@ pause_escape_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax) {
   return(list("beta" = beta, "fk" = fk, "fk_mean" = fk_mean, "fk_var" = fk_var))
 }
 
-#' @title Group transcripts
+#' @title Pause Escape Expectation Maximization
 #'
 #' @description
-#' Creates groups of transcripts on the same strand based on
-#' proximity. The groups are constructed of connected transcripts
-#' such that a pair of transcripts are considered connected if
-#' they are within a given distance \emph{d} of each other. The
-#' group then consists of all transcripts that are connected to
-#' at least one other member.
+#' Estimate transcription rates with varying pause sites.
 #'
-#' @param transcript_granges \code{\link[GenomicRanges]{GRanges-class}}
-#' object
-#' @param distance the distance within which two transcripts are
-#' considered connected
+#' @param fk_int a list of the initial pause site values
+#' @param Xk a numeric vector of read counts on each position within the pause peak
+#' @param kmin an integer for lower bound of pause sites
+#' @param kmax an integer for upper bound of pause sites
+#' @param beta_int a list of initialized beta estimates
+#' @param chi_hat a numeric for read count chi estimate
+#' @param max_itr an integer for the maximum iterations. Default is 100.
+#' @param tor Tolerance value to determine when to stop iterating. Default is 1e-3
 #'
-#' @return A \code{\link[GenomicRanges]{GenomicRangesList-class}}
-#' object
+#' @return A list of transcription rates including beta, Yk, fk, fk_mean, fk_var, betas, 
+#' likelihoods and phi
 #'
-#' @rdname group_transcripts
+#' @rdname pause_escape_EM
 #' @export
 pause_escape_EM <- function(fk_int, Xk, kmin, kmax, beta_int, chi_hat, max_itr = 100,
                     tor = 1e-3) {
@@ -287,25 +271,41 @@ steric_hindrance_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax, f1, f
               "fk_mean" = fk_mean, "fk_var" = fk_var))
 }
 
-#' @title Group transcripts
+calculate_f <- function(s, k) {
+  # sd is set as 25 here
+  x <- round(rnorm(1e7, mean = k, sd = 25))
+  x <- x[x >= 17 & x <= 200]
+  f <- mean(x > s) 
+  f1 <- mean((x > s) & (x <= 2 * s))
+  f2 <- mean(x > 2 * s)
+  return(c("f" = f, "f1" = f1, "f2" = f2))
+}
+
+
+#' @title Steric Hindrance Expectation-Maximization
 #'
 #' @description
-#' Creates groups of transcripts on the same strand based on
-#' proximity. The groups are constructed of connected transcripts
-#' such that a pair of transcripts are considered connected if
-#' they are within a given distance \emph{d} of each other. The
-#' group then consists of all transcripts that are connected to
-#' at least one other member.
+#' Estimate transcription rates with EM algorithm with varying pause sites and steric hindrance. 
+#' Landing pad occupancy is inferred. 
 #'
-#' @param transcript_granges \code{\link[GenomicRanges]{GRanges-class}}
-#' object
-#' @param distance the distance within which two transcripts are
-#' considered connected
+#' @param Xk a numeric vector of read counts on each position within the pause peak
+#' @param kmin an integer for lower bound of pause sites
+#' @param kmax an integer for upper bound of pause sites
+#' @param f1 a numeric
+#' @param f2 a numeric
+#' @param fk_int a list of the initial pause site values
+#' @param beta_int a list of initialized beta estimates
+#' @param phi_int a numeric
+#' @param chi_hat a numeric for read count chi estimate
+#' @param lambda a numeric for zeta scaled 
+#' @param zeta a numeric for elongation rate
+#' @param max_itr an integer for the maximum iterations. Default is 100.
+#' @param tor Tolerance value to determine when to stop iterating. Default is 1e-3
 #'
-#' @return A \code{\link[GenomicRanges]{GenomicRangesList-class}}
-#' object
+#' @return A list of transcription rates including beta, Yk, fk, fk_mean, fk_var, 
+#' betas, likelihoods and phi
 #'
-#' @rdname group_transcripts
+#' @rdname steric_hindrance_EM
 #' @export
 steric_hindrance_EM <- function(Xk, kmin, kmax, f1, f2, fk_int, beta_int, phi_int, chi_hat,
                     lambda, zeta, max_itr = 100, tor = 1e-3) {
@@ -346,20 +346,8 @@ steric_hindrance_EM <- function(Xk, kmin, kmax, f1, f2, fk_int, beta_int, phi_in
 
   if (i == max_itr) flag <- "max_iteration"
 
-  # message("Done!")
-
   return(list("beta" = hats$beta, "Yk" = Yk, "fk" = hats$fk,
               "fk_mean" = hats$fk_mean, "fk_var" = hats$fk_var,
               "betas" = betas, "likelihoods" = likelihoods,
               "phi"= hats$phi,  "flag" = flag))
-}
-
-calculate_f <- function(s, k) {
-  # sd is set as 25 here
-  x <- round(rnorm(1e7, mean = k, sd = 25))
-  x <- x[x >= 17 & x <= 200]
-  f <- mean(x > s) 
-  f1 <- mean((x > s) & (x <= 2 * s))
-  f2 <- mean(x > 2 * s)
-  return(c("f" = f, "f1" = f1, "f2" = f2))
 }

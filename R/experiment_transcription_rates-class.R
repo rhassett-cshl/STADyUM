@@ -14,8 +14,23 @@ experiment_transcription_rates_valid <- function(object) {
 #'
 #' Class \code{experiment_transcription_rates} has
 #'
-#' @slot transcripts a \code{\link[GenomicRanges]{GRanges-class}} that holds
-#' all the transcript coordinates
+#' @slot counts a \code{data.frame} with five columns gene_id, summarized_pause_counts, pause_length
+#' summarized_gb_counts, gb_length
+#' @slot bigwig_plus a path to bigwig for plus strand
+#' @slot bigwig_minus a path to bigwig for minus strand
+#' @slot pause_regions a \code{\link[GenomicRanges]{GRanges-class}} that holds
+#' all the pause region coordinates
+#' @slot gene_body_regions a \code{\link[GenomicRanges]{GRanges-class}} that holds
+#' all the gene body region coordinates
+#' @slot gene_name_column a string for the gene name column in the GRanges objects
+#' @slot steric_hindrance a logical value representing whether landing-pad occupancy was inferred when
+#' estimating the rates
+#' @slot omega_scale a numeric value for the scale factor used to calculate omega
+#' @slot rates a \code{tbl_df} containing estimated transcription rates such as chi estimates, 
+#' beta_org estimates from the initial model, beta_adp estimates from the model with varying 
+#' pause sites, fk_mean giving the mean position of pause sites, fk_var for variance of pause sites,
+#' phi estimates for landing-pad occupancy, omega_zeta for the effective initiation rate, beta_zeta
+#' for the pause-escape rate, alpha_zeta for the potential initiation rate, and likelihoods
 #'
 #' @name experiment_transcription_rates-class
 #' @rdname experiment_transcription_rates-class
@@ -23,7 +38,9 @@ experiment_transcription_rates_valid <- function(object) {
 #' @importClassesFrom tibble tbl_df
 #' @exportClass experiment_transcription_rates
 methods::setClass("experiment_transcription_rates",
-                  slots = c(counts = "list",
+                  slots = c(counts = "data.frame",
+                            bigwig_plus = "character",
+                            bigwig_minus = "character",
                             pause_regions = "GRanges",
                             gene_body_regions = "GRanges",
                             gene_name_column = "character",
@@ -47,8 +64,7 @@ methods::setClass("experiment_transcription_rates",
 #' gene names
 #' @param steric_hindrance a logical value to determine whether to infer landing-pad occupancy or not.
 #' Defaults to FALSE.
-#' @param scale a csv file providing scaling factors for omega with columns sample_id, omega_scale_h,
-#' omega_scale_l. Defaults to NULL.
+#' @param omega_scale a numeric value for scaling omega. Defaults to NULL.
 #'
 #' @return an \code{\link{experiment_transcription_rates-class}} object
 #'
@@ -121,8 +137,6 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
   bwp1_p3 <- import.bw(bigwig_plus)
   bwm1_p3 <- import.bw(bigwig_minus)
 
-  # TODO: bigwig validity checks
-
   bwp1_p3 <- process_bw(bw = bwp1_p3, strand = "+")
   bwm1_p3 <- process_bw(bw = bwm1_p3, strand = "-")
   bw1_p3 <- c(bwp1_p3, bwm1_p3)
@@ -132,10 +146,10 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
   pause_regions <- promoters(pause_regions, upstream = 0, downstream = kmax)
 
   # summarize read counts
-  rc1_pause <- summarise_bw(bw1_p3, pause_regions, "sp1")
+  rc1_pause <- summarise_bw(bw1_p3, pause_regions, "summarized_pause_counts")
   rc1_pause$pause_length <- kmax
 
-  rc1_gb <- summarise_bw(bw1_p3, gene_body_regions, "sb1")
+  rc1_gb <- summarise_bw(bw1_p3, gene_body_regions, "summarized_gb_counts")
   rc1_gb$gb_length <-
   width(gene_body_regions)[match(rc1_gb$gene_id, gene_body_regions$gene_id)]
 
@@ -145,20 +159,20 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 
   # clean up some genes with missing values in tss length or gene body length
   rc1 <- rc1[!(is.na(rc1$pause_length) | is.na(rc1$gb_length)), ]
-  rc1 <- rc1[(rc1$sp1 > rc_cutoff) & (rc1$sb1 > rc_cutoff), ]
+  rc1 <- rc1[(rc1$summarized_pause_counts > rc_cutoff) & (rc1$summarized_gb_counts > rc_cutoff), ]
 
   message("estimating rates...")
 
   #### Initial model: Poisson-based Maximum Likelihood Estimation ####
   analytical_rate_tbl <-
     tibble(gene_id = rc1$gene_id,
-          beta_org =  (rc1$sb1 / rc1$gb_length) / (rc1$sp1 / rc1$pause_length))
+          beta_org =  (rc1$summarized_gb_counts / rc1$gb_length) / (rc1$summarized_pause_counts / rc1$pause_length))
 
   #### Adapted model: allow uncertainty in the pause site and steric hindrance ####
   # prepare data for running EM
   em_rate <-
     DataFrame(gene_id = rc1$gene_id,
-              s = rc1$sb1,
+              s = rc1$summarized_gb_counts,
               N = rc1$gb_length)
 
 
@@ -218,6 +232,7 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
   # calculate Yk / Xk
   em_rate$t <- sapply(em_rate$Yk, sum)
   em_rate$proportion_Yk <- em_rate$t / sapply(em_rate$Xk, sum)
+  em_rate$likelihood <- map_dbl(em_ls, ~ .x$likelihoods[[length(.x$likelihoods)]])
 
   em_rate <- em_rate %>% as_tibble()
 
@@ -229,9 +244,21 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 
   em_rate <- em_rate %>% left_join(analytical_rate_tbl, by = "gene_id")
 
+  if (!steric_hindrance) {
+      em_rate <- em_rate %>%
+        select(gene_id, chi, beta_org, beta_adp, fk_mean, fk_var)
+  } else {
+    em_rate <- em_rate %>%
+      select(gene_id, chi, beta_org, beta_adp, fk_mean, fk_var, phi, omega_zeta) %>%
+      mutate(beta_zeta = beta_adp * zeta,
+            alpha_zeta = omega_zeta / (1 - phi))
+  }
+
   # Return experiment transcription rates object
   return(methods::new(Class = "experiment_transcription_rates",
                       counts = rc1,
+                      bigwig_plus = bigwig_plus,
+                      bigwig_minus = bigwig_minus,
                       pause_regions = pause_regions,
                       gene_body_regions = gene_body_regions,
                       gene_name_column = gene_name_column,
@@ -242,27 +269,19 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 }
 
 #' @inherit methods::show
-methods::setMethod("show", signature = "transcript_quantifier", function(object) {
-  num_transcripts <- length(object@transcripts)
-  num_models <- sum(unlist(lapply(object@models, ncol)))
-  num_loci <- length(object@models)
-  bin_size <- object@bin_size
-  bwp <- object@count_metadata$bigwig_plus
-  bwm <- object@count_metadata$bigwig_minus
-
+methods::setMethod("show", signature = "experiment_transcription_rates", function(object) {
   if (!is.na(object@column_identifiers["gene_id"])) {
     num_genes <- length(unique(
-      S4Vectors::mcols(object@transcripts)[[object@column_identifiers["gene_id"]]]))
+      S4Vectors::mcols(object@counts)[[object@gene_name_column]]))
     gene_string <- paste("Number of Genes:", num_genes)
   } else {
     gene_string <- "No gene id present"
   }
 
-  write("A transcript_quantifier object with:", file = stdout())
-  write(paste(num_transcripts, "transcripts converted to", num_models, "models",
-              "grouped into", num_loci, "loci"), file = stdout())
+  write("A experiment_transcription_rates object with:", file = stdout())
   write(gene_string, file = stdout())
-  write(paste("bin size:", bin_size), file = stdout())
-  write(paste("Bigwig data (plus):", bwp), file = stdout())
-  write(paste("Bigwig data (minus):", bwm), file = stdout())
+  write(paste("Estimated Transcription Rates:", object@rates), file = stdout())
+  write(paste("Steric Hindrance:", object@steric_hindrance), file = stdout())
+  write(paste("Omega Scale:", object@omega_scale), file = stdout())
+  write(paste("Summarized Read Counts:", object@counts), file = stdout())
 })
