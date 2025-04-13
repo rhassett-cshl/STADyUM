@@ -10,20 +10,20 @@ simulation_rates_estimator_valid <- function(object) {
   if (length(errors) == 0) TRUE else errors
 }
 
-#' Class experiment_rates_estimator
+#' Class simulation_rates_estimator
 #'
-#' Class \code{experiment_rates_estimator} has
+#' Class \code{simulation_rates_estimator} has
 #'
 #' @slot transcripts a \code{\link[GenomicRanges]{GRanges-class}} that holds
 #' all the transcript coordinates
 #'
-#' @name experiment_rates_estimator-class
-#' @rdname experiment_rates_estimator-class
+#' @name simulation_rates_estimator-class
+#' @rdname simulation_rates_estimator-class
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom GenomicRanges CompressedGRangesList
 #' @importClassesFrom data.table data.table
-#' @exportClass experiment_rates_estimator
-methods::setClass("experiment_rates_estimator",
+#' @exportClass simulation_rates_estimator
+methods::setClass("simulation_rates_estimator",
                   slots = c(transcripts = "GRanges",
                             column_identifiers = "character",
                             bins = "CompressedGRangesList",
@@ -36,12 +36,12 @@ methods::setClass("experiment_rates_estimator",
                             tx_gof_metrics = "data.table",
                             count_metadata = "list",
                             model_abundance = "list"),
-                  validity = experiment_rates_estimator_valid
+                  validity = simulation_rates_estimator_valid
 )
 
 #' estimate_simulation_transcription_rates
 #'
-#' Estimates the transcription rates from experimental data and contructs an object that holds
+#' Estimates the transcription rates from simulated data and contructs an object that holds
 #' these rates
 #' @param bigwig_plus the path to a bigwig file from the plus strand recording PRO-seq read counts
 #' @param bigwig_minus the path to a bigwig file from the minus strand recording PRO-seq read counts
@@ -54,7 +54,7 @@ methods::setClass("experiment_rates_estimator",
 #' @param scale a csv file providing scaling factors for omega with columns sample_id, omega_scale_h,
 #' omega_scale_l. Defaults to NULL.
 #'
-#' @return an \code{\link{experiment_transcription_rates-class}} object
+#' @return an \code{\link{_transcription_rates-class}} object
 #'
 #' @export
 estimate_simulation_transcription_rates <- function() {
@@ -232,8 +232,8 @@ estimate_simulation_transcription_rates <- function() {
 
   em_rate <- em_rate %>% left_join(analytical_rate_tbl, by = "gene_id")
 
-  # Return experiment transcription rates object
-  return(methods::new(Class = "experiment_transcription_rates",
+  # Return simulation transcription rates object
+  return(methods::new(Class = "simulation_transcription_rates",
                       counts = rc1,
                       pause_regions = pause_regions,
                       gene_body_regions = gene_body_regions,
@@ -245,7 +245,7 @@ estimate_simulation_transcription_rates <- function() {
 }
 
 #' @inherit methods::show
-methods::setMethod("show", signature = "transcript_quantifier", function(object) {
+methods::setMethod("show", signature = "simulation_rates_estimator", function(object) {
   num_transcripts <- length(object@transcripts)
   num_models <- sum(unlist(lapply(object@models, ncol)))
   num_loci <- length(object@models)

@@ -7,6 +7,67 @@
 experiment_transcription_rates_valid <- function(object) {
   errors <- c()
 
+  # Check counts data.frame structure
+  if (!is.data.frame(object@counts)) {
+    errors <- c(errors, "counts must be a data.frame")
+  } else {
+    required_cols <- c("gene_id", "summarized_pause_counts", "pause_length",
+                      "summarized_gb_counts", "gb_length")
+    missing_cols <- setdiff(required_cols, colnames(object@counts))
+    if (length(missing_cols) > 0) {
+      errors <- c(errors, paste("counts missing required columns:", 
+                              paste(missing_cols, collapse = ", ")))
+    }
+  }
+
+  # Check bigwig file paths
+  if (!file.exists(object@bigwig_plus)) {
+    errors <- c(errors, "bigwig_plus file does not exist")
+  }
+  if (!file.exists(object@bigwig_minus)) {
+    errors <- c(errors, "bigwig_minus file does not exist")
+  }
+
+  # Check GRanges objects
+  if (!inherits(object@pause_regions, "GRanges")) {
+    errors <- c(errors, "pause_regions must be a GRanges object")
+  }
+  if (!inherits(object@gene_body_regions, "GRanges")) {
+    errors <- c(errors, "gene_body_regions must be a GRanges object")
+  }
+
+  # Check gene_name_column
+  if (!is.character(object@gene_name_column) || length(object@gene_name_column) != 1) {
+    errors <- c(errors, "gene_name_column must be a single character string")
+  }
+
+  # Check steric_hindrance
+  if (!is.logical(object@steric_hindrance) || length(object@steric_hindrance) != 1) {
+    errors <- c(errors, "steric_hindrance must be a single logical value")
+  }
+
+  # Check omega_scale
+  if (object@steric_hindrance) {
+    if (!is.numeric(object@omega_scale) || length(object@omega_scale) != 1 || object@omega_scale <= 0) {
+      errors <- c(errors, "omega_scale must be a positive numeric value when steric_hindrance is TRUE")
+    }
+  }
+
+  # Check rates tbl_df
+  if (!inherits(object@rates, "tbl_df")) {
+    errors <- c(errors, "rates must be a tbl_df")
+  } else {
+    required_cols <- c("gene_id", "chi", "beta_org", "beta_adp", "fk_mean", "fk_var")
+    if (object@steric_hindrance) {
+      required_cols <- c(required_cols, "phi", "omega_zeta", "beta_zeta", "alpha_zeta")
+    }
+    missing_cols <- setdiff(required_cols, colnames(object@rates))
+    if (length(missing_cols) > 0) {
+      errors <- c(errors, paste("rates missing required columns:", 
+                              paste(missing_cols, collapse = ", ")))
+    }
+  }
+
   if (length(errors) == 0) TRUE else errors
 }
 
@@ -73,6 +134,36 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
                                                 pause_regions, gene_body_regions,
                                                 gene_name_column, steric_hindrance = FALSE, 
                                                 omega_scale = NULL) {
+  # 1. Input validation for bigwig files
+  if (!file.exists(bigwig_plus)) {
+    stop("bigwig_plus file does not exist")
+  }
+  if (!file.exists(bigwig_minus)) {
+    stop("bigwig_minus file does not exist")
+  }
+  if (!file.access(bigwig_plus, 4) == 0) {
+    stop("bigwig_plus file is not readable")
+  }
+  if (!file.access(bigwig_minus, 4) == 0) {
+    stop("bigwig_minus file is not readable")
+  }
+
+  # 2. Check for empty or invalid regions
+  if (length(pause_regions) == 0) {
+    stop("pause_regions is empty")
+  }
+  if (length(gene_body_regions) == 0) {
+    stop("gene_body_regions is empty")
+  }
+
+  # Check regions have valid ranges
+  if (any(width(pause_regions) <= 0)) {
+    stop("pause_regions contains invalid (non-positive) widths")
+  }
+  if (any(width(gene_body_regions) <= 0)) {
+    stop("gene_body_regions contains invalid (non-positive) widths")
+  }
+
   # **Some checks prior to beginning construction**
   # Check for correct GRanges object metadata
   if (!gene_name_column %in%
@@ -136,6 +227,14 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 
   bwp1_p3 <- import.bw(bigwig_plus)
   bwm1_p3 <- import.bw(bigwig_minus)
+
+  # 5. Check for reasonable read counts
+  if (sum(bwp1_p3$score) == 0) {
+    stop("No reads found in plus strand bigwig file")
+  }
+  if (sum(bwm1_p3$score) == 0) {
+    stop("No reads found in minus strand bigwig file")
+  }
 
   bwp1_p3 <- process_bw(bw = bwp1_p3, strand = "+")
   bwm1_p3 <- process_bw(bw = bwm1_p3, strand = "-")
@@ -284,4 +383,96 @@ methods::setMethod("show", signature = "experiment_transcription_rates", functio
   write(paste("Steric Hindrance:", object@steric_hindrance), file = stdout())
   write(paste("Omega Scale:", object@omega_scale), file = stdout())
   write(paste("Summarized Read Counts:", object@counts), file = stdout())
+})
+
+#' Get transcription rates
+#'
+#' @param object An experiment_transcription_rates object
+#' @return A tibble containing the transcription rates
+#' @export
+setGeneric("getRates", function(object) standardGeneric("getRates"))
+setMethod("getRates", "experiment_transcription_rates", function(object) {
+  object@rates
+})
+
+#' Get read counts
+#'
+#' @param object An experiment_transcription_rates object
+#' @return A data.frame containing the read counts
+#' @export
+setGeneric("getCounts", function(object) standardGeneric("getCounts"))
+setMethod("getCounts", "experiment_transcription_rates", function(object) {
+  object@counts
+})
+
+#' Get genomic regions
+#'
+#' @param object An experiment_transcription_rates object
+#' @param type Either "pause" or "gene_body" to specify which regions to return
+#' @return A GRanges object containing the specified regions
+#' @export
+setGeneric("getRegions", function(object, type) standardGeneric("getRegions"))
+setMethod("getRegions", "experiment_transcription_rates", function(object, type) {
+  if (!type %in% c("pause", "gene_body")) {
+    stop("type must be either 'pause' or 'gene_body'")
+  }
+  if (type == "pause") {
+    object@pause_regions
+  } else {
+    object@gene_body_regions
+  }
+})
+
+#' Export rates to CSV
+#'
+#' @param object An experiment_transcription_rates object
+#' @param file Path to output CSV file
+#' @export
+setGeneric("exportRatesToCSV", function(object, file) standardGeneric("exportRatesToCSV"))
+setMethod("exportRatesToCSV", "experiment_transcription_rates", function(object, file) {
+  write.csv(object@rates, file = file, row.names = FALSE)
+})
+
+#' Plot transcription rates
+#'
+#' @param object An experiment_transcription_rates object
+#' @param type Type of plot to create ("scatter", "histogram", or "density")
+#' @param rate_type Which rate to plot ("beta_org", "beta_adp", "chi", etc.)
+#' @param ... Additional arguments passed to the plotting function
+#' @return A ggplot object
+#' @export
+setGeneric("plotRates", function(object, type = "scatter", rate_type = "beta_adp", ...) standardGeneric("plotRates"))
+setMethod("plotRates", "experiment_transcription_rates", function(object, type = "scatter", rate_type = "beta_adp", ...) {
+  if (!requireNamespace("ggplot2", quietly = TRUE)) {
+    stop("ggplot2 package is required for plotting")
+  }
+  
+  if (!rate_type %in% colnames(object@rates)) {
+    stop(paste("rate_type", rate_type, "not found in rates data"))
+  }
+  
+  data <- object@rates
+  
+  switch(type,
+         scatter = {
+           ggplot2::ggplot(data, ggplot2::aes_string(x = "beta_org", y = rate_type)) +
+             ggplot2::geom_point(alpha = 0.6) +
+             ggplot2::geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+             ggplot2::labs(x = "Original Beta", y = rate_type) +
+             ggplot2::theme_minimal()
+         },
+         histogram = {
+           ggplot2::ggplot(data, ggplot2::aes_string(x = rate_type)) +
+             ggplot2::geom_histogram(bins = 30, fill = "steelblue", alpha = 0.7) +
+             ggplot2::labs(x = rate_type, y = "Count") +
+             ggplot2::theme_minimal()
+         },
+         density = {
+           ggplot2::ggplot(data, ggplot2::aes_string(x = rate_type)) +
+             ggplot2::geom_density(fill = "steelblue", alpha = 0.7) +
+             ggplot2::labs(x = rate_type, y = "Density") +
+             ggplot2::theme_minimal()
+         },
+         stop("Invalid plot type. Choose from 'scatter', 'histogram', or 'density'")
+  )
 })
