@@ -1,9 +1,20 @@
-#' experiment_transcription_rates_valid
-#'
-#' Checks that a \code{experiment_transcription_rates} object is valid
-#' @param object a \code{experiment_transcription_rates} object
-#'
+#' @importFrom rtracklayer import.bw
+#' @import GenomicRanges
+#' @import tibble
+#' @importFrom methods new
+#' @importFrom S4Vectors elementMetadata DataFrame splitAsList
+#' @importFrom dplyr mutate select %>% left_join
+#' @importFrom purrr map map_dbl
+#' @importFrom stats dnorm
+#' @importFrom utils write.csv
+#' @import ggplot2
+#' @import progress
+#' 
+#' @title Check validity of experiment_transcription_rates object
+#' @description Validates an experiment_transcription_rates object
+#' @param object A \code{experiment_transcription_rates} object
 #' @return TRUE if valid, else errors
+#' @keywords internal
 experiment_transcription_rates_valid <- function(object) {
   errors <- c()
 
@@ -73,7 +84,9 @@ experiment_transcription_rates_valid <- function(object) {
 
 #' Class experiment_transcription_rates
 #'
-#' Class \code{experiment_transcription_rates} has
+#' Class \code{experiment_transcription_rates} has read counts, pause and gene body genomic region
+#' coordinates, steric hindrance and omega scale factor parameters used to estimate the transcription 
+#' rates
 #'
 #' @slot counts a \code{data.frame} with five columns gene_id, summarized_pause_counts, pause_length
 #' summarized_gb_counts, gb_length
@@ -193,7 +206,7 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
   }
   duplicated_gene_body_region_gene_names <-
     any(duplicated(S4Vectors::elementMetadata(gene_body_regions)[, gene_name_column]))
-  if (duplicated_gene_body_regions_gene_names) {
+  if (duplicated_gene_body_region_gene_names) {
     stop("One or more gene names are duplicated in gene body region, gene names must be unique")
   }
   if (steric_hindrance && (is.null(omega_scale) && !is.numeric(omega_scale) && omega_scale <= 0) ) {
@@ -225,8 +238,19 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 
   rc_cutoff <- 20 # read count cut-off for both gene body and pause peak
 
+  # Add progress bar for bigwig import
+  pb <- progress::progress_bar$new(
+    format = "Importing bigwigs [:bar] :percent eta: :eta",
+    total = 3,
+    clear = FALSE
+  )
+  pb$tick(0)
+  
+  pb$tick()
   bwp1_p3 <- import.bw(bigwig_plus)
+  pb$tick()
   bwm1_p3 <- import.bw(bigwig_minus)
+  pb$tick()
 
   # 5. Check for reasonable read counts
   if (sum(bwp1_p3$score) == 0) {
@@ -236,8 +260,18 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
     stop("No reads found in minus strand bigwig file")
   }
 
+  # Add progress bar for processing
+  pb <- progress::progress_bar$new(
+    format = "Processing bigwigs [:bar] :percent eta: :eta",
+    total = 4,
+    clear = FALSE
+  )
+  pb$tick(0)
+  
   bwp1_p3 <- process_bw(bw = bwp1_p3, strand = "+")
+  pb$tick()
   bwm1_p3 <- process_bw(bw = bwm1_p3, strand = "-")
+  pb$tick()
   bw1_p3 <- c(bwp1_p3, bwm1_p3)
   rm(bwp1_p3, bwm1_p3)
 
@@ -247,10 +281,12 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
   # summarize read counts
   rc1_pause <- summarise_bw(bw1_p3, pause_regions, "summarized_pause_counts")
   rc1_pause$pause_length <- kmax
+  pb$tick()
 
   rc1_gb <- summarise_bw(bw1_p3, gene_body_regions, "summarized_gb_counts")
   rc1_gb$gb_length <-
   width(gene_body_regions)[match(rc1_gb$gene_id, gene_body_regions$gene_id)]
+  pb$tick()
 
   # prepare read count table
   rc1 <- Reduce(function(x, y) merge(x, y, by = "gene_id", all = TRUE),
@@ -264,7 +300,7 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 
   #### Initial model: Poisson-based Maximum Likelihood Estimation ####
   analytical_rate_tbl <-
-    tibble(gene_id = rc1$gene_id,
+    tibble::tibble(gene_id = rc1$gene_id,
           beta_org =  (rc1$summarized_gb_counts / rc1$gb_length) / (rc1$summarized_pause_counts / rc1$pause_length))
 
   #### Adapted model: allow uncertainty in the pause site and steric hindrance ####
@@ -355,7 +391,7 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 
   # Return experiment transcription rates object
   return(methods::new(Class = "experiment_transcription_rates",
-                      counts = rc1,
+                      counts = as.data.frame(rc1),
                       bigwig_plus = bigwig_plus,
                       bigwig_minus = bigwig_minus,
                       pause_regions = pause_regions,
@@ -369,20 +405,15 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 
 #' @inherit methods::show
 methods::setMethod("show", signature = "experiment_transcription_rates", function(object) {
-  if (!is.na(object@column_identifiers["gene_id"])) {
-    num_genes <- length(unique(
-      S4Vectors::mcols(object@counts)[[object@gene_name_column]]))
-    gene_string <- paste("Number of Genes:", num_genes)
-  } else {
-    gene_string <- "No gene id present"
-  }
+  num_genes <- length(unique(object@counts$gene_id))
+  gene_string <- paste("Number of Genes:", num_genes)
 
   write("A experiment_transcription_rates object with:", file = stdout())
   write(gene_string, file = stdout())
-  write(paste("Estimated Transcription Rates:", object@rates), file = stdout())
+  write(paste("Estimated Transcription Rates:", nrow(object@rates)), file = stdout())
   write(paste("Steric Hindrance:", object@steric_hindrance), file = stdout())
   write(paste("Omega Scale:", object@omega_scale), file = stdout())
-  write(paste("Summarized Read Counts:", object@counts), file = stdout())
+  write(paste("Summarized Read Counts:", nrow(object@counts)), file = stdout())
 })
 
 #' Get transcription rates
@@ -455,20 +486,20 @@ setMethod("plotRates", "experiment_transcription_rates", function(object, type =
   
   switch(type,
          scatter = {
-           ggplot2::ggplot(data, ggplot2::aes_string(x = "beta_org", y = rate_type)) +
+           ggplot2::ggplot(data, ggplot2::aes(x = .data$beta_org, y = .data[[rate_type]])) +
              ggplot2::geom_point(alpha = 0.6) +
              ggplot2::geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
              ggplot2::labs(x = "Original Beta", y = rate_type) +
              ggplot2::theme_minimal()
          },
          histogram = {
-           ggplot2::ggplot(data, ggplot2::aes_string(x = rate_type)) +
+           ggplot2::ggplot(data, ggplot2::aes(x = .data[[rate_type]])) +
              ggplot2::geom_histogram(bins = 30, fill = "steelblue", alpha = 0.7) +
              ggplot2::labs(x = rate_type, y = "Count") +
              ggplot2::theme_minimal()
          },
          density = {
-           ggplot2::ggplot(data, ggplot2::aes_string(x = rate_type)) +
+           ggplot2::ggplot(data, ggplot2::aes(x = .data[[rate_type]])) +
              ggplot2::geom_density(fill = "steelblue", alpha = 0.7) +
              ggplot2::labs(x = rate_type, y = "Density") +
              ggplot2::theme_minimal()

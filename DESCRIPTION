@@ -8,6 +8,8 @@ Authors@R: c(person("Yixin", "Zhao", email = "",
   role = c("aut")),
   person("Rebecca", "Hassett", email = "hassett@cshl.edu",
   role = c("aut", "cre")))
+Maintainer: Rebecca Hassett <hassett@cshl.edu>
+Author: Rebecca Hassett
 Description: STADyUM is a package with functionality for analyzing nascent
   RNA read counts to infer transcription rates. This includes utilities for processing
   experimental nascent RNA read counts as well as for simulating PRO-seq data. Rates 
@@ -22,7 +24,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Imports:
     GenomicRanges,
     IRanges,
@@ -34,7 +36,12 @@ Imports:
     ggplot2,
     progress,
     plyranges,
-    BRGenomics
+    BRGenomics,
+    rtracklayer,
+    GenomeInfoDb,
+    Rcpp
+LinkingTo:
+    Rcpp
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

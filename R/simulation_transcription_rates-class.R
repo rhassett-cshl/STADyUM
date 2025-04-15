@@ -1,29 +1,26 @@
-#' simulation_rates_estimator_valid
+#' simulation_transcription_rates_valid
 #'
-#' Checks that a \code{simulation_rates_estimator} object is valid
-#' @param object a \code{simulation_rates_estimator} object
+#' Checks that a \code{simulation_transcription_rates} object is valid
+#' @param object a \code{simulation_transcription_rates} object
 #'
 #' @return TRUE if valid, else errors
-simulation_rates_estimator_valid <- function(object) {
+simulation_transcription_rates_valid <- function(object) {
   errors <- c()
 
   if (length(errors) == 0) TRUE else errors
 }
 
-#' Class simulation_rates_estimator
+#' Class simulation_transcription_rates
 #'
-#' Class \code{simulation_rates_estimator} has
+#' Class \code{simulation_transcription_rates} has
 #'
-#' @slot transcripts a \code{\link[GenomicRanges]{GRanges-class}} that holds
-#' all the transcript coordinates
-#'
-#' @name simulation_rates_estimator-class
-#' @rdname simulation_rates_estimator-class
+#' @name simulation_transcription_rates-class
+#' @rdname simulation_transcription_rates-class
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom GenomicRanges CompressedGRangesList
 #' @importClassesFrom data.table data.table
-#' @exportClass simulation_rates_estimator
-methods::setClass("simulation_rates_estimator",
+#' @exportClass simulation_transcription_rates
+methods::setClass("simulation_transcription_rates",
                   slots = c(transcripts = "GRanges",
                             column_identifiers = "character",
                             bins = "CompressedGRangesList",
@@ -36,7 +33,7 @@ methods::setClass("simulation_rates_estimator",
                             tx_gof_metrics = "data.table",
                             count_metadata = "list",
                             model_abundance = "list"),
-                  validity = simulation_rates_estimator_valid
+                  validity = simulation_transcription_rates_valid
 )
 
 #' estimate_simulation_transcription_rates
@@ -245,7 +242,7 @@ estimate_simulation_transcription_rates <- function() {
 }
 
 #' @inherit methods::show
-methods::setMethod("show", signature = "simulation_rates_estimator", function(object) {
+methods::setMethod("show", signature = "simulation_transcription_rates", function(object) {
   num_transcripts <- length(object@transcripts)
   num_models <- sum(unlist(lapply(object@models, ncol)))
   num_loci <- length(object@models)

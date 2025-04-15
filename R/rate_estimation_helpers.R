@@ -1,3 +1,7 @@
+#' @importFrom BRGenomics makeGRangesBRG
+#' @importFrom plyranges find_overlaps_directed group_by summarise
+#' @importFrom stats dnorm
+#' @importFrom GenomeInfoDb keepStandardChromosomes
 #' @title Process bigwigs
 #'
 #' @description
@@ -17,7 +21,7 @@ process_bw <- function(bw, strand) {
   strand(bw) <- strand
   bw$score <- abs(bw$score)
   bw <- bw[bw$score > 0]
-  bw <- keepStandardChromosomes(bw, pruning.mode = "coarse")
+  bw <- GenomeInfoDb::keepStandardChromosomes(bw, pruning.mode = "coarse")
   bw <- BRGenomics::makeGRangesBRG(bw)
   return(bw)
 }
