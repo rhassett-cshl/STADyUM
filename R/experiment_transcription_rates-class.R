@@ -469,11 +469,15 @@ setMethod("exportRatesToCSV", "experiment_transcription_rates", function(object,
 #' @param object An experiment_transcription_rates object
 #' @param type Type of plot to create ("scatter", "histogram", or "density")
 #' @param rate_type Which rate to plot ("beta_org", "beta_adp", "chi", etc.)
+#' @param file Optional path to save the plot. If provided, the plot will be saved to this location.
+#' @param width Width of the saved plot in inches. Default is 8.
+#' @param height Height of the saved plot in inches. Default is 6.
+#' @param dpi Resolution of the saved plot. Default is 300.
 #' @param ... Additional arguments passed to the plotting function
 #' @return A ggplot object
 #' @export
-setGeneric("plotRates", function(object, type = "scatter", rate_type = "beta_adp", ...) standardGeneric("plotRates"))
-setMethod("plotRates", "experiment_transcription_rates", function(object, type = "scatter", rate_type = "beta_adp", ...) {
+setGeneric("plotRates", function(object, type = "scatter", rate_type = "beta_adp", file = NULL, width = 8, height = 6, dpi = 300, ...) standardGeneric("plotRates"))
+setMethod("plotRates", "experiment_transcription_rates", function(object, type = "scatter", rate_type = "beta_adp", file = NULL, width = 8, height = 6, dpi = 300, ...) {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     stop("ggplot2 package is required for plotting")
   }
@@ -484,26 +488,50 @@ setMethod("plotRates", "experiment_transcription_rates", function(object, type =
   
   data <- object@rates
   
-  switch(type,
+  p <- switch(type,
          scatter = {
            ggplot2::ggplot(data, ggplot2::aes(x = .data$beta_org, y = .data[[rate_type]])) +
-             ggplot2::geom_point(alpha = 0.6) +
-             ggplot2::geom_abline(slope = 1, intercept = 0, linetype = "dashed") +
+             ggplot2::geom_point(color = "#1E88E5", alpha = 0.7, size = 2) +  # Blue points
              ggplot2::labs(x = "Original Beta", y = rate_type) +
-             ggplot2::theme_minimal()
+             ggplot2::theme_bw() +  # White background with grid
+             ggplot2::theme(
+               panel.grid.major = ggplot2::element_line(color = "gray90"),
+               panel.grid.minor = ggplot2::element_line(color = "gray95"),
+               axis.text = ggplot2::element_text(color = "black", size = 12),
+               axis.title = ggplot2::element_text(color = "black", size = 14)
+             )
          },
          histogram = {
            ggplot2::ggplot(data, ggplot2::aes(x = .data[[rate_type]])) +
-             ggplot2::geom_histogram(bins = 30, fill = "steelblue", alpha = 0.7) +
+             ggplot2::geom_histogram(bins = 30, fill = "#1E88E5", color = "white", alpha = 0.7) +
              ggplot2::labs(x = rate_type, y = "Count") +
-             ggplot2::theme_minimal()
+             ggplot2::theme_bw() +
+             ggplot2::theme(
+               panel.grid.major = ggplot2::element_line(color = "gray90"),
+               panel.grid.minor = ggplot2::element_line(color = "gray95"),
+               axis.text = ggplot2::element_text(color = "black", size = 12),
+               axis.title = ggplot2::element_text(color = "black", size = 14)
+             )
          },
          density = {
            ggplot2::ggplot(data, ggplot2::aes(x = .data[[rate_type]])) +
-             ggplot2::geom_density(fill = "steelblue", alpha = 0.7) +
+             ggplot2::geom_density(fill = "#1E88E5", color = "#0D47A1", alpha = 0.7) +
              ggplot2::labs(x = rate_type, y = "Density") +
-             ggplot2::theme_minimal()
+             ggplot2::theme_bw() +
+             ggplot2::theme(
+               panel.grid.major = ggplot2::element_line(color = "gray90"),
+               panel.grid.minor = ggplot2::element_line(color = "gray95"),
+               axis.text = ggplot2::element_text(color = "black", size = 12),
+               axis.title = ggplot2::element_text(color = "black", size = 14)
+             )
          },
          stop("Invalid plot type. Choose from 'scatter', 'histogram', or 'density'")
   )
+  
+  # Save the plot if file is provided
+  if (!is.null(file)) {
+    ggplot2::ggsave(file, p, width = width, height = height, dpi = dpi)
+  }
+  
+  return(p)
 })
