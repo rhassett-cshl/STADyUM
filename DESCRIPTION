@@ -39,7 +39,9 @@ Imports:
     BRGenomics,
     rtracklayer,
     GenomeInfoDb,
-    Rcpp
+    Rcpp,
+    data.table,
+    purrr
 LinkingTo:
     Rcpp
 Suggests: 

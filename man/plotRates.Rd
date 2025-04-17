@@ -4,7 +4,16 @@
 \alias{plotRates}
 \title{Plot transcription rates}
 \usage{
-plotRates(object, type = "scatter", rate_type = "beta_adp", ...)
+plotRates(
+  object,
+  type = "scatter",
+  rate_type = "beta_adp",
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  ...
+)
 }
 \arguments{
 \item{object}{An experiment_transcription_rates object}
@@ -12,6 +21,14 @@ plotRates(object, type = "scatter", rate_type = "beta_adp", ...)
 \item{type}{Type of plot to create ("scatter", "histogram", or "density")}
 
 \item{rate_type}{Which rate to plot ("beta_org", "beta_adp", "chi", etc.)}
+
+\item{file}{Optional path to save the plot. If provided, the plot will be saved to this location.}
+
+\item{width}{Width of the saved plot in inches. Default is 8.}
+
+\item{height}{Height of the saved plot in inches. Default is 6.}
+
+\item{dpi}{Resolution of the saved plot. Default is 300.}
 
 \item{...}{Additional arguments passed to the plotting function}
 }

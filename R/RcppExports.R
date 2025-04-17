@@ -2,6 +2,6 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 simulate_polymerase_cpp <- function(k, k_min, k_max, ksd, gene_len, alpha, beta, zeta, zeta_sd, zeta_max, zeta_min, total_cells, s, h, time, delta_t, csv_steps_to_record) {
-    .Call('_STADyUM_simulate_polymerase_cpp', PACKAGE = 'STADyUM', k, k_min, k_max, ksd, gene_len, alpha, beta, zeta, zeta_sd, zeta_max, zeta_min, total_cells, s, h, time, delta_t, csv_steps_to_record)
+    .Call(`_STADyUM_simulate_polymerase_cpp`, k, k_min, k_max, ksd, gene_len, alpha, beta, zeta, zeta_sd, zeta_max, zeta_min, total_cells, s, h, time, delta_t, csv_steps_to_record)
 }
 
