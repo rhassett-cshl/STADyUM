@@ -22,7 +22,17 @@ simulation_transcription_rates_valid <- function(object) {
 #' @exportClass simulation_transcription_rates
 methods::setClass("simulation_transcription_rates",
                   slots = c(simpol="simulate_polymerase",
-                            steric_hindrance="logical"),
+                            steric_hindrance="logical",
+                            trial="numeric",
+                            chi="numeric",
+                            beta_org="numeric",
+                            beta_adp="numeric",
+                            phi="numeric",
+                            fk="numeric",
+                            fk_mean="numeric",
+                            fk_var="numeric",
+                            flag="character",
+                            rnap_n="list"),
                   validity = simulation_transcription_rates_valid
 )
 
