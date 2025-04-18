@@ -12,7 +12,7 @@ simulation_transcription_rates_valid <- function(object) {
 
 #' Class simulation_transcription_rates
 #'
-#' Class \code{simulation_transcription_rates} has
+#' Class \code{simulation_transcription_rates} 
 #'
 #' @name simulation_transcription_rates-class
 #' @rdname simulation_transcription_rates-class
@@ -21,18 +21,8 @@ simulation_transcription_rates_valid <- function(object) {
 #' @importClassesFrom data.table data.table
 #' @exportClass simulation_transcription_rates
 methods::setClass("simulation_transcription_rates",
-                  slots = c(transcripts = "GRanges",
-                            column_identifiers = "character",
-                            bins = "CompressedGRangesList",
-                            bin_size = "integer",
-                            models = "list",
-                            masks = "list",
-                            transcript_model_key = "data.frame",
-                            counts = "list",
-                            upstream_polymerase_ratios = "numeric",
-                            tx_gof_metrics = "data.table",
-                            count_metadata = "list",
-                            model_abundance = "list"),
+                  slots = c(simpol="simulate_polymerase",
+                            steric_hindrance="logical"),
                   validity = simulation_transcription_rates_valid
 )
 
@@ -40,142 +30,184 @@ methods::setClass("simulation_transcription_rates",
 #'
 #' Estimates the transcription rates from simulated data and contructs an object that holds
 #' these rates
-#' @param bigwig_plus the path to a bigwig file from the plus strand recording PRO-seq read counts
-#' @param bigwig_minus the path to a bigwig file from the minus strand recording PRO-seq read counts
-#' @param pause_regions a \link[GenomicRanges]{GRanges-class} object that must
-#' contain a gene_id metadata column
-#' @param gene_body_regions a \link[GenomicRanges]{GRanges-class} object that must
-#' contain a gene_id metadata column
+#' @param simpol a \code{\link{simulate_polymerase-class}} object
 #' @param steric_hindrance a logical value to determine whether to infer landing-pad occupancy or not.
 #' Defaults to FALSE.
-#' @param scale a csv file providing scaling factors for omega with columns sample_id, omega_scale_h,
-#' omega_scale_l. Defaults to NULL.
 #'
 #' @return an \code{\link{_transcription_rates-class}} object
 #'
 #' @export
 estimate_simulation_transcription_rates <- function() {
 
-  
-  # **Some checks prior to beginning construction**
-  # Check for correct GRanges object metadata
-  if (!gene_name_column %in%
-      colnames(S4Vectors::elementMetadata(pause_regions))) {
-    stop(paste("pause_regions does not have a column matching",
-               gene_name_column))
-  }
-  if (!gene_name_column %in%
-      colnames(S4Vectors::elementMetadata(gene_body_regions))) {
-    stop(paste("gene_body_regions does not have a column matching",
-               gene_name_column))
-  }
-  if (!is.character(
-    S4Vectors::elementMetadata(pause_regions)[, gene_name_column])) {
-    stop(paste("gene name column", gene_name_column,
-               "must be of class 'character' in pause_regions object"))
-  }
-  if (!is.character(
-    S4Vectors::elementMetadata(gene_body_regions)[, gene_name_column])) {
-    stop(paste("gene name column", gene_name_column,
-               "must be of class 'character' in gene_body_regions object"))
-  }
-  duplicated_pause_region_gene_names <-
-    any(duplicated(S4Vectors::elementMetadata(pause_regions)[, gene_name_column]))
-  if (duplicated_pause_region_gene_names) {
-    stop("One or more gene names are duplicated in pause region, gene names must be unique")
-  }
-  duplicated_gene_body_region_gene_names <-
-    any(duplicated(S4Vectors::elementMetadata(gene_body_regions)[, gene_name_column]))
-  if (duplicated_gene_body_regions_gene_names) {
-    stop("One or more gene names are duplicated in gene body region, gene names must be unique")
-  }
-  if (steric_hindrance && (is.null(omega_scale) && !is.numeric(omega_scale) && omega_scale <= 0) ) {
-    stop("For steric hindrance case, omega_scale parameter must be set to numeric greater than 0")
-  }
-  
-  # **End checks**
+  sample_cell <- 5000 # number of cells sampled each time
+  sample_n <- 50 # number of times to sample
+  matched_len <- 2e4 # gene length to be matched
 
-  # Force copy of object underlying GRanges to prevent any weird side effects if
-  # GRanges is using a data.table or something else that can modify in place
-  pause_regions <- GenomicRanges::makeGRangesFromDataFrame(
-    data.table::copy(data.table::as.data.table(pause_regions)),
-    keep.extra.columns = T)
-
-  gene_body_regions <- GenomicRanges::makeGRangesFromDataFrame(
-    data.table::copy(data.table::as.data.table(gene_body_regions)),
-    keep.extra.columns = T)
-
-
-  # set up parameters
-  k <- 50
   kmin <- 1
-  kmax <- 200 # also used as k on the poisson case
+  kmax <- 200
+  matched_gb_len <- matched_len - kmax
+  count_rnap <- FALSE
 
-  rnap_size <- 50
-  zeta <- 2000
+  total_spacing <- simpol@s + simpol@h
 
-  message("processing bigwigs...")
+  k <- simpol@k
 
-  rc_cutoff <- 20 # read count cut-off for both gene body and pause peak
+  start_point <- 0.99 * 1e6 # set a start coordinate for the simulated gene
+  # set lambda according to the read coverage of PRO-seq in the control samples
+  # from Dukler et al. 2017
+  lambda <- 102.1 
 
-  bwp1_p3 <- import.bw(bigwig_plus)
-  bwm1_p3 <- import.bw(bigwig_minus)
+  # last step of position matrix
+  rnap_pos <- simpol@position_matrix
+  total_cell <- NCOL(rnap_pos)
+  gene_len <- NROW(rnap_pos) - 1
 
-  # TODO: bigwig validity checks
+  # count number of RNAP before the pause site
+  #if (count_rnap) {
+    # get probability vector
+  #  prob <- readRDS(str_replace(rds_in, ".RDS", "_prob_init.RDS"))
+  #  alpha <- as.double(gsub(".*a([0-9].*)b.*", "\\1",sel_sample))
+  #  beta <- as.double(gsub(".*b([0-9].*)g.*", "\\1",sel_sample))
+  #  zeta <- as.double(gsub(".*z([0-9].*)zsd.*", "\\1",sel_sample))
 
-  bwp1_p3 <- process_bw(bw = bwp1_p3, strand = "+")
-  bwm1_p3 <- process_bw(bw = bwm1_p3, strand = "-")
-  bw1_p3 <- c(bwp1_p3, bwm1_p3)
-  rm(bwp1_p3, bwm1_p3)
+    # calculate time slice first then get the corresponding probability for beta
+  #  beta_prob <- prob[1, 1] / alpha * beta
+    # get pause position for every cell
+  #  idx <- which(prob == beta_prob, arr.ind = TRUE)
+  #  idx <- idx[idx[, 1] != 1, ]
+  #}
+  
+  #### initiation and pause release rate estimates ####
+  # generate regions for read counting
+  gn_rng <-
+  GRanges(seqnames = rep("chr1", 3),
+          IRanges(start = c(1, kmax + 1, 1),
+                  end = c(kmax, gene_len, spacing)))
+  
+  gn_rng <- shift(gn_rng, shift = start_point)
 
-  # make sure pause region is the same as kmax used in EM
-  pause_regions <- promoters(pause_regions, upstream = 0, downstream = kmax)
+  region_names <- c("tss", "gb", "landing")
+  names(gn_rng) <- region_names
 
-  # summarize read counts
-  rc1_pause <- summarise_bw(bw1_p3, pause_regions, "sp1")
-  rc1_pause$pause_length <- kmax
+  len <- as.list(width(gn_rng))
+  names(len) <- region_names
 
-  rc1_gb <- summarise_bw(bw1_p3, gene_body_regions, "sb1")
-  rc1_gb$gb_length <-
-  width(gene_body_regions)[match(rc1_gb$gene_id, gene_body_regions$gene_id)]
+  # set seeds for random sampling
+  seeds <- seq(from = 2013, by = 1, length.out = sample_n)
+  # a list to Granges for rnap positions
+  rnap_grng <- list()
+  # a list recording number of RNAPs at or before the pause site
+  if (count_rnap) rnap_n_ls <- list()
 
-  # prepare read count table
-  rc1 <- Reduce(function(x, y) merge(x, y, by = "gene_id", all = TRUE),
-              list(rc1_pause, rc1_gb))
+  for (i in 1:sample_n) {
+    set.seed(seeds[[i]])
+    sel_cells <- sample(1:total_cell, size = sample_cell, replace = TRUE)
+    res_pos <- rnap_pos[, sel_cells]
+    # get rid of position 1, which is always 1
+    res_pos <- res_pos[-1, ]
+    if (count_rnap) {
+      # get pause sites
+      pause_site <- idx[sel_cells, 1] - 1
+      # generate data mask
+      # inspired by https://stackoverflow.com/questions/47732085/sum-of-some-positions-in-a-row-r
+      res_shape <- dim(res_pos)
+      after_pause_len <- res_shape[1] - pause_site
+      mask_mx <- map2(pause_site, after_pause_len,
+          function(x, y) c(rep(TRUE, x), rep(FALSE, y)))
+      mask_mx <- Matrix::Matrix(unlist(mask_mx), nrow = res_shape[1], ncol = res_shape[2])
+      # calculate rnap number before pause site for every cell
+      rnap_n_ls[[i]] <- colSums(res_pos * mask_mx)
+    }
+    # combine rnap positions across all cells
+    res_all <- rowSums(res_pos)
+    # generate bigwig for positive strand
+    rnap_grng[[i]] <-
+      GRanges(seqnames = "chr1",
+              IRanges(start = (1 + start_point) : (gene_len + start_point),
+                      width = 1),
+              score = res_all,
+              strand = "+",
+              seqlengths = c("chr1" = gene_len * 10)  + start_point)
 
-  # clean up some genes with missing values in tss length or gene body length
-  rc1 <- rc1[!(is.na(rc1$pause_length) | is.na(rc1$gb_length)), ]
-  rc1 <- rc1[(rc1$sp1 > rc_cutoff) & (rc1$sb1 > rc_cutoff), ]
+    rm(res_pos, res_all)
+  }
 
-  message("estimating rates...")
+  summarise_bw <-
+  function(bw, grng) {
+    rc <- grng %>%
+      plyranges::group_by_overlaps(bw) %>%
+      plyranges::group_by(query) %>%
+      plyranges::summarise(score = sum(score))
+    if (!1 %in% rc$query) {
+      rc <- rbind(DataFrame(list(query = 1, score = 0)), rc)
+    }
+    rc <- as.list(rc$score)
+    names(rc) <- region_names
+    return(rc)
+  }
 
-  #### Initial model: Poisson-based Maximum Likelihood Estimation ####
-  analytical_rate_tbl <-
-    tibble(gene_id = rc1$gene_id,
-          beta_org =  (rc1$sb1 / rc1$gb_length) / (rc1$sp1 / rc1$pause_length))
+  bw_dfs <- tibble(trial = 1:sample_n)
+  bw_dfs$rc_region <- map(rnap_grng, ~ summarise_bw(.x, gn_rng))
 
-  #### Adapted model: allow uncertainty in the pause site and steric hindrance ####
-  # prepare data for running EM
-  em_rate <-
-    DataFrame(gene_id = rc1$gene_id,
-              s = rc1$sb1,
-              N = rc1$gb_length)
+  bw_dfs$rc_tss <- map_dbl(bw_dfs$rc_region, "tss")
+  bw_dfs$rc_gb <-map_dbl(bw_dfs$rc_region, "gb")
+  bw_dfs$rc_landing <-map_dbl(bw_dfs$rc_region, "landing")
 
+  #### empirical way to calculate steric hindrance at pause site ####
+  bw_dfs <- bw_dfs %>%
+    mutate(# number of RNAPs per cell per gene
+          R = (rc_tss + rc_gb) / sample_cell,
+          # number of RNAPs in the pause peak per cell per gene
+          R_pause = rc_tss / sample_cell,
+          # proportion of landing pad being occupied by RNAP, i.e., empirical phi
+          rnap_prop = rc_landing / sample_cell
+          )
+  
+  # whether to match the simulated number of RNAPs to read coverage in experimental data or not
+  # here match RNAP number within kmin to kmax, RNAP in gene body will be taken care
+  # of afterwards
+  if (!is.null(lambda)) {
+    rnap_grng <- map(rnap_grng, function(grng) {
+      grng$score[kmin:kmax] <-
+        rpois(length(kmin:kmax), grng$score[kmin:kmax] / sample_cell * lambda)
+      # first 20bp get removed because they are usually not seen in sequencing
+      grng$score[1:20] <- 0
+      return(grng)
+    })
+    bw_dfs$rc_region <- map(rnap_grng, ~ summarise_bw(.x, gn_rng))
+    bw_dfs$rc_tss <- map_dbl(bw_dfs$rc_region, "tss")
+  }
 
-  # use read count within gene body to pre-estimate chi hat
-  em_rate$chi = em_rate$s / em_rate$N
+  # match RNAP number within gene bodies to desired read coverage
+  if (!is.null(lambda)) {
+    pois_mean <- (lambda * bw_dfs$rc_gb / sample_cell) * (matched_gb_len / len$gb)
+    bw_dfs$rc_gb <- rpois(length(pois_mean), pois_mean)
+    # assign matched gene body length as gene body length
+    len$gb <- matched_gb_len
+  }
 
   # get read counts on each position within pause peak (from kmin to kmax)
-  Xk <-
-    BRGenomics::getCountsByPositions(bw1_p3, pause_regions, melt = TRUE)
-  Xk <- splitAsList(Xk$signal, Xk$region)
-  names(Xk) <- pause_regions$gene_id
+  bw_dfs$Xk <- map(rnap_grng,
+                  ~ .x[(start(.x) >= 990000 + kmin) & (start(.x) <= 990000 + kmax), ]$score)
 
-  em_rate$Xk <- Xk[em_rate$gene_id]
+  ## Initial model: Poisson based MLEs ##
+  # use read count within gene body to pre-estimate chi hat
+  bw_dfs$chi <- bw_dfs$rc_gb / len$gb
 
+  # TODO??
+  # take care of single pause site or variable pause sites (pause peak)
+  if (simpol@k_sd == 0) {
+    bw_dfs$beta_org <- bw_dfs$chi / map_dbl(bw_dfs$Xk, k)
+  } else {
+    bw_dfs$beta_org <- bw_dfs$chi / (bw_dfs$rc_tss / len$tss)
+  }
+    
+  bw_dfs$beta_max_rc <- bw_dfs$chi / map_dbl(bw_dfs$Xk, max)
+
+  ## Adapted model: allows uncertainty in the pause site and steric hindrance ##
   # initialize beta using sum of read counts within pause peak
-  em_rate$Xk_sum <- sapply(em_rate$Xk, sum)
-  em_rate$beta_int <- em_rate$chi / em_rate$Xk_sum
+  bw_dfs$Xk_sum <- sapply(bw_dfs$Xk, sum)
+  bw_dfs$beta_int <- bw_dfs$chi / bw_dfs$Xk_sum
 
   # initialize fk with some reasonable values based on heuristic
   fk_int <- dnorm(kmin:kmax, mean = 50, sd = 100)
@@ -183,86 +215,65 @@ estimate_simulation_transcription_rates <- function() {
 
   # estimate rates using EM
   em_ls <- list()
+  # wrap the EM function in case there is an error
+  main_EM <- possibly(main_EM, otherwise = NA)
 
-  if(steric_hindrance) {
-    em_rate$omega_zeta <- em_rate$chi * omega_scale
-    em_rate$omega <- em_rate$omega_zeta / zeta
-
-    # compute a scaling factor lambda for the purpose of using the same parameters as simulations
-    lambda <- zeta ^ 2 / omega_scale
+  if (steric_hindrance) {
+    f <- calculate_f(s = spacing, k = k)
+    phi_int <- 0.5
+    zeta <- 2000 # elongation rate
+    # lambda used for scaling in EM, different from the one used to match coverage
+    lambda1 <- 0.0505 * zeta ^ 2
   }
 
-  for (i in 1:NROW(em_rate)) {
-    rc <- em_rate[i, ]
 
-    if(!steric_hindrance) {
-      em_ls[[i]] <- pause_escape_EM(Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
-                            fk_int = fk_int, beta_int = rc$beta_int[[1]],
-                            chi_hat = rc$chi, max_itr = 500, tor = 1e-4)
+  for (i in 1:NROW(bw_dfs)) {
+    rc <- bw_dfs[i, ]
+
+    if (!steric_hindrance) {
+
+      em_ls[[i]] <- main_EM(Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
+                            fk_int = fk_int, beta_int = rc$beta_int[[1]], chi_hat = rc$chi,
+                            max_itr = 500, tor = 1e-4)
+
     } else {
-      em_ls[[i]] <- steric_hindrance_EM(Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, f1 = 0.517, f2 = 0.024,
-                            fk_int = fk_int, beta_int = rc$beta_int[[1]], phi_int = 0.5,
-                            chi_hat = rc$chi, lambda = lambda, zeta = zeta,
+
+      em_ls[[i]] <- main_EM(Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, f1 = f[["f1"]], f2 = f[["f2"]],
+                            fk_int = fk_int, beta_int = rc$beta_int[[1]], chi_hat = rc$chi,
+                            phi_int = phi_int, lambda = lambda1, zeta = zeta,
                             max_itr = 500, tor = 1e-4)
     }
   }
-
-  names(em_ls) <- em_rate$gene_id
+  
 
   # get rate estimates and posterior distribution of pause sites
-  em_rate$beta_adp <- map_dbl(em_ls, "beta", .default = NA)
-  em_rate$Yk <- map(em_ls, "Yk", .default = NA)
-  em_rate$fk <- map(em_ls, "fk", .default = NA)
-  em_rate$fk_mean <- map_dbl(em_ls, "fk_mean", .default = NA)
-  em_rate$fk_var <- map_dbl(em_ls, "fk_var", .default = NA)
+  bw_dfs$beta_adp <- map_dbl(em_ls, "beta", .default = NA)
+  bw_dfs$Yk <- map(em_ls, "Yk", .default = NA)
+  bw_dfs$fk <- map(em_ls, "fk", .default = NA)
+  bw_dfs$fk_mean <- map_dbl(em_ls, "fk_mean", .default = NA)
+  bw_dfs$fk_var <- map_dbl(em_ls, "fk_var", .default = NA)
   # calculate Yk / Xk
-  em_rate$t <- sapply(em_rate$Yk, sum)
-  em_rate$proportion_Yk <- em_rate$t / sapply(em_rate$Xk, sum)
+  # bw_dfs$proportion_Yk <- sapply(bw_dfs$Yk, sum) / sapply(bw_dfs$Xk, sum)
+  bw_dfs$flag <- map_chr(em_ls, "flag", .default = NA)
 
-  em_rate <- em_rate %>% as_tibble()
+  if (steric_hindrance) bw_dfs$phi <- map_dbl(em_ls, "phi", .default = NA)
 
-  if (steric_hindrance) {
-    em_rate$phi <- map_dbl(em_ls, "phi", .default = NA)
-    em_rate <- em_rate %>%
-      mutate(alpha_zeta = omega_zeta / (1 - phi))
-  }
-
-  em_rate <- em_rate %>% left_join(analytical_rate_tbl, by = "gene_id")
+  # add number of RNAP before pause site to output if it exists
+  if (count_rnap) bw_dfs$rnap_n <- rnap_n_ls
 
   # Return simulation transcription rates object
   return(methods::new(Class = "simulation_transcription_rates",
-                      counts = rc1,
-                      pause_regions = pause_regions,
-                      gene_body_regions = gene_body_regions,
-                      gene_name_column = gene_name_column,
+                      simpol = simpol,
                       steric_hindrance = steric_hindrance,
-                      omega_scale = omega_scale,
-                      rates = em_rate
-  ))
+                      trial = bw_dfs$trial,
+                      chi = bw_dfs$chi,
+                      beta_org = bw_dfs$beta_org,
+                      beta_adp = bw_dfs$beta_adp,
+                      phi = bw_dfs$phi,
+                      fk = bw_dfs$fk,
+                      fk_mean = bw_dfs$fk_mean,
+                      fk_var = bw_dfs$fk_var,
+                      flag = bw_dfs$flag,
+                      rnap_n = bw_dfs$rnap_n,
+                      ))
 }
-
-#' @inherit methods::show
-methods::setMethod("show", signature = "simulation_transcription_rates", function(object) {
-  num_transcripts <- length(object@transcripts)
-  num_models <- sum(unlist(lapply(object@models, ncol)))
-  num_loci <- length(object@models)
-  bin_size <- object@bin_size
-  bwp <- object@count_metadata$bigwig_plus
-  bwm <- object@count_metadata$bigwig_minus
-
-  if (!is.na(object@column_identifiers["gene_id"])) {
-    num_genes <- length(unique(
-      S4Vectors::mcols(object@transcripts)[[object@column_identifiers["gene_id"]]]))
-    gene_string <- paste("Number of Genes:", num_genes)
-  } else {
-    gene_string <- "No gene id present"
-  }
-
-  write("A transcript_quantifier object with:", file = stdout())
-  write(paste(num_transcripts, "transcripts converted to", num_models, "models",
-              "grouped into", num_loci, "loci"), file = stdout())
-  write(gene_string, file = stdout())
-  write(paste("bin size:", bin_size), file = stdout())
-  write(paste("Bigwig data (plus):", bwp), file = stdout())
-  write(paste("Bigwig data (minus):", bwm), file = stdout())
-})

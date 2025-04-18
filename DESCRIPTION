@@ -41,7 +41,8 @@ Imports:
     GenomeInfoDb,
     Rcpp,
     data.table,
-    purrr
+    purrr,
+    reshape2
 LinkingTo:
     Rcpp
 Suggests: 

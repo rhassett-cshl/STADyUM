@@ -81,24 +81,10 @@ Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int 
                                  double alpha, double beta, double zeta, double zeta_sd,
                                  double zeta_max, double zeta_min, int total_cells,
                                  int s, int h, double time, double delta_t, int csv_steps_to_record) {
-    std::string output_dir_str = "results";
 
     int steric_hindrance = s + h;
     const int total_sites = gene_len + 1;
     double steps = time / delta_t;
-
-    /* Create output directories */
-    std::string positions_dir = output_dir_str + "/positions";
-    std::string pause_sites_file_name = output_dir_str + "/pause_sites.csv";
-    std::string probability_file_name = output_dir_str + "/probability_vector.csv";
-    std::string combined_cells_file_name = output_dir_str + "/combined_cell_data.csv";
-    std::string positions_file_name = positions_dir + "/position_matrix_";
-    mkdir(output_dir_str.c_str(), 0755);
-    if(csv_steps_to_record > 0)
-    {
-        mkdir(positions_dir.c_str(), 0755);
-    }
-    std::ofstream out;
 
     /* Initialize an array to hold Pol II presence and absence*/
     std::vector<std::vector<int>> pos_matrix;
@@ -113,14 +99,6 @@ Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int 
      * Generate pause sites located from kmin to kmax with sd = ksd
      */
     std::vector<double> y = NormalDistrubtionGenerator(k, ksd, k_min, k_max, total_cells, true);
-
-    /* Output pause sites per cell in csv format */
-    out.open(pause_sites_file_name);
-    for (size_t i = 0; i < y.size(); i++)
-    {
-        out << y[i] << '\n';
-    }
-    out.close();
 
     /* A matrix of probabilities to control transition from state to state
      * cols are cells, rows are positions
@@ -155,13 +133,6 @@ Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int 
         double transform_val = zeta * delta_t;
         std::transform(zv.begin(), zv.end(), zv.begin(), [&transform_val](auto& c){return c*transform_val;});*/
     }
-    /* Output probability values per site in csv format */
-    out.open(probability_file_name);
-    for (size_t i = 0; i < zv.size(); i++)
-    {
-        out << zv[i] << '\n';
-    }
-    out.close();
 
     std::random_device rd; // Get seed for random number generator
     std::mt19937 gen(rd());
@@ -239,23 +210,21 @@ Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int 
             res_all[(*sites)[j]]++;
         }
     }
-    out.open(combined_cells_file_name);
-    for (size_t i = 0; i < res_all.size(); i++)
-    {
-        out << res_all[i] << "\n";
-    }
-    out.close();
 
-    if(csv_steps_to_record > 0)
-    {
-        int total_steps_to_record = csv_steps_to_record > (int)pos_matrices_csv_record.size() ? (int)pos_matrices_csv_record.size() : csv_steps_to_record;
-        #pragma omp parallel for
-        for(int i = 0; i < total_steps_to_record; i++)
-        {
-            int step_idx = csv_steps_to_record > steps ? i + 1 : steps - csv_steps_to_record + i + 1; 
-            PrintPositionMatrixToCSV(pos_matrices_csv_record[i], total_cells, total_sites, positions_file_name + std::to_string(step_idx) + ".csv");       
+    // Convert position matrix to a format that can be returned to R
+    // Now with sites as rows and cells as columns
+    Rcpp::IntegerMatrix pos_matrix_r(total_sites, total_cells);
+    for (int cell = 0; cell < total_cells; cell++) {
+        std::vector<int> *sites = &pos_matrix[cell];
+        for (size_t j = 0; j < sites->size(); j++) {
+            pos_matrix_r((*sites)[j], cell) = 1;
         }
     }
 
-    return Rcpp::wrap(42);
+    return Rcpp::List::create(
+        Rcpp::Named("probability_vector") = zv,
+        Rcpp::Named("pause_sites") = y,
+        Rcpp::Named("combined_cells_data") = res_all,
+        Rcpp::Named("position_matrix") = pos_matrix_r
+    );
 }
