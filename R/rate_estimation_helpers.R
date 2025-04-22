@@ -73,6 +73,8 @@ get_likelihood <- function(beta, chi, Xk, Yk, fk) {
 # functions for EM based on Gaussian distributed k
 pause_escape_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax) {
 
+  # Yk is NaNs
+
   t <- sum(Yk)
   u <- sum(Yk * seq(kmin, kmax))
   v <- sum(Yk * seq(kmin, kmax) ^ 2)
@@ -83,6 +85,7 @@ pause_escape_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax) {
 
   fk_mean <- (u - z) / (t - w)
   fk_var <- (v - r) / (t - w) - fk_mean ^ 2
+  # fk_var is NaN
 
   # avoid small and negative values
   if (fk_var < 1e-10) {

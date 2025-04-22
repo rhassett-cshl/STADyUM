@@ -5,8 +5,46 @@
 #'
 #' @return TRUE if valid, else errors
 simulation_transcription_rates_valid <- function(object) {
-  errors <- c()
-
+  errors <- character()
+  
+  # Check if required slots are present and have correct types
+  if (!is(object@simpol, "simulate_polymerase")) {
+    errors <- c(errors, "simpol must be a simulate_polymerase object")
+  }
+  if (!is.logical(object@steric_hindrance)) {
+    errors <- c(errors, "steric_hindrance must be logical")
+  }
+  if (!is.numeric(object@trial)) {
+    errors <- c(errors, "trial must be numeric")
+  }
+  if (!is.numeric(object@chi)) {
+    errors <- c(errors, "chi must be numeric")
+  }
+  if (!is.numeric(object@beta_org)) {
+    errors <- c(errors, "beta_org must be numeric")
+  }
+  if (!is.numeric(object@beta_adp)) {
+    errors <- c(errors, "beta_adp must be numeric")
+  }
+  if (!is.numeric(object@phi)) {
+    errors <- c(errors, "phi must be numeric")
+  }
+  if (!is.list(object@fk)) {
+    errors <- c(errors, "fk must be a list")
+  }
+  if (!is.numeric(object@fk_mean)) {
+    errors <- c(errors, "fk_mean must be numeric")
+  }
+  if (!is.numeric(object@fk_var)) {
+    errors <- c(errors, "fk_var must be numeric")
+  }
+  if (!is.character(object@flag)) {
+    errors <- c(errors, "flag must be character")
+  }
+  if (!is.list(object@rnap_n)) {
+    errors <- c(errors, "rnap_n must be a list")
+  }
+  
   if (length(errors) == 0) TRUE else errors
 }
 
@@ -28,11 +66,25 @@ methods::setClass("simulation_transcription_rates",
                             beta_org="numeric",
                             beta_adp="numeric",
                             phi="numeric",
-                            fk="numeric",
+                            fk="list",
                             fk_mean="numeric",
                             fk_var="numeric",
                             flag="character",
                             rnap_n="list"),
+                  prototype = list(
+                    simpol = NULL,
+                    steric_hindrance = FALSE,
+                    trial = numeric(0),
+                    chi = numeric(0),
+                    beta_org = numeric(0),
+                    beta_adp = numeric(0),
+                    phi = 0,
+                    fk = list(),
+                    fk_mean = numeric(0),
+                    fk_var = numeric(0),
+                    flag = character(0),
+                    rnap_n = list()
+                  ),
                   validity = simulation_transcription_rates_valid
 )
 
@@ -43,11 +95,12 @@ methods::setClass("simulation_transcription_rates",
 #' @param simpol a \code{\link{simulate_polymerase-class}} object
 #' @param steric_hindrance a logical value to determine whether to infer landing-pad occupancy or not.
 #' Defaults to FALSE.
-#'
+#' @importFrom IRanges IRanges
+#' @import GenomicRanges
 #' @return an \code{\link{_transcription_rates-class}} object
 #'
 #' @export
-estimate_simulation_transcription_rates <- function() {
+estimate_simulation_transcription_rates <- function(simpol, steric_hindrance=FALSE) {
 
   sample_cell <- 5000 # number of cells sampled each time
   sample_n <- 50 # number of times to sample
@@ -58,7 +111,7 @@ estimate_simulation_transcription_rates <- function() {
   matched_gb_len <- matched_len - kmax
   count_rnap <- FALSE
 
-  total_spacing <- simpol@s + simpol@h
+  spacing <- simpol@s + simpol@h
 
   k <- simpol@k
 
@@ -94,7 +147,7 @@ estimate_simulation_transcription_rates <- function() {
           IRanges(start = c(1, kmax + 1, 1),
                   end = c(kmax, gene_len, spacing)))
   
-  gn_rng <- shift(gn_rng, shift = start_point)
+  gn_rng <- IRanges::shift(gn_rng, shift=start_point)
 
   region_names <- c("tss", "gb", "landing")
   names(gn_rng) <- region_names
@@ -206,7 +259,7 @@ estimate_simulation_transcription_rates <- function() {
 
   # TODO??
   # take care of single pause site or variable pause sites (pause peak)
-  if (simpol@k_sd == 0) {
+  if (simpol@ksd == 0) {
     bw_dfs$beta_org <- bw_dfs$chi / map_dbl(bw_dfs$Xk, k)
   } else {
     bw_dfs$beta_org <- bw_dfs$chi / (bw_dfs$rc_tss / len$tss)
@@ -217,7 +270,15 @@ estimate_simulation_transcription_rates <- function() {
   ## Adapted model: allows uncertainty in the pause site and steric hindrance ##
   # initialize beta using sum of read counts within pause peak
   bw_dfs$Xk_sum <- sapply(bw_dfs$Xk, sum)
-  bw_dfs$beta_int <- bw_dfs$chi / bw_dfs$Xk_sum
+  
+  # Handle cases where Xk_sum is 0 or chi is 0/Inf
+  valid_indices <- which(bw_dfs$Xk_sum > 0 & bw_dfs$chi > 0 & !is.infinite(bw_dfs$chi))
+  if (length(valid_indices) == 0) {
+    stop("No valid data points found - check if there are any RNA polymerases in the pause region or gene body")
+  }
+  
+  bw_dfs$beta_int <- rep(NA, nrow(bw_dfs))
+  bw_dfs$beta_int[valid_indices] <- bw_dfs$chi[valid_indices] / bw_dfs$Xk_sum[valid_indices]
 
   # initialize fk with some reasonable values based on heuristic
   fk_int <- dnorm(kmin:kmax, mean = 50, sd = 100)
@@ -226,7 +287,7 @@ estimate_simulation_transcription_rates <- function() {
   # estimate rates using EM
   em_ls <- list()
   # wrap the EM function in case there is an error
-  main_EM <- possibly(main_EM, otherwise = NA)
+  #main_EM <- possibly(main_EM, otherwise = NA)
 
   if (steric_hindrance) {
     f <- calculate_f(s = spacing, k = k)
@@ -236,19 +297,22 @@ estimate_simulation_transcription_rates <- function() {
     lambda1 <- 0.0505 * zeta ^ 2
   }
 
+  print("Starting EM")
 
   for (i in 1:NROW(bw_dfs)) {
     rc <- bw_dfs[i, ]
 
     if (!steric_hindrance) {
 
-      em_ls[[i]] <- main_EM(Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
+      # rc$beta_int[[1]] is NaN
+
+      em_ls[[i]] <- pause_escape_EM(Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
                             fk_int = fk_int, beta_int = rc$beta_int[[1]], chi_hat = rc$chi,
                             max_itr = 500, tor = 1e-4)
 
     } else {
 
-      em_ls[[i]] <- main_EM(Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, f1 = f[["f1"]], f2 = f[["f2"]],
+      em_ls[[i]] <- steric_hindrance_EM(Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, f1 = f[["f1"]], f2 = f[["f2"]],
                             fk_int = fk_int, beta_int = rc$beta_int[[1]], chi_hat = rc$chi,
                             phi_int = phi_int, lambda = lambda1, zeta = zeta,
                             max_itr = 500, tor = 1e-4)
@@ -275,15 +339,187 @@ estimate_simulation_transcription_rates <- function() {
   return(methods::new(Class = "simulation_transcription_rates",
                       simpol = simpol,
                       steric_hindrance = steric_hindrance,
-                      trial = bw_dfs$trial,
-                      chi = bw_dfs$chi,
-                      beta_org = bw_dfs$beta_org,
-                      beta_adp = bw_dfs$beta_adp,
-                      phi = bw_dfs$phi,
-                      fk = bw_dfs$fk,
-                      fk_mean = bw_dfs$fk_mean,
-                      fk_var = bw_dfs$fk_var,
-                      flag = bw_dfs$flag,
-                      rnap_n = bw_dfs$rnap_n,
+                      trial = as.numeric(bw_dfs$trial),
+                      chi = as.numeric(bw_dfs$chi),
+                      beta_org = as.numeric(bw_dfs$beta_org),
+                      beta_adp = as.numeric(bw_dfs$beta_adp),
+                      phi = if("phi" %in% names(bw_dfs)) as.numeric(bw_dfs$phi) else 0,
+                      fk = as.list(bw_dfs$fk),
+                      fk_mean = as.numeric(bw_dfs$fk_mean),
+                      fk_var = as.numeric(bw_dfs$fk_var),
+                      flag = as.character(bw_dfs$flag),
+                      rnap_n = if("rnap_n" %in% names(bw_dfs)) bw_dfs$rnap_n else list()
                       ))
 }
+
+# Accessor methods
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_simpol", function(object) standardGeneric("get_simpol"))
+setMethod("get_simpol", "simulation_transcription_rates", function(object) object@simpol)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_steric_hindrance", function(object) standardGeneric("get_steric_hindrance"))
+setMethod("get_steric_hindrance", "simulation_transcription_rates", function(object) object@steric_hindrance)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_trial", function(object) standardGeneric("get_trial"))
+setMethod("get_trial", "simulation_transcription_rates", function(object) object@trial)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_chi", function(object) standardGeneric("get_chi"))
+setMethod("get_chi", "simulation_transcription_rates", function(object) object@chi)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_beta_org", function(object) standardGeneric("get_beta_org"))
+setMethod("get_beta_org", "simulation_transcription_rates", function(object) object@beta_org)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_beta_adp", function(object) standardGeneric("get_beta_adp"))
+setMethod("get_beta_adp", "simulation_transcription_rates", function(object) object@beta_adp)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_phi", function(object) standardGeneric("get_phi"))
+setMethod("get_phi", "simulation_transcription_rates", function(object) object@phi)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_fk", function(object) standardGeneric("get_fk"))
+setMethod("get_fk", "simulation_transcription_rates", function(object) object@fk)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_fk_mean", function(object) standardGeneric("get_fk_mean"))
+setMethod("get_fk_mean", "simulation_transcription_rates", function(object) object@fk_mean)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_fk_var", function(object) standardGeneric("get_fk_var"))
+setMethod("get_fk_var", "simulation_transcription_rates", function(object) object@fk_var)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_flag", function(object) standardGeneric("get_flag"))
+setMethod("get_flag", "simulation_transcription_rates", function(object) object@flag)
+
+#' @rdname simulation_transcription_rates-class
+#' @export
+setGeneric("get_rnap_n", function(object) standardGeneric("get_rnap_n"))
+setMethod("get_rnap_n", "simulation_transcription_rates", function(object) object@rnap_n)
+
+# Plotting methods
+#' Plot transcription rates
+#' @param object A simulation_transcription_rates object
+#' @param file Optional file path to save the plot
+#' @param width Plot width in inches
+#' @param height Plot height in inches
+#' @return A ggplot object showing the transcription rates
+#' @export
+setGeneric("plot_transcription_rates", function(object, file = NULL, width = 8, height = 6) standardGeneric("plot_transcription_rates"))
+setMethod("plot_transcription_rates", "simulation_transcription_rates", function(object, file = NULL, width = 8, height = 6) {
+  # Create data frame for plotting
+  df <- data.frame(
+    trial = object@trial,
+    chi = object@chi,
+    beta_org = object@beta_org,
+    beta_adp = object@beta_adp,
+    phi = object@phi,
+    fk_mean = object@fk_mean,
+    fk_var = object@fk_var
+  )
+  
+  # Create plot
+  p <- ggplot(df, aes(x = trial)) +
+    geom_line(aes(y = chi, color = "chi")) +
+    geom_line(aes(y = beta_org, color = "beta_org")) +
+    geom_line(aes(y = beta_adp, color = "beta_adp")) +
+    geom_line(aes(y = phi, color = "phi")) +
+    theme_minimal() +
+    labs(
+      title = "Transcription Rates Across Trials",
+      x = "Trial",
+      y = "Rate",
+      color = "Rate Type"
+    )
+  
+  if (!is.null(file)) {
+    ggsave(file, p, width = width, height = height)
+  }
+  
+  return(p)
+})
+
+#' Plot pause site distribution
+#' @param object A simulation_transcription_rates object
+#' @param file Optional file path to save the plot
+#' @param width Plot width in inches
+#' @param height Plot height in inches
+#' @return A ggplot object showing the pause site distribution
+#' @export
+setGeneric("plot_pause_site_distribution", function(object, file = NULL, width = 8, height = 6) standardGeneric("plot_pause_site_distribution"))
+setMethod("plot_pause_site_distribution", "simulation_transcription_rates", function(object, file = NULL, width = 8, height = 6) {
+  # Create data frame for plotting
+  df <- data.frame(
+    trial = object@trial,
+    fk_mean = object@fk_mean,
+    fk_var = object@fk_var
+  )
+  
+  # Create plot
+  p <- ggplot(df, aes(x = fk_mean, y = fk_var)) +
+    geom_point() +
+    theme_minimal() +
+    labs(
+      title = "Pause Site Distribution",
+      x = "Mean Position",
+      y = "Variance"
+    )
+  
+  if (!is.null(file)) {
+    ggsave(file, p, width = width, height = height)
+  }
+  
+  return(p)
+})
+
+#' Plot RNAP counts
+#' @param object A simulation_transcription_rates object
+#' @param file Optional file path to save the plot
+#' @param width Plot width in inches
+#' @param height Plot height in inches
+#' @return A ggplot object showing the RNAP counts
+#' @export
+setGeneric("plot_rnap_counts", function(object, file = NULL, width = 8, height = 6) standardGeneric("plot_rnap_counts"))
+setMethod("plot_rnap_counts", "simulation_transcription_rates", function(object, file = NULL, width = 8, height = 6) {
+  if (length(object@rnap_n) == 0) {
+    stop("No RNAP counts available")
+  }
+  
+  # Create data frame for plotting
+  df <- data.frame(
+    trial = rep(object@trial, each = length(object@rnap_n[[1]])),
+    rnap_count = unlist(object@rnap_n)
+  )
+  
+  # Create plot
+  p <- ggplot(df, aes(x = rnap_count)) +
+    geom_histogram(bins = 30) +
+    theme_minimal() +
+    labs(
+      title = "RNAP Count Distribution",
+      x = "RNAP Count",
+      y = "Frequency"
+    )
+  
+  if (!is.null(file)) {
+    ggsave(file, p, width = width, height = height)
+  }
+  
+  return(p)
+})

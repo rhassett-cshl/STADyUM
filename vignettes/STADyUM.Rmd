@@ -1,0 +1,137 @@
+---
+title: "STADyUM: Simulating and Analyzing Transcription Dynamics"
+author: "Rebecca Hassett"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{STADyUM: Simulating and Analyzing Transcription Dynamics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+STADyUM is an R package for simulating and analyzing transcription dynamics. It provides tools for:
+- Simulating polymerase movement along genes
+- Estimating transcription rates
+- Analyzing pause site distributions
+- Visualizing transcription dynamics
+
+# Installation
+
+```{r install, eval = FALSE}
+# Install from GitHub
+devtools::install_github("yourusername/STADyUM")
+```
+
+# Basic Usage
+
+## Creating a Simulate Polymerase Object
+
+First, let's create a simulate_polymerase object with some parameters:
+
+```{r create_simpol}
+library(STADyUM)
+
+# Create a simulate_polymerase object
+simpol <- simulate_polymerase(
+  k = 50,           # mean pause sites
+  k_min = 17,       # minimum pause sites
+  k_max = 200,      # maximum pause sites
+  ksd = 25,         # standard deviation of pause sites
+  gene_len = 1950,  # gene length
+  alpha = 1,        # initiation rate
+  beta = 1,         # pause release rate
+  zeta = 2000,      # mean elongation rate
+  zeta_sd = 1000,   # standard deviation of elongation rate
+  zeta_min = 1500,  # minimum elongation rate
+  zeta_max = 2500,  # maximum elongation rate
+  total_cells = 20000, # number of cells
+  s = 33,           # polymerase size
+  h = 17,           # additional space
+  time = 40,        # simulation time
+  delta_t = 0.0001, # time step
+  csv_steps_to_record = 0  # steps to record
+)
+```
+
+## Estimating Transcription Rates
+
+Now we can estimate transcription rates from the simulation:
+
+```{r estimate_rates}
+# Estimate transcription rates
+srates <- estimate_simulation_transcription_rates(simpol)
+
+# Get the rates
+chi <- get_chi(srates)
+beta_org <- get_beta_org(srates)
+beta_adp <- get_beta_adp(srates)
+phi <- get_phi(srates)
+```
+
+## Visualizing Results
+
+The package provides several plotting functions:
+
+```{r plotting}
+# Plot transcription rates
+plot_transcription_rates(srates)
+
+# Plot pause site distribution
+plot_pause_site_distribution(srates)
+
+# Plot RNAP counts (if available)
+plot_rnap_counts(srates)
+```
+
+# Advanced Usage
+
+## Steric Hindrance
+
+You can enable steric hindrance calculations:
+
+```{r steric_hindrance}
+# Estimate rates with steric hindrance
+srates_sh <- estimate_simulation_transcription_rates(simpol, steric_hindrance = TRUE)
+
+# Get steric hindrance values
+phi_sh <- get_phi(srates_sh)
+```
+
+## Saving and Loading Results
+
+You can save your results to RDS files:
+
+```{r save_load}
+# Save results
+saveRDS(srates, "simulation_results.RDS")
+
+# Load results
+srates_loaded <- readRDS("simulation_results.RDS")
+```
+
+## Accessing Simulation Parameters
+
+You can access the original simulation parameters:
+
+```{r parameters}
+# Get parameters
+params <- get_parameters(simpol)
+
+# Print parameters
+print(params)
+```
+
+# Session Info
+
+```{r session_info}
+sessionInfo()
+``` 

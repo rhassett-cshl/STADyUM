@@ -3,16 +3,16 @@ simulate_polymerase_valid <- function(object) {
     errors <- character()
     
     # Check vector lengths
-    if (length(object@pause_sites) != object@n) {
-        errors <- c(errors, "pause_sites length must match n")
-    }
-    if (length(object@probability_vector) != object@gene_len + 1) {
-        errors <- c(errors, "probability_vector length must match gene_len + 1")
-    }
-    if (length(object@combined_cells_data) != object@gene_len + 1) {
-        errors <- c(errors, "combined_cells_data length must match gene_len + 1")
-    }
-    if (nrow(object@position_matrix) != object@n || ncol(object@position_matrix) != object@gene_len + 1) {
+    #if (length(object@pause_sites) != object@n) {
+    #    errors <- c(errors, "pause_sites length must match n")
+    #}
+    #if (length(object@probability_vector) != object@gene_len + 1) {
+    #    errors <- c(errors, "probability_vector length must match gene_len + 1")
+    #}
+    #if (length(object@combined_cells_data) != object@gene_len + 1) {
+    #    errors <- c(errors, "combined_cells_data length must match gene_len + 1")
+    #}
+    if (ncol(object@position_matrix) != object@n || nrow(object@position_matrix) != object@gene_len + 1) {
         errors <- c(errors, "position_matrix dimensions must match n and gene_len + 1")
     }
     
@@ -44,6 +44,7 @@ simulate_polymerase_valid <- function(object) {
 #' @slot probability_vector a numeric vector
 #' @slot combined_cells_data an integer vector
 #' @slot position_matrix a matrix of position of polymerase
+#' @slot read_counts a numeric vector for read counts
 
 #' @name simulate_polymerase-class
 #' @rdname simulate_polymerase-class
@@ -58,7 +59,7 @@ methods::setClass("simulate_polymerase",
                             zeta_sd="numeric", zeta_max="numeric", zeta_min="numeric", n="integer",
                             s="integer", h="integer", time="numeric", delta_t="numeric",
                             csv_steps_to_record="integer", pause_sites="numeric", probability_vector="numeric", 
-                            combined_cells_data="integer", position_matrix="matrix"),
+                            combined_cells_data="integer", position_matrix="matrix", read_counts="numeric"),
                   validity = simulate_polymerase_valid
 )
 
@@ -318,6 +319,34 @@ setMethod("save_plots", "simulate_polymerase", function(object, dir = "results",
     plot_position_matrix(object, file.path(dir, "position_matrix.pdf"), width, height)
 })
 
+simulate_polymerase2 <- function(k, k_min, k_max, ksd, gene_len,
+                              alpha, beta, zeta, zeta_sd,
+                              zeta_max, zeta_min, total_cells,
+                              s, h, time, pos_matrix) {
+
+    return(new("simulate_polymerase",
+        k = as.integer(k),
+        k_min = as.integer(k_min),
+        k_max = as.integer(k_max),
+        ksd = ksd,
+        gene_len = as.integer(gene_len),
+        alpha = alpha,
+        beta = beta,
+        zeta = zeta,
+        zeta_sd = zeta_sd,
+        zeta_max = zeta_max,
+        zeta_min = zeta_min,
+        n = as.integer(total_cells),
+        s = as.integer(s),
+        h = as.integer(h),
+        time = time,
+        delta_t = 0.0001,
+        position_matrix = pos_matrix
+    )   )
+
+}
+    
+
 #' @name simulate_polymerase
 #' @rdname simulate_polymerase-class
 #' @export
@@ -401,7 +430,8 @@ simulate_polymerase <- function(k, k_min, k_max, ksd, gene_len,
         h = as.integer(h),
         time = time,
         delta_t = delta_t,
-        csv_steps_to_record = as.integer(csv_steps_to_record)
+        csv_steps_to_record = as.integer(csv_steps_to_record),
+        read_counts = result$read_counts
     )
     
     # Validate the object
@@ -415,6 +445,7 @@ simulate_polymerase <- function(k, k_min, k_max, ksd, gene_len,
 #' Sample read counts from a simulate_polymerase object
 #' @param object A simulate_polymerase object
 #' @param read_density A numeric value for the read density within gene body in _Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
+#' @return The read count per nucleotide value
 #' @export
 setGeneric("sample_read_counts", function(object, read_density=0.0489) standardGeneric("sample_read_counts"))
 setMethod("sample_read_counts", "simulate_polymerase", function(object, read_density=0.0489) {
@@ -437,21 +468,17 @@ setMethod("sample_read_counts", "simulate_polymerase", function(object, read_den
     lambda <- read_density / (sum(total_rnap[(k_max + 1):N]) / (L * cell_n))
 
     set.seed(12345678)
-
-    print(cell_n)
-    print(total_rnap)
-    print(N)
-    print(lambda)
     
     rc <- rpois(N, total_rnap / cell_n * lambda)
-
-    print(rc)
 
     gb_rc <- sum(rc[(k_max + 1):N])
 
     # read count per nucleotide
     rc_per_nt <- gb_rc / L
 
-    return(rc_per_nt)
+    # Update the read_counts field in the object
+    object@read_counts <- rc_per_nt
 
+    # Return the read count per nucleotide value
+    return(rc_per_nt)
 })
