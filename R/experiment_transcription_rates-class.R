@@ -126,8 +126,11 @@ methods::setClass("experiment_transcription_rates",
 
 #' estimate_experiment_transcription_rates
 #'
-#' Estimates the transcription rates from experimental data and contructs an object that holds
+#' Estimates the transcription rates, such as initiation, pause-release rates and landing pad occupancy,
+#' from experimental data, such as nascent RNA sequencing read counts and genomic
+#' coordinates, and contructs an object that holds
 #' these rates
+#' 
 #' @param bigwig_plus the path to a bigwig file from the plus strand recording PRO-seq read counts
 #' @param bigwig_minus the path to a bigwig file from the minus strand recording PRO-seq read counts
 #' @param pause_regions a \link[GenomicRanges]{GRanges-class} object that must contain a gene_id
@@ -315,12 +318,19 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
   em_rate$chi = em_rate$s / em_rate$N
 
   # get read counts on each position within pause peak (from kmin to kmax)
-  Xk <-
-    BRGenomics::getCountsByPositions(bw1_p3, pause_regions, melt = TRUE)
-  Xk <- splitAsList(Xk$signal, Xk$region)
-  names(Xk) <- pause_regions$gene_id
-
-  em_rate$Xk <- Xk[em_rate$gene_id]
+  Xk <- GenomicRanges::coverage(bw1_p3, weight = "score")
+  Xk <- Xk[pause_regions]
+  
+  # Convert to a list of numeric vectors
+  Xk_list <- lapply(seq_along(pause_regions), function(i) {
+    region <- pause_regions[i]
+    counts <- as.numeric(Xk[[seqnames(region)]][ranges(region)])
+    names(counts) <- start(region):end(region)
+    counts
+  })
+  names(Xk_list) <- pause_regions$gene_id
+  
+  em_rate$Xk <- Xk_list[em_rate$gene_id]
 
   # initialize beta using sum of read counts within pause peak
   em_rate$Xk_sum <- sapply(em_rate$Xk, sum)

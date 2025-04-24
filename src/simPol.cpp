@@ -77,18 +77,19 @@ vector<double> NormalDistrubtionGenerator(double mean, double stddev, double min
 
 // [[Rcpp::plugins(openmp)]]
 // [[Rcpp::export]]
-Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int gene_len,
+Rcpp::List simulate_polymerase_cpp(int k, double ksd, int k_min, int k_max, int gene_len,
                                  double alpha, double beta, double zeta, double zeta_sd,
-                                 double zeta_max, double zeta_min, int total_cells,
-                                 int s, int h, double time, double delta_t, int csv_steps_to_record) {
+                                 double zeta_min, double zeta_max, int cell_num,
+                                 int pol_size, int add_space, double time, int steps_to_record) {
 
-    int steric_hindrance = s + h;
+    int steric_hindrance = pol_size + add_space;
+    double delta_t = 1e-4; 
     const int total_sites = gene_len + 1;
     double steps = time / delta_t;
 
     /* Initialize an array to hold Pol II presence and absence*/
     std::vector<std::vector<int>> pos_matrix;
-    for (int i = 0; i < total_cells; i++)
+    for (int i = 0; i < cell_num; i++)
     {
         std::vector<int> sites;
         sites.push_back(0);
@@ -98,7 +99,7 @@ Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int 
     /* Construct a probability matrix to control RNAP movement
      * Generate pause sites located from kmin to kmax with sd = ksd
      */
-    std::vector<double> y = NormalDistrubtionGenerator(k, ksd, k_min, k_max, total_cells, true);
+    std::vector<double> y = NormalDistrubtionGenerator(k, ksd, k_min, k_max, cell_num, true);
 
     /* A matrix of probabilities to control transition from state to state
      * cols are cells, rows are positions
@@ -139,12 +140,12 @@ Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int 
     std::uniform_real_distribution<double> distrib(0.0, 1.0);
 
     auto start = std::chrono::high_resolution_clock::now();
-    std::vector<std::vector<std::vector<int>>> pos_matrices_csv_record; 
+    std::vector<std::vector<std::vector<int>>> pos_matrices; 
 
     for (int step = 0; step < steps; step++)
     {
 #pragma omp parallel for
-        for (int cell = 0; cell < total_cells; cell++)
+        for (int cell = 0; cell < cell_num; cell++)
         {
             std::vector<int> *sites = &pos_matrix[cell];
             for (size_t i = 0; i < sites->size(); i++)
@@ -190,10 +191,10 @@ Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int 
             }
         }
         /* Record info for studying steric hindrance */
-        bool record_to_csv = step >= (steps - csv_steps_to_record);
-        if (record_to_csv)
+        bool record_to_pos_matrix = step >= (steps - steps_to_record);
+        if (record_to_pos_matrix)
         {
-            pos_matrices_csv_record.push_back(pos_matrix);
+            pos_matrices.push_back(pos_matrix);
         }
     }
     auto stop = std::chrono::high_resolution_clock::now();
@@ -202,7 +203,7 @@ Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int 
 
     /* Calculate the # of polymerase at each site across all cells and output the results in csv format */
     std::vector<int> res_all(total_sites, 0);
-    for (int cell = 0; cell < total_cells; cell++)
+    for (int cell = 0; cell < cell_num; cell++)
     {
         std::vector<int> *sites = &pos_matrix[cell];
         for (size_t j = 0; j < sites->size(); j++)
@@ -213,8 +214,8 @@ Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int 
 
     // Convert position matrix to a format that can be returned to R
     // Now with sites as rows and cells as columns
-    Rcpp::IntegerMatrix pos_matrix_r(total_sites, total_cells);
-    for (int cell = 0; cell < total_cells; cell++) {
+    Rcpp::IntegerMatrix pos_matrix_r(total_sites, cell_num);
+    for (int cell = 0; cell < cell_num; cell++) {
         std::vector<int> *sites = &pos_matrix[cell];
         for (size_t j = 0; j < sites->size(); j++) {
             pos_matrix_r((*sites)[j], cell) = 1;

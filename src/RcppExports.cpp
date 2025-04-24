@@ -11,35 +11,34 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // simulate_polymerase_cpp
-Rcpp::List simulate_polymerase_cpp(int k, int k_min, int k_max, double ksd, int gene_len, double alpha, double beta, double zeta, double zeta_sd, double zeta_max, double zeta_min, int total_cells, int s, int h, double time, double delta_t, int csv_steps_to_record);
-RcppExport SEXP _STADyUM_simulate_polymerase_cpp(SEXP kSEXP, SEXP k_minSEXP, SEXP k_maxSEXP, SEXP ksdSEXP, SEXP gene_lenSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP zetaSEXP, SEXP zeta_sdSEXP, SEXP zeta_maxSEXP, SEXP zeta_minSEXP, SEXP total_cellsSEXP, SEXP sSEXP, SEXP hSEXP, SEXP timeSEXP, SEXP delta_tSEXP, SEXP csv_steps_to_recordSEXP) {
+Rcpp::List simulate_polymerase_cpp(int k, double ksd, int k_min, int k_max, int gene_len, double alpha, double beta, double zeta, double zeta_sd, double zeta_min, double zeta_max, int cell_num, int pol_size, int add_space, double time, int steps_to_record);
+RcppExport SEXP _STADyUM_simulate_polymerase_cpp(SEXP kSEXP, SEXP ksdSEXP, SEXP k_minSEXP, SEXP k_maxSEXP, SEXP gene_lenSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP zetaSEXP, SEXP zeta_sdSEXP, SEXP zeta_minSEXP, SEXP zeta_maxSEXP, SEXP cell_numSEXP, SEXP pol_sizeSEXP, SEXP add_spaceSEXP, SEXP timeSEXP, SEXP steps_to_recordSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< double >::type ksd(ksdSEXP);
     Rcpp::traits::input_parameter< int >::type k_min(k_minSEXP);
     Rcpp::traits::input_parameter< int >::type k_max(k_maxSEXP);
-    Rcpp::traits::input_parameter< double >::type ksd(ksdSEXP);
     Rcpp::traits::input_parameter< int >::type gene_len(gene_lenSEXP);
     Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
     Rcpp::traits::input_parameter< double >::type zeta(zetaSEXP);
     Rcpp::traits::input_parameter< double >::type zeta_sd(zeta_sdSEXP);
-    Rcpp::traits::input_parameter< double >::type zeta_max(zeta_maxSEXP);
     Rcpp::traits::input_parameter< double >::type zeta_min(zeta_minSEXP);
-    Rcpp::traits::input_parameter< int >::type total_cells(total_cellsSEXP);
-    Rcpp::traits::input_parameter< int >::type s(sSEXP);
-    Rcpp::traits::input_parameter< int >::type h(hSEXP);
+    Rcpp::traits::input_parameter< double >::type zeta_max(zeta_maxSEXP);
+    Rcpp::traits::input_parameter< int >::type cell_num(cell_numSEXP);
+    Rcpp::traits::input_parameter< int >::type pol_size(pol_sizeSEXP);
+    Rcpp::traits::input_parameter< int >::type add_space(add_spaceSEXP);
     Rcpp::traits::input_parameter< double >::type time(timeSEXP);
-    Rcpp::traits::input_parameter< double >::type delta_t(delta_tSEXP);
-    Rcpp::traits::input_parameter< int >::type csv_steps_to_record(csv_steps_to_recordSEXP);
-    rcpp_result_gen = Rcpp::wrap(simulate_polymerase_cpp(k, k_min, k_max, ksd, gene_len, alpha, beta, zeta, zeta_sd, zeta_max, zeta_min, total_cells, s, h, time, delta_t, csv_steps_to_record));
+    Rcpp::traits::input_parameter< int >::type steps_to_record(steps_to_recordSEXP);
+    rcpp_result_gen = Rcpp::wrap(simulate_polymerase_cpp(k, ksd, k_min, k_max, gene_len, alpha, beta, zeta, zeta_sd, zeta_min, zeta_max, cell_num, pol_size, add_space, time, steps_to_record));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_STADyUM_simulate_polymerase_cpp", (DL_FUNC) &_STADyUM_simulate_polymerase_cpp, 17},
+    {"_STADyUM_simulate_polymerase_cpp", (DL_FUNC) &_STADyUM_simulate_polymerase_cpp, 16},
     {NULL, NULL, 0}
 };
 

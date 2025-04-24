@@ -12,8 +12,8 @@ simulate_polymerase_valid <- function(object) {
     #if (length(object@combined_cells_data) != object@gene_len + 1) {
     #    errors <- c(errors, "combined_cells_data length must match gene_len + 1")
     #}
-    if (ncol(object@position_matrix) != object@n || nrow(object@position_matrix) != object@gene_len + 1) {
-        errors <- c(errors, "position_matrix dimensions must match n and gene_len + 1")
+    if (ncol(object@position_matrix) != object@cell_num || nrow(object@position_matrix) != object@gene_len + 1) {
+        errors <- c(errors, "position_matrix dimensions must match cell_num and gene_len + 1")
     }
     
     if (length(errors) == 0) TRUE else errors
@@ -21,25 +21,34 @@ simulate_polymerase_valid <- function(object) {
 
 #' Class simulate_polymerase
 #'
-#' Class \code{simulate_polymerase} has
+#' Class \code{simulate_polymerase} tracks movement of RNAPs along the DNA templates
+#' of a large number of cells. It accepts several key user-specified parameters, 
+#' including the initiation rate, pause-escape rate, a constant or variable elongation 
+#' rate, the mean and variance of pause sites across cells, as well as the center-to-center 
+#' spacing constraint between RNAPs, the number of cells being simulated, the gene length, 
+#' and the total time of transcription. The simulator simply allows each RNAP to move forward 
+#' or not, in time slices of 1e-4 minutes, according to the specified position-specific rate parameters.    
+#' It assumes that at most one movement of each RNAP can occur per time slice. The simulator monitors for 
+#' collisions between adjacent RNAPs, prohibiting one RNAP to advance if it is at the boundary 
+#' of the allowable distance from the next. After running for specified time, it outputs
+#' RNAPs for the last specified number of steps.
 #'
 #' @slot k an integer value for the mean of pause sites across cells.
+#' @slot ksd a numeric value for the standard deviation of pause sites across cells.
 #' @slot k_min an integer value for the upper bound of pause sites allowed.
 #' @slot k_max an integer value for the lower bound of pause sites allowed.
-#' @slot ksd a numeric value for the standard deviation of pause sites across cells.
 #' @slot gene_len an integer value for the length of the gene.
 #' @slot alpha a numeric value for the initiation rate.
 #' @slot beta a numeric value for the pause release rate.
 #' @slot zeta a numeric value for the mean elongation rate across sites.
 #' @slot zeta_sd a numeric value for the standard deviation of pause sites across sites.
-#' @slot zeta_max a numeric value for the maximum elongation rate.
 #' @slot zeta_min a numeric value for the minimum elongation rate.
-#' @slot n an integer value for the number of cells to simulate.
-#' @slot s an integer value for the polymerase II size.    
-#' @slot h an integer value for the additional space in addition to RNAP size.
+#' @slot zeta_max a numeric value for the maximum elongation rate.
+#' @slot cell_num an integer value for the number of cells to simulate.
+#' @slot pol_size an integer value for the polymerase II size.    
+#' @slot add_space an integer value for the additional space in addition to RNAP size.
 #' @slot time a numeric value for the time to simulate.
-#' @slot delta_t a numeric value for the time step.
-#' @slot csv_steps_to_record an integer value for the number of steps to record.
+#' @slot steps_to_record an integer value for the number of steps to record in position matrix.
 #' @slot pause_sites a numeric vector of pause sites
 #' @slot probability_vector a numeric vector
 #' @slot combined_cells_data an integer vector
@@ -54,12 +63,13 @@ simulate_polymerase_valid <- function(object) {
 #' @importFrom reshape2 melt
 #' @exportClass simulate_polymerase
 methods::setClass("simulate_polymerase",
-                  slots = c(k = "integer", k_min="integer", k_max="integer", ksd="numeric",
+                  slots = c(k = "integer", ksd="numeric", k_min="integer", k_max="integer",
                             gene_len="integer", alpha="numeric", beta="numeric", zeta="numeric",
-                            zeta_sd="numeric", zeta_max="numeric", zeta_min="numeric", n="integer",
-                            s="integer", h="integer", time="numeric", delta_t="numeric",
-                            csv_steps_to_record="integer", pause_sites="numeric", probability_vector="numeric", 
-                            combined_cells_data="integer", position_matrix="matrix", read_counts="numeric"),
+                            zeta_sd="numeric", zeta_min="numeric", zeta_max="numeric", cell_num="integer",
+                            pol_size="integer", add_space="integer", time="numeric", delta_t="numeric",
+                            steps_to_record="integer", pause_sites="numeric", probability_vector="numeric", 
+                            combined_cells_data="integer", position_matrix="matrix", read_counts="numeric",
+                            avg_read_density="numeric"),
                   validity = simulate_polymerase_valid
 )
 
@@ -92,22 +102,21 @@ setGeneric("get_parameters", function(object) standardGeneric("get_parameters"))
 setMethod("get_parameters", "simulate_polymerase", function(object) {
     list(
         k = object@k,
+        ksd = object@ksd,
         k_min = object@k_min,
         k_max = object@k_max,
-        ksd = object@ksd,
         gene_len = object@gene_len,
         alpha = object@alpha,
         beta = object@beta,
         zeta = object@zeta,
         zeta_sd = object@zeta_sd,
-        zeta_max = object@zeta_max,
         zeta_min = object@zeta_min,
-        n = object@n,
-        s = object@s,
-        h = object@h,
+        zeta_max = object@zeta_max,
+        cell_num = object@cell_num,
+        pol_size = object@pol_size,
+        add_space = object@add_space,
         time = object@time,
-        delta_t = object@delta_t,
-        csv_steps_to_record = object@csv_steps_to_record
+        steps_to_record = object@steps_to_record
     )
 })
 
@@ -118,7 +127,7 @@ setMethod("get_parameters", "simulate_polymerase", function(object) {
 setGeneric("get_pause_sites_df", function(object) standardGeneric("get_pause_sites_df"))
 setMethod("get_pause_sites_df", "simulate_polymerase", function(object) {
     data.frame(
-        cell = 1:object@n,
+        cell = 1:object@cell_num,
         pause_site = object@pause_sites
     )
 })
@@ -199,7 +208,7 @@ setMethod("plot_polymerase_distribution", "simulate_polymerase", function(object
 setGeneric("plot_pause_sites", function(object, file = NULL, width = 8, height = 6) standardGeneric("plot_pause_sites"))
 setMethod("plot_pause_sites", "simulate_polymerase", function(object, file = NULL, width = 8, height = 6) {
     df <- data.frame(
-        cell = 1:object@n,
+        cell = 1:object@cell_num,
         pause_site = object@pause_sites
     )
     
@@ -318,56 +327,29 @@ setMethod("save_plots", "simulate_polymerase", function(object, dir = "results",
     plot_transition_probabilities(object, file.path(dir, "transition_probabilities.pdf"), width, height)
     plot_position_matrix(object, file.path(dir, "position_matrix.pdf"), width, height)
 })
-
-simulate_polymerase2 <- function(k, k_min, k_max, ksd, gene_len,
-                              alpha, beta, zeta, zeta_sd,
-                              zeta_max, zeta_min, total_cells,
-                              s, h, time, pos_matrix) {
-
-    return(new("simulate_polymerase",
-        k = as.integer(k),
-        k_min = as.integer(k_min),
-        k_max = as.integer(k_max),
-        ksd = ksd,
-        gene_len = as.integer(gene_len),
-        alpha = alpha,
-        beta = beta,
-        zeta = zeta,
-        zeta_sd = zeta_sd,
-        zeta_max = zeta_max,
-        zeta_min = zeta_min,
-        n = as.integer(total_cells),
-        s = as.integer(s),
-        h = as.integer(h),
-        time = time,
-        delta_t = 0.0001,
-        position_matrix = pos_matrix
-    )   )
-
-}
     
 
 #' @name simulate_polymerase
 #' @rdname simulate_polymerase-class
 #' @export
-simulate_polymerase <- function(k, k_min, k_max, ksd, gene_len,
-                              alpha, beta, zeta, zeta_sd,
-                              zeta_max, zeta_min, total_cells,
-                              s, h, time, delta_t, csv_steps_to_record) {
+simulate_polymerase <- function(k, ksd, k_min, k_max, gene_len,
+                              alpha, beta, zeta, zeta_sd, zeta_min,
+                              zeta_max, cell_num, pol_size, add_space,
+                              time, steps_to_record) {
     # Validate parameters
     errors <- character()
     
     # Check parameter ranges
-    if (k_min >= k_max) {
+    if (k_min <= k_max) {
         errors <- c(errors, "k_min must be less than k_max")
     }
-    if (k < k_min || k > k_max) {
+    if (k > k_min || k < k_max) {
         errors <- c(errors, "k must be between k_min and k_max")
     }
-    if (zeta_min >= zeta_max) {
+    if (zeta_min <= zeta_max) {
         errors <- c(errors, "zeta_min must be less than zeta_max")
     }
-    if (zeta < zeta_min || zeta > zeta_max) {
+    if (zeta > zeta_min || zeta < zeta_max) {
         errors <- c(errors, "zeta must be between zeta_min and zeta_max")
     }
     if (ksd <= 0) {
@@ -379,23 +361,20 @@ simulate_polymerase <- function(k, k_min, k_max, ksd, gene_len,
     if (gene_len <= 0) {
         errors <- c(errors, "gene_len must be positive")
     }
-    if (total_cells <= 0) {
-        errors <- c(errors, "total_cells must be positive")
+    if (cell_num <= 0) {
+        errors <- c(errors, "cell_num must be positive")
     }
-    if (s <= 0) {
-        errors <- c(errors, "s must be positive")
+    if (pol_size <= 0) {
+        errors <- c(errors, "pol_size must be positive")
     }
-    if (h < 0) {
-        errors <- c(errors, "h must be non-negative")
+    if (add_space < 0) {
+        errors <- c(errors, "add_space must be non-negative")
     }
     if (time <= 0) {
         errors <- c(errors, "time must be positive")
     }
-    if (delta_t <= 0) {
-        errors <- c(errors, "delta_t must be positive")
-    }
-    if (csv_steps_to_record < 0) {
-        errors <- c(errors, "csv_steps_to_record must be non-negative")
+    if (steps_to_record < 0) {
+        errors <- c(errors, "steps_to_record must be non-negative")
     }
     
     if (length(errors) > 0) {
@@ -405,8 +384,8 @@ simulate_polymerase <- function(k, k_min, k_max, ksd, gene_len,
     # Call the C++ function
     result <- simulate_polymerase_cpp(k, k_min, k_max, ksd, gene_len,
                                     alpha, beta, zeta, zeta_sd,
-                                    zeta_max, zeta_min, total_cells,
-                                    s, h, time, delta_t, csv_steps_to_record)
+                                    zeta_max, zeta_min, cell_num,
+                                    pol_size, add_space, time, steps_to_record)
 
     # Create and return a simulate_polymerase object
     obj <- new("simulate_polymerase",
@@ -425,12 +404,11 @@ simulate_polymerase <- function(k, k_min, k_max, ksd, gene_len,
         zeta_sd = zeta_sd,
         zeta_max = zeta_max,
         zeta_min = zeta_min,
-        n = as.integer(total_cells),
-        s = as.integer(s),
-        h = as.integer(h),
+        cell_num = as.integer(cell_num),
+        pol_size = as.integer(pol_size),
+        add_space = as.integer(add_space),
         time = time,
-        delta_t = delta_t,
-        csv_steps_to_record = as.integer(csv_steps_to_record),
+        steps_to_record = as.integer(steps_to_record),
         read_counts = result$read_counts
     )
     
@@ -447,9 +425,9 @@ simulate_polymerase <- function(k, k_min, k_max, ksd, gene_len,
 #' @param read_density A numeric value for the read density within gene body in _Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
 #' @return The read count per nucleotide value
 #' @export
-setGeneric("sample_read_counts", function(object, read_density=0.0489) standardGeneric("sample_read_counts"))
-setMethod("sample_read_counts", "simulate_polymerase", function(object, read_density=0.0489) {
-    cell_n <- object@n
+setGeneric("sample_read_counts_per_nucleotide", function(object, read_density=0.0489) standardGeneric("sample_read_counts_per_nucleotide"))
+setMethod("sample_read_counts_per_nucleotide", "simulate_polymerase", function(object, read_density=0.0489) {
+    cell_num <- object@cell_num
     k_max <- object@k_max
     total_rnap <- object@combined_cells_data
 
@@ -465,11 +443,11 @@ setMethod("sample_read_counts", "simulate_polymerase", function(object, read_den
     # the read counts with mean equals to the RNAP frequency multiplied by lambda.
 
     # TODO: handle case if lambda is INF because sum is 0
-    lambda <- read_density / (sum(total_rnap[(k_max + 1):N]) / (L * cell_n))
+    lambda <- read_density / (sum(total_rnap[(k_max + 1):N]) / (L * cell_num))
 
     set.seed(12345678)
     
-    rc <- rpois(N, total_rnap / cell_n * lambda)
+    rc <- rpois(N, total_rnap / cell_num * lambda)
 
     gb_rc <- sum(rc[(k_max + 1):N])
 
@@ -481,4 +459,25 @@ setMethod("sample_read_counts", "simulate_polymerase", function(object, read_den
 
     # Return the read count per nucleotide value
     return(rc_per_nt)
+})
+
+#' Sample read counts from a simulate_polymerase object
+#' @param object A simulate_polymerase object
+#' @param read_density A numeric value for the read density within gene body in _Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
+#' @return The read count per nucleotide value
+#' @export
+setGeneric("sample_gene_body_avg_read_density", function(object, read_density=0.0489) standardGeneric("sample_gene_body_avg_read_density"))
+setMethod("sample_gene_body_avg_read_density", "simulate_polymerase", function(object, read_density=0.0489) {
+    cell_num <- object@cell_num
+    k_max <- object@k_max
+    total_rnap <- object@combined_cells_data
+
+    N <- length(total_rnap)
+    L <- N - k_max
+
+    sim_avg_read_density <- sum(total_rnap[(kmax + 1):N]) / L
+
+    object@avg_read_density <- sim_avg_read_density
+
+    return(sim_avg_read_density)
 })

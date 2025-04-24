@@ -33,6 +33,81 @@ devtools::install_github("yourusername/STADyUM")
 
 # Basic Usage
 
+## Estimating Transcription Rates from Experimental Data
+
+```{r estimate_rates_from_experimental_data}
+
+load("experimental_data/granges_for_read_counting.RData")
+
+exp_rates_control <- estimate_experiment_transcription_rates(
+  bigwig_plus = "experimental_data/PROseq-K562-vihervaara-control-SE_plus.bw",
+  bigwig_minus = "experimental_data/PROseq-K562-vihervaara-control-SE_minus.bw",
+  pause_regions = bw_pause_filtered,
+  gene_body_regions = bw_gb_filtered,
+  gene_name_column = "gene_id",
+  steric_hindrance = TRUE,
+  omega_scale = 1.62776148862949
+)
+
+exp_rates_treatment <- estimate_experiment_transcription_rates(
+  bigwig_plus = "experimental_data/PROseq-K562-vihervaara-treatment-SE_plus.bw",
+  bigwig_minus = "experimental_data/PROseq-K562-vihervaara-treatment-SE_minus.bw",
+  pause_regions = bw_pause_filtered,
+  gene_body_regions = bw_gb_filtered,
+  gene_name_column = "gene_id",
+  steric_hindrance = TRUE,
+  omega_scale = 1.62776148862949
+)
+
+# Create a data frame for comparison
+comparison_df <- data.frame(
+  gene_id = c(exp_rates_control@rates$gene_id, exp_rates_treatment@rates$gene_id),
+  beta_adp = c(exp_rates_control@rates$beta_adp, exp_rates_treatment@rates$beta_adp),
+  condition = rep(c("Control", "Treatment"), each = nrow(exp_rates_control@rates))
+)
+
+# Create a boxplot
+library(ggplot2)
+ggplot(comparison_df, aes(x = condition, y = beta_adp, fill = condition)) +
+  geom_boxplot() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Comparison of Pause Release Rates",
+       x = "Condition",
+       y = "Beta (pause release rate)") +
+  theme_minimal()
+
+# Create a scatter plot of original vs adapted rates
+ggplot(exp_rates_control@rates, aes(x = beta_org, y = beta_adp)) +
+  geom_point(alpha = 0.6, color = "#1E88E5") +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+  labs(title = "Original vs Adapted Pause Release Rates",
+       x = "Original Beta",
+       y = "Adapted Beta") +
+  theme_minimal()
+
+# Create a density plot of pause site positions
+ggplot(exp_rates_control@rates, aes(x = fk_mean)) +
+  geom_density(fill = "#1E88E5", alpha = 0.6) +
+  labs(title = "Distribution of Pause Site Positions",
+       x = "Mean Pause Site Position",
+       y = "Density") +
+  theme_minimal()
+
+# Create a scatter plot of phi vs beta
+ggplot(exp_rates_control@rates, aes(x = beta_adp, y = phi)) +
+  geom_point(alpha = 0.6, color = "#1E88E5") +
+  labs(title = "Relationship between Pause Release Rate and Landing Pad Occupancy",
+       x = "Beta (pause release rate)",
+       y = "Phi (landing pad occupancy)") +
+  theme_minimal()
+
+# Save the plots
+ggsave("comparison_plot.pdf", width = 8, height = 6)
+ggsave("scatter_plot.pdf", width = 8, height = 6)
+ggsave("pause_sites_plot.pdf", width = 8, height = 6)
+ggsave("steric_hindrance_plot.pdf", width = 8, height = 6)
+```
+
 ## Creating a Simulate Polymerase Object
 
 First, let's create a simulate_polymerase object with some parameters:
@@ -54,12 +129,13 @@ simpol <- simulate_polymerase(
   zeta_min = 1500,  # minimum elongation rate
   zeta_max = 2500,  # maximum elongation rate
   total_cells = 20000, # number of cells
-  s = 33,           # polymerase size
-  h = 17,           # additional space
+  pol_size = 33,           # polymerase size
+  add_space = 17,           # additional space
   time = 40,        # simulation time
-  delta_t = 0.0001, # time step
-  csv_steps_to_record = 0  # steps to record
+  steps_to_record = 1  # steps to record
 )
+
+simpol2 <- readRDS("simulate_polymerase_object.RDS")
 ```
 
 ## Estimating Transcription Rates

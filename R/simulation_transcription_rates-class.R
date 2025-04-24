@@ -50,7 +50,10 @@ simulation_transcription_rates_valid <- function(object) {
 
 #' Class simulation_transcription_rates
 #'
-#' Class \code{simulation_transcription_rates} 
+#' Class \code{simulation_transcription_rates} estimates the transcription rates, such as initiation,
+#' pause-release rates and landing pad occupancy, from simulated data, such as nascent RNA sequencing read counts
+#' and genomic coordinates simulated from polymerase movement over a specified time period 
+#' calculated by simulator, and contructs an object that holds these rates.
 #'
 #' @name simulation_transcription_rates-class
 #' @rdname simulation_transcription_rates-class
@@ -90,8 +93,10 @@ methods::setClass("simulation_transcription_rates",
 
 #' estimate_simulation_transcription_rates
 #'
-#' Estimates the transcription rates from simulated data and contructs an object that holds
+#' Estimates the transcription rates, such as initiation, pause-release rates and landing pad occupancy,
+#' from simulated data, such as nascent RNA sequencing read counts and genomic coordinates, and contructs an object that holds
 #' these rates
+#' 
 #' @param simpol a \code{\link{simulate_polymerase-class}} object
 #' @param steric_hindrance a logical value to determine whether to infer landing-pad occupancy or not.
 #' Defaults to FALSE.

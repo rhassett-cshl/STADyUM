@@ -1,4 +1,3 @@
-#' @importFrom BRGenomics makeGRangesBRG
 #' @importFrom plyranges find_overlaps_directed group_by summarise
 #' @importFrom stats dnorm
 #' @importFrom GenomeInfoDb keepStandardChromosomes
@@ -22,7 +21,20 @@ process_bw <- function(bw, strand) {
   bw$score <- abs(bw$score)
   bw <- bw[bw$score > 0]
   bw <- GenomeInfoDb::keepStandardChromosomes(bw, pruning.mode = "coarse")
-  bw <- BRGenomics::makeGRangesBRG(bw)
+  
+  # Replace makeGRangesBRG with GenomicRanges::GRanges
+  # Ensure each range is a single basepair
+  bw <- GenomicRanges::GRanges(
+    seqnames = seqnames(bw),
+    ranges = IRanges::IRanges(
+      start = start(bw),
+      end = start(bw),  # Make each range a single basepair
+      names = names(bw)
+    ),
+    strand = strand(bw),
+    score = bw$score
+  )
+  
   return(bw)
 }
 
