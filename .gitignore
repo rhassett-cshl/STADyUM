@@ -2,6 +2,19 @@
 .Rhistory
 .RData
 .Ruserdata
+k50ksd25kmin17kmax200l1950a1b1z2000zsd1000zmin1500zmax2500t40n20000s33h17_pos_new.RDS
+k50ksd25kmin17kmax200l1950a1b1z2000zsd1000zmin1500zmax2500t40n20000s33h17_pos.RDS
+fk_mean_plot.png
 
 # Rproject file
 *.Rproj
+
+results/
+libs/
+experimental_data/
+.vscode/
+.github/
+..Rcheck/
+src/STADyUM.o
+src/STADyUM.so
+src/RcppExports.o

@@ -4,29 +4,21 @@
 \alias{estimate_simulation_transcription_rates}
 \title{estimate_simulation_transcription_rates}
 \usage{
-estimate_simulation_transcription_rates()
+estimate_simulation_transcription_rates(simpol, steric_hindrance = FALSE)
 }
 \arguments{
-\item{bigwig_plus}{the path to a bigwig file from the plus strand recording PRO-seq read counts}
+\item{simpol}{a \code{\link{simulate_polymerase-class}} object}
 
-\item{bigwig_minus}{the path to a bigwig file from the minus strand recording PRO-seq read counts}
-
-\item{pause_regions}{a \link[GenomicRanges]{GRanges-class} object that must
-contain a gene_id metadata column}
-
-\item{gene_body_regions}{a \link[GenomicRanges]{GRanges-class} object that must
-contain a gene_id metadata column}
-
-\item{steric_hindrance}{a logical value to determine whether to infer landing-pad occupancy or not.
+\item{steric_hindrance}{a logical value to determine whether to infer
+landing-pad occupancy or not.
 Defaults to FALSE.}
-
-\item{scale}{a csv file providing scaling factors for omega with columns sample_id, omega_scale_h,
-omega_scale_l. Defaults to NULL.}
 }
 \value{
 an \code{\link{_transcription_rates-class}} object
 }
 \description{
-Estimates the transcription rates from simulated data and contructs an object that holds
-these rates
+Estimates the transcription rates, such as initiation, pause-release rates
+and landing pad occupancy, from simulated data, such as nascent RNA
+sequencing read counts and genomic coordinates, and contructs an object
+that holds these rates
 }

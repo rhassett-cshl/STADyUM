@@ -15,21 +15,23 @@ estimate_experiment_transcription_rates(
 )
 }
 \arguments{
-\item{bigwig_plus}{the path to a bigwig file from the plus strand recording PRO-seq read counts}
+\item{bigwig_plus}{the path to a bigwig file from the plus strand recording
+PRO-seq read counts}
 
-\item{bigwig_minus}{the path to a bigwig file from the minus strand recording PRO-seq read counts}
+\item{bigwig_minus}{the path to a bigwig file from the minus strand recording
+PRO-seq read counts}
 
-\item{pause_regions}{a \link[GenomicRanges]{GRanges-class} object that must contain a gene_id
-metadata column}
+\item{pause_regions}{a \link[GenomicRanges]{GRanges-class} object that must
+contain a gene_id}
 
-\item{gene_body_regions}{a \link[GenomicRanges]{GRanges-class} object that must contain a gene_id
-metadata column}
+\item{gene_body_regions}{a \link[GenomicRanges]{GRanges-class} object that
+must contain a gene_id}
 
-\item{gene_name_column}{a string that indicates which column in the GRanges object contains the
+\item{gene_name_column}{a string that indicates which column in the GRanges
 gene names}
 
-\item{steric_hindrance}{a logical value to determine whether to infer landing-pad occupancy or not.
-Defaults to FALSE.}
+\item{steric_hindrance}{a logical value to determine whether to infer
+landing-pad occupancy or not. Defaults to FALSE.}
 
 \item{omega_scale}{a numeric value for scaling omega. Defaults to NULL.}
 }
@@ -37,6 +39,8 @@ Defaults to FALSE.}
 an \code{\link{experiment_transcription_rates-class}} object
 }
 \description{
-Estimates the transcription rates from experimental data and contructs an object that holds
-these rates
+Estimates the transcription rates, such as initiation, pause-release rates
+and landing pad occupancy, from experimental data, such as nascent RNA
+sequencing read counts and genomic coordinates, and contructs an object
+that holds these rates
 }

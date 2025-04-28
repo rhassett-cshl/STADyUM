@@ -3,17 +3,95 @@
 \docType{class}
 \name{experiment_transcription_rates-class}
 \alias{experiment_transcription_rates-class}
+\alias{getRates}
+\alias{rates}
+\alias{counts}
+\alias{pause_regions}
+\alias{gene_body_regions}
+\alias{gene_name_column}
+\alias{steric_hindrance}
+\alias{omega_scale}
+\alias{bigwig_plus}
+\alias{bigwig_minus}
+\alias{rates,experiment_transcription_rates-method}
+\alias{counts,experiment_transcription_rates-method}
+\alias{pause_regions,experiment_transcription_rates-method}
+\alias{gene_body_regions,experiment_transcription_rates-method}
+\alias{gene_name_column,experiment_transcription_rates-method}
+\alias{steric_hindrance,experiment_transcription_rates-method}
+\alias{omega_scale,experiment_transcription_rates-method}
+\alias{bigwig_plus,experiment_transcription_rates-method}
+\alias{bigwig_minus,experiment_transcription_rates-method}
+\alias{save_rates}
+\alias{save_rates,experiment_transcription_rates-method}
+\alias{plot_rate}
+\alias{plot_rate,experiment_transcription_rates-method}
 \title{Class experiment_transcription_rates}
+\usage{
+getRates(object)
+
+rates(object)
+
+counts(object)
+
+pause_regions(object)
+
+gene_body_regions(object)
+
+gene_name_column(object)
+
+steric_hindrance(object)
+
+omega_scale(object)
+
+bigwig_plus(object)
+
+bigwig_minus(object)
+
+\S4method{rates}{experiment_transcription_rates}(object)
+
+\S4method{counts}{experiment_transcription_rates}(object)
+
+\S4method{pause_regions}{experiment_transcription_rates}(object)
+
+\S4method{gene_body_regions}{experiment_transcription_rates}(object)
+
+\S4method{gene_name_column}{experiment_transcription_rates}(object)
+
+\S4method{steric_hindrance}{experiment_transcription_rates}(object)
+
+\S4method{omega_scale}{experiment_transcription_rates}(object)
+
+\S4method{bigwig_plus}{experiment_transcription_rates}(object)
+
+\S4method{bigwig_minus}{experiment_transcription_rates}(object)
+
+save_rates(object, file)
+
+\S4method{save_rates}{experiment_transcription_rates}(object, file)
+
+plot_rate(object, rate_type)
+
+\S4method{plot_rate}{experiment_transcription_rates}(object, rate_type)
+}
+\arguments{
+\item{object}{An experiment_transcription_rates object}
+}
+\value{
+A tibble containing the transcription rates
+}
 \description{
-Class \code{experiment_transcription_rates} has read counts, pause and gene body genomic region
-coordinates, steric hindrance and omega scale factor parameters used to estimate the transcription
-rates
+Class \code{experiment_transcription_rates} has read counts, pause and gene
+body genomic region coordinates, steric hindrance and omega scale factor
+parameters used to estimate the transcription rates
+
+Retrieves the transcription rates from an experiment_transcription_rates object
 }
 \section{Slots}{
 
 \describe{
-\item{\code{counts}}{a \code{data.frame} with five columns gene_id, summarized_pause_counts, pause_length
-summarized_gb_counts, gb_length}
+\item{\code{counts}}{a \code{data.frame} with five columns gene_id,
+summarized_pause_counts, pause_length, summarized_gb_counts, gb_length}
 
 \item{\code{bigwig_plus}}{a path to bigwig for plus strand}
 
@@ -22,20 +100,22 @@ summarized_gb_counts, gb_length}
 \item{\code{pause_regions}}{a \code{\link[GenomicRanges]{GRanges-class}} that holds
 all the pause region coordinates}
 
-\item{\code{gene_body_regions}}{a \code{\link[GenomicRanges]{GRanges-class}} that holds
-all the gene body region coordinates}
+\item{\code{gene_body_regions}}{a \code{\link[GenomicRanges]{GRanges-class}}
+that holds all the gene body region coordinates}
 
-\item{\code{gene_name_column}}{a string for the gene name column in the GRanges objects}
+\item{\code{gene_name_column}}{a string for the gene name column in the GRanges}
 
-\item{\code{steric_hindrance}}{a logical value representing whether landing-pad occupancy was inferred when
-estimating the rates}
+\item{\code{steric_hindrance}}{a logical value representing whether landing-pad
+occupancy was inferred when estimating the rates}
 
-\item{\code{omega_scale}}{a numeric value for the scale factor used to calculate omega}
+\item{\code{omega_scale}}{a numeric for the scale factor used to calculate omega}
 
-\item{\code{rates}}{a \code{tbl_df} containing estimated transcription rates such as chi estimates,
-beta_org estimates from the initial model, beta_adp estimates from the model with varying
-pause sites, fk_mean giving the mean position of pause sites, fk_var for variance of pause sites,
-phi estimates for landing-pad occupancy, omega_zeta for the effective initiation rate, beta_zeta
-for the pause-escape rate, alpha_zeta for the potential initiation rate, and likelihoods}
+\item{\code{rates}}{a \code{tbl_df} containing estimated transcription rates such as
+chi estimates, beta_org estimates from the initial model, beta_adp estimates
+from the model with varying pause sites, fk_mean giving the mean position
+of pause sites, fk_var for variance of pause sites, phi estimates for
+landing-pad occupancy, omega_zeta for the effective initiation rate,
+beta_zeta for the pause-escape rate, alpha_zeta for the potential initiation
+rate, and likelihoods}
 }}
 

@@ -2,27 +2,36 @@ Package: STADyUM
 Type: Package
 Title: Statistical Transcriptome Analysis under a Dynamic Unified Model
 Version: 1.0.0
-Authors@R: c(person("Yixin", "Zhao", email = "",
-  role = c("aut")),
-  person("Lingjie", "Liu", email = "",
-  role = c("aut")),
-  person("Rebecca", "Hassett", email = "hassett@cshl.edu",
-  role = c("aut", "cre")))
-Maintainer: Rebecca Hassett <hassett@cshl.edu>
-Author: Rebecca Hassett
+Authors@R: 
+    c(
+        person("Yixin", "Zhao", 
+            email = "",
+            role = c("aut"),
+            comment = c(ORCID = "0000-0002-7856-2818")
+        ),
+        person("Lingjie", "Liu",
+            email = "",
+            role = c("aut"),
+            comment = c(ORCID = "0000-0002-5765-1213")
+        ),
+        person("Rebecca", "Hassett",
+            email = "hassett@cshl.edu",
+            role = c("aut", "cre"),
+            comment = c(ORCID = "0000-0001-5133-9387")
+        )
+    )
 Description: STADyUM is a package with functionality for analyzing nascent
-  RNA read counts to infer transcription rates. This includes utilities for processing
-  experimental nascent RNA read counts as well as for simulating PRO-seq data. Rates 
-  such as initiation, pause release and landing pad occupancy are estimated 
-  from either synthetic or experimental data. There are also options for varying pause sites and including 
-  steric hindrance of initiation in the model. 
-bioCviews:
-  Software,
-  StatisticalMethod,
-  Transcriptomics
+    RNA read counts to infer transcription rates. This includes utilities for processing
+    experimental nascent RNA read counts as well as for simulating PRO-seq data. Rates 
+    such as initiation, pause release and landing pad occupancy are estimated 
+    from either synthetic or experimental data. There are also options for varying pause sites and including 
+    steric hindrance of initiation in the model.
+URL: https://github.com/rhassett-cshl/STADyUM
+BugReports: https://github.com/rhassett-cshl/STADyUM
+biocViews: Software, StatisticalMethod, Transcriptomics, Transcription, Sequencing
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
+LazyData: false
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports:
