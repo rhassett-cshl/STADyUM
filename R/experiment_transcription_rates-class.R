@@ -213,6 +213,150 @@ input_validation_checks <- function(bigwig_plus, bigwig_minus, pause_regions,
     }
 }
 
+#' @keywords internal
+prepare_read_count_table <- function(bigwig_plus, bigwig_minus, pause_regions,
+                                    gene_body_regions, kmax) {
+    rc_cutoff <- 20 # read count cut-off for both gene body and pause peak
+    bwp1_p3 <- import.bw(bigwig_plus); bwm1_p3 <- import.bw(bigwig_minus)
+
+    if (sum(bwp1_p3$score) == 0 || sum(bwm1_p3$score) == 0) {
+        stop("No reads found in plus or minus strand bigwig file")
+    }
+
+    bwp1_p3 <- process_bw(bw = bwp1_p3, strand = "+")
+    bwm1_p3 <- process_bw(bw = bwm1_p3, strand = "-")
+    bw1_p3 <- c(bwp1_p3, bwm1_p3)
+    rm(bwp1_p3, bwm1_p3)
+
+    # make sure pause region is the same as kmax used in EM
+    pause_regions <- promoters(pause_regions, upstream = 0, downstream = kmax)
+
+    rc1_pause <- summarise_bw(bw1_p3, pause_regions, "summarized_pause_counts")
+    rc1_pause$pause_length <- kmax
+
+    rc1_gb <- summarise_bw(bw1_p3, gene_body_regions, "summarized_gb_counts")
+    rc1_gb$gb_length <- width(gene_body_regions)[match(
+            rc1_gb$gene_id,gene_body_regions$gene_id)]
+
+    rc1 <- Reduce(
+        function(x, y) merge(x, y, by = "gene_id", all = TRUE),
+        list(rc1_pause, rc1_gb)
+    )
+
+    # clean up some genes with missing values in tss length or gene body length
+    rc1 <- rc1[!(is.na(rc1$pause_length) | is.na(rc1$gb_length)), ]
+    rc1 <- rc1[(rc1$summarized_pause_counts > rc_cutoff) &
+        (rc1$summarized_gb_counts > rc_cutoff), ]
+
+    return(list(rc1 = rc1, bw1_p3 = bw1_p3))
+}
+
+#' @keywords internal
+estimate_em_rates <- function(rc1, bw1_p3, pause_regions, kmin, kmax, fk_int,
+                            steric_hindrance, omega_scale, zeta) {
+    # prepare data for running EM
+    em_rate <- DataFrame(
+        gene_id = rc1$gene_id, s = rc1$summarized_gb_counts, N = rc1$gb_length
+    )
+
+    # use read count within gene body to pre-estimate chi hat
+    em_rate$chi <- em_rate$s / em_rate$N
+
+    # get read counts on each position within pause peak (from kmin to kmax)
+    Xk <- GenomicRanges::coverage(bw1_p3, weight = "score")
+    Xk <- Xk[pause_regions]
+
+    Xk_list <- lapply(seq_along(pause_regions), function(i) {
+        region <- pause_regions[i]
+        counts <- as.numeric(Xk[[seqnames(region)]][ranges(region)])
+        names(counts) <- start(region):end(region)
+        counts
+    })
+    names(Xk_list) <- pause_regions$gene_id
+
+    em_rate$Xk <- Xk_list[em_rate$gene_id]
+
+    # initialize beta using sum of read counts within pause peak
+    em_rate$Xk_sum <- vapply(em_rate$Xk, sum, numeric(1))
+    em_rate$beta_int <- em_rate$chi / em_rate$Xk_sum
+
+    em_ls <- list()
+    if (steric_hindrance) {
+        em_rate$omega_zeta <- em_rate$chi * omega_scale
+        em_rate$omega <- em_rate$omega_zeta / zeta
+
+        # compute scaling factor lambda to use the same params as simulations
+        lambda <- zeta^2 / omega_scale
+    }
+
+    for (i in seq_len(NROW(em_rate))) {
+        rc <- em_rate[i, ]
+
+        if (!steric_hindrance) {
+            em_ls[[i]] <- pause_escape_EM(
+                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
+                fk_int = fk_int, beta_int = rc$beta_int[[1]],
+                chi_hat = rc$chi, max_itr = 500, tor = 1e-4
+            )
+        } else {
+            em_ls[[i]] <- steric_hindrance_EM(
+                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, f1 = 0.517,
+                f2 = 0.024, fk_int = fk_int, beta_int = rc$beta_int[[1]],
+                phi_int = 0.5, chi_hat = rc$chi, lambda = lambda, zeta = zeta,
+                max_itr = 500, tor = 1e-4
+            )
+        }
+    }
+
+    names(em_ls) <- em_rate$gene_id
+
+    # get rate estimates and posterior distribution of pause sites
+    em_rate$beta_adp <- map_dbl(em_ls, "beta", .default = NA)
+    em_rate$Yk <- map(em_ls, "Yk", .default = NA)
+    em_rate$fk <- map(em_ls, "fk", .default = NA)
+    em_rate$fk_mean <- map_dbl(em_ls, "fk_mean", .default = NA)
+    em_rate$fk_var <- map_dbl(em_ls, "fk_var", .default = NA)
+    # calculate Yk / Xk
+    em_rate$t <- vapply(em_rate$Yk, sum, numeric(1))
+    em_rate$proportion_Yk <- em_rate$t / vapply(em_rate$Xk, sum, numeric(1))
+    em_rate$likelihood <- map_dbl(
+        em_ls, ~ .x$likelihoods[[length(.x$likelihoods)]]
+    )
+
+    em_rate <- em_rate %>% as_tibble()
+
+    if (steric_hindrance) {
+        em_rate$phi <- map_dbl(em_ls, "phi", .default = NA)
+        em_rate <- em_rate %>%
+            mutate(
+                beta_zeta = beta_adp * zeta, alpha_zeta = omega_zeta / (1 - phi)
+            )
+    }
+
+    return(em_rate)
+}
+
+#' @keywords internal
+prepare_rate_table <- function(em_rate, analytical_rate_tbl, steric_hindrance) {
+    em_rate <- em_rate %>% left_join(analytical_rate_tbl, by = "gene_id")
+
+    if (!steric_hindrance) {
+        em_rate <- em_rate %>%
+            select(gene_id, chi, beta_org, beta_adp, fk_mean, fk_var)
+    } else {
+        em_rate <- em_rate %>%
+            select(
+                gene_id, chi, beta_org, beta_adp, fk_mean, fk_var, phi,
+                omega_zeta
+            ) %>%
+            mutate(
+                beta_zeta = beta_adp * zeta, alpha_zeta = omega_zeta / (1 - phi)
+            )
+    }
+
+    return(em_rate)
+}
+
 #' estimate_experiment_transcription_rates
 #'
 #' Estimates the transcription rates, such as initiation, pause-release rates
@@ -238,213 +382,45 @@ input_validation_checks <- function(bigwig_plus, bigwig_minus, pause_regions,
 #'
 #' @export
 estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
-                                                    pause_regions,
-                                                    gene_body_regions,
-                                                    gene_name_column,
-                                                    steric_hindrance = FALSE,
-                                                    omega_scale = NULL) {
+pause_regions, gene_body_regions, gene_name_column, steric_hindrance = FALSE,
+omega_scale = NULL) {
+
     input_validation_checks(
         bigwig_plus, bigwig_minus, pause_regions,
         gene_body_regions, gene_name_column, steric_hindrance, omega_scale
     )
 
-    # Force copy of object underlying GRanges to prevent any weird side effects
-    # if GRanges is using data.table or something else that can modify in place
+    # Force copy underlying GRanges obj to prevent modify in place side effects
     pause_regions <- GenomicRanges::makeGRangesFromDataFrame(
         data.table::copy(data.table::as.data.table(pause_regions)),
         keep.extra.columns = TRUE
     )
-
     gene_body_regions <- GenomicRanges::makeGRangesFromDataFrame(
         data.table::copy(data.table::as.data.table(gene_body_regions)),
         keep.extra.columns = TRUE
     )
 
-    # set up parameters
-    k <- 50
-    kmin <- 1
-    kmax <- 200 # also used as k on the poisson case
-    rnap_size <- 50
-    zeta <- 2000
+    k <- 50; kmin <- 1; kmax <- 200; rnap_size <- 50; zeta <- 2000
 
-    rc_cutoff <- 20 # read count cut-off for both gene body and pause peak
-
-    # Add progress bar for bigwig import
-    pb <- progress::progress_bar$new(
-        format = "Importing bigwigs [:bar] :percent eta: :eta",
-        total = 3, clear = FALSE
-    )
-    pb$tick(0)
-
-    pb$tick()
-    bwp1_p3 <- import.bw(bigwig_plus)
-    pb$tick()
-    bwm1_p3 <- import.bw(bigwig_minus)
-    pb$tick()
-
-    if (sum(bwp1_p3$score) == 0 || sum(bwm1_p3$score) == 0) {
-        stop("No reads found in plus or minus strand bigwig file")
-    }
-
-    # Add progress bar for processing
-    pb <- progress::progress_bar$new(
-        format = "Processing bigwigs [:bar] :percent eta: :eta",
-        total = 4, clear = FALSE
-    )
-    pb$tick(0)
-
-    bwp1_p3 <- process_bw(bw = bwp1_p3, strand = "+")
-    pb$tick()
-    bwm1_p3 <- process_bw(bw = bwm1_p3, strand = "-")
-    pb$tick()
-    bw1_p3 <- c(bwp1_p3, bwm1_p3)
-    rm(bwp1_p3, bwm1_p3)
-
-    # make sure pause region is the same as kmax used in EM
-    pause_regions <- promoters(pause_regions, upstream = 0, downstream = kmax)
-
-    # summarize read counts
-    rc1_pause <- summarise_bw(bw1_p3, pause_regions, "summarized_pause_counts")
-    rc1_pause$pause_length <- kmax
-    pb$tick()
-
-    rc1_gb <- summarise_bw(bw1_p3, gene_body_regions, "summarized_gb_counts")
-    rc1_gb$gb_length <-
-        width(gene_body_regions)[match(
-            rc1_gb$gene_id,
-            gene_body_regions$gene_id
-        )]
-    pb$tick()
-
-    # prepare read count table
-    rc1 <- Reduce(
-        function(x, y) merge(x, y, by = "gene_id", all = TRUE),
-        list(rc1_pause, rc1_gb)
-    )
-
-    # clean up some genes with missing values in tss length or gene body length
-    rc1 <- rc1[!(is.na(rc1$pause_length) | is.na(rc1$gb_length)), ]
-    rc1 <- rc1[(rc1$summarized_pause_counts > rc_cutoff) &
-        (rc1$summarized_gb_counts > rc_cutoff), ]
+    processed_data <- prepare_read_count_table(bigwig_plus, bigwig_minus,
+    pause_regions, gene_body_regions, kmax)
+    rc1 <- processed_data$rc1; bw1_p3 <- processed_data$bw1_p3
 
     message("estimating rates...")
 
     #### Initial model: Poisson-based Maximum Likelihood Estimation ####
-    analytical_rate_tbl <-
-        tibble::tibble(
-            gene_id = rc1$gene_id,
-            beta_org = (rc1$summarized_gb_counts / rc1$gb_length) /
-                (rc1$summarized_pause_counts / rc1$pause_length)
-        )
+    analytical_rate_tbl <- tibble::tibble(gene_id = rc1$gene_id, beta_org =
+    (rc1$summarized_gb_counts / rc1$gb_length) / (rc1$summarized_pause_counts /
+    rc1$pause_length))
 
-    # Adapted model: allow uncertainty in the pause site and steric hindrance
-    # prepare data for running EM
-    em_rate <- DataFrame(
-        gene_id = rc1$gene_id, s = rc1$summarized_gb_counts,
-        N = rc1$gb_length
-    )
-
-
-    # use read count within gene body to pre-estimate chi hat
-    em_rate$chi <- em_rate$s / em_rate$N
-
-    # get read counts on each position within pause peak (from kmin to kmax)
-    Xk <- GenomicRanges::coverage(bw1_p3, weight = "score")
-    Xk <- Xk[pause_regions]
-
-    # Convert to a list of numeric vectors
-    Xk_list <- lapply(seq_along(pause_regions), function(i) {
-        region <- pause_regions[i]
-        counts <- as.numeric(Xk[[seqnames(region)]][ranges(region)])
-        names(counts) <- start(region):end(region)
-        counts
-    })
-    names(Xk_list) <- pause_regions$gene_id
-
-    em_rate$Xk <- Xk_list[em_rate$gene_id]
-
-    # initialize beta using sum of read counts within pause peak
-    em_rate$Xk_sum <- vapply(em_rate$Xk, sum, numeric(1))
-    em_rate$beta_int <- em_rate$chi / em_rate$Xk_sum
-
-    # initialize fk with some reasonable values based on heuristic
     fk_int <- dnorm(kmin:kmax, mean = 50, sd = 100)
     fk_int <- fk_int / sum(fk_int)
 
-    # estimate rates using EM
-    em_ls <- list()
+    em_rate <- estimate_em_rates(rc1, bw1_p3, pause_regions, kmin, kmax, fk_int,
+    steric_hindrance, omega_scale, zeta)
+    em_rate <- prepare_rate_table(em_rate, analytical_rate_tbl,
+    steric_hindrance)
 
-    if (steric_hindrance) {
-        em_rate$omega_zeta <- em_rate$chi * omega_scale
-        em_rate$omega <- em_rate$omega_zeta / zeta
-
-        # compute a scaling factor lambda for the purpose of using the same
-        # parameters as simulations
-        lambda <- zeta^2 / omega_scale
-    }
-
-    for (i in seq_len(NROW(em_rate))) {
-        rc <- em_rate[i, ]
-
-        if (!steric_hindrance) {
-            em_ls[[i]] <- pause_escape_EM(
-                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
-                fk_int = fk_int, beta_int = rc$beta_int[[1]],
-                chi_hat = rc$chi, max_itr = 500, tor = 1e-4
-            )
-        } else {
-            em_ls[[i]] <- steric_hindrance_EM(
-                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, f1 = 0.517,
-                f2 = 0.024,
-                fk_int = fk_int, beta_int = rc$beta_int[[1]], phi_int = 0.5,
-                chi_hat = rc$chi, lambda = lambda, zeta = zeta,
-                max_itr = 500, tor = 1e-4
-            )
-        }
-    }
-
-    names(em_ls) <- em_rate$gene_id
-
-    # get rate estimates and posterior distribution of pause sites
-    em_rate$beta_adp <- map_dbl(em_ls, "beta", .default = NA)
-    em_rate$Yk <- map(em_ls, "Yk", .default = NA)
-    em_rate$fk <- map(em_ls, "fk", .default = NA)
-    em_rate$fk_mean <- map_dbl(em_ls, "fk_mean", .default = NA)
-    em_rate$fk_var <- map_dbl(em_ls, "fk_var", .default = NA)
-    # calculate Yk / Xk
-    em_rate$t <- vapply(em_rate$Yk, sum, numeric(1))
-    em_rate$proportion_Yk <- em_rate$t / vapply(em_rate$Xk, sum, numeric(1))
-    em_rate$likelihood <- map_dbl(
-        em_ls,
-        ~ .x$likelihoods[[length(.x$likelihoods)]]
-    )
-
-    em_rate <- em_rate %>% as_tibble()
-
-    if (steric_hindrance) {
-        em_rate$phi <- map_dbl(em_ls, "phi", .default = NA)
-        em_rate <- em_rate %>%
-            mutate(alpha_zeta = omega_zeta / (1 - phi))
-    }
-
-    em_rate <- em_rate %>% left_join(analytical_rate_tbl, by = "gene_id")
-
-    if (!steric_hindrance) {
-        em_rate <- em_rate %>%
-            select(gene_id, chi, beta_org, beta_adp, fk_mean, fk_var)
-    } else {
-        em_rate <- em_rate %>%
-            select(
-                gene_id, chi, beta_org, beta_adp, fk_mean, fk_var, phi,
-                omega_zeta
-            ) %>%
-            mutate(
-                beta_zeta = beta_adp * zeta,
-                alpha_zeta = omega_zeta / (1 - phi)
-            )
-    }
-
-    # Return experiment transcription rates object
     return(methods::new(
         Class = "experiment_transcription_rates",
         counts = as.data.frame(rc1), bigwig_plus = bigwig_plus,
