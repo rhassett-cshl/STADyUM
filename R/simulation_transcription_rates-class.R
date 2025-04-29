@@ -244,12 +244,8 @@ estimate_simulation_transcription_rates <-
         #### empirical way to calculate steric hindrance at pause site ####
         bw_dfs <- bw_dfs %>%
             mutate(
-                # number of RNAPs per cell per gene
                 R = (rc_tss + rc_gb) / sample_cell,
-                # number of RNAPs in the pause peak per cell per gene
                 R_pause = rc_tss / sample_cell,
-                # proportion of landing pad being occupied by RNAP, i.e.,
-                # empirical phi
                 rnap_prop = rc_landing / sample_cell
             )
 

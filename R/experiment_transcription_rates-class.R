@@ -163,8 +163,7 @@ methods::setClass("experiment_transcription_rates",
 )
 
 #' @keywords internal
-input_validation_checks <- function(
-    bigwig_plus, bigwig_minus, pause_regions,
+input_validation_checks <- function(bigwig_plus, bigwig_minus, pause_regions,
     gene_body_regions, gene_name_column, steric_hindrance, omega_scale) {
     if (!file.exists(bigwig_plus) || !file.exists(bigwig_minus)) {
         stop("bigwig_plus or bigwig_minus file does not exist")
@@ -175,10 +174,6 @@ input_validation_checks <- function(
     }
     if (length(pause_regions) == 0 || length(gene_body_regions) == 0) {
         stop("pause_regions or gene_body_regions is empty")
-    }
-    if (any(width(pause_regions) <= 0) || any(width(gene_body_regions) <= 0)) {
-        stop("pause_regions or gene_body_regions contains invalid
-        (non-positive) widths")
     }
     if (!gene_name_column %in%
         colnames(S4Vectors::elementMetadata(pause_regions)) ||
@@ -196,18 +191,16 @@ input_validation_checks <- function(
         pause_regions and of gene_body_regions object", gene_name_column))
     }
     duplicated_pause_region_gene_names <-
-        any(duplicated(S4Vectors::elementMetadata(pause_regions)[
-            ,
-            gene_name_column
+        any(duplicated(
+            S4Vectors::elementMetadata(pause_regions)[,gene_name_column
         ]))
     if (duplicated_pause_region_gene_names) {
         stop("One or more gene names are
         duplicated in pause region, gene names must be unique")
     }
     duplicated_gene_body_region_gene_names <-
-        any(duplicated(S4Vectors::elementMetadata(gene_body_regions)[
-            ,
-            gene_name_column
+        any(duplicated(
+            S4Vectors::elementMetadata(gene_body_regions)[,gene_name_column
         ]))
     if (duplicated_gene_body_region_gene_names) {
         stop("One or more gene names are duplicated in gene body region, gene

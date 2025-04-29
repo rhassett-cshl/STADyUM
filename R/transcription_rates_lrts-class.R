@@ -146,6 +146,7 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
 
     h0_likelihood <- map_dbl(em_res, ~ .x$likelihoods[[length(.x$likelihoods)]])
 
+    # use eq (25) instead of (31) to compute T stats
     beta_tbl <-
         tibble(
             gene_id = exp_data1$gene_id,
@@ -156,7 +157,6 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
             fk_mean2 = exp_data2$fk_mean,
             fk_var1 = exp_data1$fk_var,
             fk_var2 = exp_data2$fk_var,
-            # use eq (25) instead of (31) to compute T stats
             t_stats = exp_data1$likelihood + exp_data2$likelihood -
                 h0_likelihood
         )

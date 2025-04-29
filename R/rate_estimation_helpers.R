@@ -33,7 +33,7 @@ process_bw <- function(bw, strand) {
         seqnames = seqnames(bw),
         ranges = IRanges::IRanges(
             start = start(bw),
-            end = start(bw), # Make each range a single basepair
+            end = start(bw),
             names = names(bw)
         ),
         strand = strand(bw),
@@ -149,11 +149,8 @@ pause_escape_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax) {
 #' @rdname pause_escape_EM
 #' @export
 pause_escape_EM <- function(
-    fk_int, Xk, kmin, kmax, beta_int, chi_hat,
-    max_itr = 100, tor = 1e-3) {
-    betas <- list()
-    likelihoods <- list()
-    flag <- "normal"
+    fk_int, Xk, kmin, kmax, beta_int, chi_hat, max_itr = 100, tor = 1e-3) {
+    betas <- list(); likelihoods <- list(); flag <- "normal"
 
     for (i in seq_len(max_itr)) {
         if (i == 1) {
@@ -371,11 +368,9 @@ calculate_f <- function(s, k) {
 #' @rdname steric_hindrance_EM
 #' @export
 steric_hindrance_EM <- function(
-    Xk, kmin, kmax, f1, f2, fk_int, beta_int,
-    phi_int, chi_hat, lambda, zeta, max_itr = 100, tor = 1e-3) {
-    betas <- list()
-    likelihoods <- list()
-    flag <- "normal"
+    Xk, kmin, kmax, f1, f2, fk_int, beta_int, phi_int, chi_hat, lambda, zeta,
+    max_itr = 100, tor = 1e-3) {
+    betas <- list(); likelihoods <- list(); flag <- "normal"
 
     for (i in seq_len(max_itr)) {
         if (i == 1) {
@@ -417,9 +412,8 @@ steric_hindrance_EM <- function(
     if (i == max_itr) flag <- "max_iteration"
 
     return(list(
-        "beta" = hats$beta, "Yk" = Yk, "fk" = hats$fk,
-        "fk_mean" = hats$fk_mean, "fk_var" = hats$fk_var,
-        "betas" = betas, "likelihoods" = likelihoods,
-        "phi" = hats$phi, "flag" = flag
+        "beta" = hats$beta, "Yk" = Yk, "fk" = hats$fk, "fk_mean" =
+        hats$fk_mean, "fk_var" = hats$fk_var, "betas" = betas, "likelihoods"
+        =likelihoods, "phi" = hats$phi, "flag" = flag
     ))
 }
