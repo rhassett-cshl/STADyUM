@@ -25,14 +25,6 @@ This is a basic example which shows you how to solve a common problem:
 
 ``` r
 library(STADyUM)
-#> 
-#> Attaching package: 'STADyUM'
-#> The following object is masked from 'package:stats':
-#> 
-#>     time
-#> The following object is masked from 'package:base':
-#> 
-#>     beta
 ## basic example code
 ```
 

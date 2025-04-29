@@ -11,7 +11,8 @@ likelihood_ratio_test(exp_data1, exp_data2, sc)
 
 \item{exp_data2}{an \code{\link{experiment_transcription_rates-class}} object}
 
-\item{sc}{path to a csv file containing scale factors based on total or spike-in reads}
+\item{sc}{path to a csv file containing scale factors based on total or
+spike-in reads}
 }
 \value{
 a \code{\link{likelihood_ratio_test-class}} object

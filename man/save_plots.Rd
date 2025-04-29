@@ -15,6 +15,9 @@ save_plots(object, dir = "results", width = 8, height = 6)
 
 \item{height}{Plot height in inches}
 }
+\value{
+Outputs directory where plots were saved to pdf files
+}
 \description{
 Save all plots to files
 }

@@ -1,4 +1,4 @@
-# STADyUM 1.0.0
+# STADyUM 0.99.0
 
 ## First release
 

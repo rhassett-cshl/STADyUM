@@ -18,5 +18,6 @@ summarize read count}
 A \code{\link[GenomicRanges]{GenomicRanges-class}} object
 }
 \description{
-Creates GRanges object with column of read counts summarized over regions of genes
+Creates GRanges object with column of read counts summarized over regions of
+genes
 }

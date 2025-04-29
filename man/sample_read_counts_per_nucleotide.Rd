@@ -9,7 +9,8 @@ sample_read_counts_per_nucleotide(object, read_density = 0.0489)
 \arguments{
 \item{object}{A simulate_polymerase object}
 
-\item{read_density}{A numeric value for the read density within gene body in \emph{Dukler et al.} (2017) for genes with median expression (i.e., 0.0489).}
+\item{read_density}{A numeric value for the read density within gene body in
+Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).}
 }
 \value{
 The read count per nucleotide value

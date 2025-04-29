@@ -16,73 +16,100 @@
 #' @return TRUE if valid, else errors
 #' @keywords internal
 experiment_transcription_rates_valid <- function(object) {
-    errors <- character()
+    errors <- c(
+        validate_counts(object),
+        validate_bigwig_files(object),
+        validate_regions(object),
+        validate_gene_name_column(object),
+        validate_steric_hindrance(object),
+        validate_rates(object)
+    )
+    
+    if (length(errors) == 0) TRUE else errors
+}
 
-    # Check if required slots are present and have correct types
+# Helper validation functions
+validate_counts <- function(object) {
+    errors <- character()
     if (!is.data.frame(counts(object))) {
         errors <- c(errors, "counts must be a data.frame")
     }
-
-    # Check for required columns in counts
+    
     required_cols <- c("gene_id", "tss", "gb", "landing")
     missing_cols <- setdiff(required_cols, colnames(counts(object)))
     if (length(missing_cols) > 0) {
         errors <- c(errors, paste("Missing required columns in counts:", 
         paste(missing_cols, collapse = ", ")))
     }
+    return(errors)
+}
 
-    # Check if bigwig files exist
+validate_bigwig_files <- function(object) {
+    errors <- character()
     if (!file.exists(bigwig_plus(object))) {
         errors <- c(errors, "bigwig_plus file does not exist")
     }
     if (!file.exists(bigwig_minus(object))) {
         errors <- c(errors, "bigwig_minus file does not exist")
     }
+    return(errors)
+}
 
-    # Check if regions are GRanges objects
+validate_regions <- function(object) {
+    errors <- character()
     if (!inherits(pause_regions(object), "GRanges")) {
         errors <- c(errors, "pause_regions must be a GRanges object")
     }
     if (!inherits(gene_body_regions(object), "GRanges")) {
         errors <- c(errors, "gene_body_regions must be a GRanges object")
     }
+    return(errors)
+}
 
-    # Check gene_name_column
+validate_gene_name_column <- function(object) {
+    errors <- character()
     if (!is.character(gene_name_column(object)) ||
         length(gene_name_column(object)) != 1) {
-        errors <- c(errors, "gene_name_column must be a single character string")
+        errors <- c(errors, "gene_name_column must be a single character
+        string")
     }
+    return(errors)
+}
 
-    # Check steric_hindrance
+validate_steric_hindrance <- function(object) {
+    errors <- character()
     if (!is.logical(steric_hindrance(object)) ||
         length(steric_hindrance(object)) != 1) {
         errors <- c(errors, "steric_hindrance must be a single logical value")
     }
-
-    # Check omega_scale if steric_hindrance is TRUE
+    
     if (steric_hindrance(object)) {
-        if (!is.numeric(omega_scale(object)) || length(omega_scale(object)) != 1 ||
+        if (!is.numeric(omega_scale(object)) ||
+            length(omega_scale(object)) != 1 ||
             omega_scale(object) <= 0) {
-            errors <- c(errors, "omega_scale must be a single positive numeric value")
+            errors <- c(errors, "omega_scale must be a single positive numeric
+            value")
         }
     }
+    return(errors)
+}
 
-    # Check rates
+validate_rates <- function(object) {
+    errors <- character()
     if (!inherits(rates(object), "tbl_df")) {
         errors <- c(errors, "rates must be a tibble")
     }
-
-    # Check required columns in rates
+    
     required_cols <- c("gene_id", "initiation_rate", "pause_release_rate")
     if (steric_hindrance(object)) {
         required_cols <- c(required_cols, "landing_pad_occupancy")
     }
     missing_cols <- setdiff(required_cols, colnames(rates(object)))
     if (length(missing_cols) > 0) {
-        errors <- c(errors, paste("Missing required columns in rates:", paste(missing_cols, collapse = ", ")))
+        errors <- c(errors, paste("Missing required columns in rates:", 
+        paste(missing_cols, collapse = ", ")))
     }
-
-    if (length(errors) == 0) TRUE else errors
+    return(errors)
 }
 
 #' Class experiment_transcription_rates
@@ -195,40 +222,50 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
     # Check for correct GRanges object metadata
     if (!gene_name_column %in%
         colnames(S4Vectors::elementMetadata(pause_regions))) {
-        stop(sprintf("pause_regions does not have a column matching %s", gene_name_column))
+        stop(sprintf("pause_regions does not have a column matching %s",
+        gene_name_column))
     }
     if (!gene_name_column %in%
         colnames(S4Vectors::elementMetadata(gene_body_regions))) {
-        stop(sprintf("gene_body_regions does not have a column matching %s", gene_name_column))
+        stop(sprintf("gene_body_regions does not have a column matching %s",
+        gene_name_column))
     }
     if (!is.character(
         S4Vectors::elementMetadata(pause_regions)[, gene_name_column]
     )) {
-        stop(sprintf("gene name column %s must be of class 'character' in pause_regions object", gene_name_column))
+        stop(sprintf("gene name column %s must be of class 'character' in
+        pause_regions object", gene_name_column))
     }
     if (!is.character(
         S4Vectors::elementMetadata(gene_body_regions)[, gene_name_column]
     )) {
-        stop(sprintf("gene name column %s must be of class 'character' in gene_body_regions object", gene_name_column))
+        stop(sprintf("gene name column %s must be of class 'character' in
+        gene_body_regions object", gene_name_column))
     }
     duplicated_pause_region_gene_names <-
-        any(duplicated(S4Vectors::elementMetadata(pause_regions)[, gene_name_column]))
+        any(duplicated(S4Vectors::elementMetadata(pause_regions)[,
+        gene_name_column]))
     if (duplicated_pause_region_gene_names) {stop("One or more gene names are
         duplicated in pause region, gene names must be unique")
     }
     duplicated_gene_body_region_gene_names <-
-        any(duplicated(S4Vectors::elementMetadata(gene_body_regions)[, gene_name_column]))
+        any(duplicated(S4Vectors::elementMetadata(gene_body_regions)[,
+        gene_name_column]))
     if (duplicated_gene_body_region_gene_names) {
-        stop("One or more gene names are duplicated in gene body region, gene names must be unique")
+        stop("One or more gene names are duplicated in gene body region, gene
+        names must be unique")
     }
-    if (steric_hindrance && (is.null(omega_scale) && !is.numeric(omega_scale) && omega_scale <= 0)) {
-        stop("For steric hindrance case, omega_scale parameter must be set to numeric greater than 0")
+    if (steric_hindrance && (is.null(omega_scale) && !is.numeri
+    (omega_scale) && omega_scale <= 0)) {
+        stop("For steric hindrance case, omega_scale parameter must be set to
+        numeric greater than 0")
     }
 
     # **End checks**
 
-    # Force copy of object underlying GRanges to prevent any weird side effects if
-    # GRanges is using a data.table or something else that can modify in place
+    # Force copy of object underlying GRanges to prevent any weird side effects
+    # if GRanges is using a data.table or something else that can modify in
+    # place
     pause_regions <- GenomicRanges::makeGRangesFromDataFrame(
         data.table::copy(data.table::as.data.table(pause_regions)),
         keep.extra.columns = TRUE
@@ -299,7 +336,8 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 
     rc1_gb <- summarise_bw(bw1_p3, gene_body_regions, "summarized_gb_counts")
     rc1_gb$gb_length <-
-        width(gene_body_regions)[match(rc1_gb$gene_id, gene_body_regions$gene_id)]
+        width(gene_body_regions)[match(rc1_gb$gene_id,
+        gene_body_regions$gene_id)]
     pb$tick()
 
     # prepare read count table
@@ -310,7 +348,8 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 
     # clean up some genes with missing values in tss length or gene body length
     rc1 <- rc1[!(is.na(rc1$pause_length) | is.na(rc1$gb_length)), ]
-    rc1 <- rc1[(rc1$summarized_pause_counts > rc_cutoff) & (rc1$summarized_gb_counts > rc_cutoff), ]
+    rc1 <- rc1[(rc1$summarized_pause_counts > rc_cutoff) &
+    (rc1$summarized_gb_counts > rc_cutoff), ]
 
     message("estimating rates...")
 
@@ -318,10 +357,12 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
     analytical_rate_tbl <-
         tibble::tibble(
             gene_id = rc1$gene_id,
-            beta_org = (rc1$summarized_gb_counts / rc1$gb_length) / (rc1$summarized_pause_counts / rc1$pause_length)
+            beta_org = (rc1$summarized_gb_counts / rc1$gb_length) /
+            (rc1$summarized_pause_counts / rc1$pause_length)
         )
 
-    #### Adapted model: allow uncertainty in the pause site and steric hindrance ####
+    #### Adapted model: allow uncertainty in the pause site and steric
+    # hindrance ####
     # prepare data for running EM
     em_rate <-
         DataFrame(
@@ -364,7 +405,8 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
         em_rate$omega_zeta <- em_rate$chi * omega_scale
         em_rate$omega <- em_rate$omega_zeta / zeta
 
-        # compute a scaling factor lambda for the purpose of using the same parameters as simulations
+        # compute a scaling factor lambda for the purpose of using the same
+        # parameters as simulations
         lambda <- zeta^2 / omega_scale
     }
 
@@ -379,7 +421,8 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
             )
         } else {
             em_ls[[i]] <- steric_hindrance_EM(
-                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, f1 = 0.517, f2 = 0.024,
+                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, f1 = 0.517, 
+                f2 = 0.024,
                 fk_int = fk_int, beta_int = rc$beta_int[[1]], phi_int = 0.5,
                 chi_hat = rc$chi, lambda = lambda, zeta = zeta,
                 max_itr = 500, tor = 1e-4
@@ -398,7 +441,8 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
     # calculate Yk / Xk
     em_rate$t <- vapply(em_rate$Yk, sum, numeric(1))
     em_rate$proportion_Yk <- em_rate$t / vapply(em_rate$Xk, sum, numeric(1))
-    em_rate$likelihood <- map_dbl(em_ls, ~ .x$likelihoods[[length(.x$likelihoods)]])
+    em_rate$likelihood <- map_dbl(em_ls, 
+    ~ .x$likelihoods[[length(.x$likelihoods)]])
 
     em_rate <- em_rate %>% as_tibble()
 
@@ -415,7 +459,8 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
             select(gene_id, chi, beta_org, beta_adp, fk_mean, fk_var)
     } else {
         em_rate <- em_rate %>%
-            select(gene_id, chi, beta_org, beta_adp, fk_mean, fk_var, phi, omega_zeta) %>%
+            select(gene_id, chi, beta_org, beta_adp, fk_mean, fk_var, phi,
+            omega_zeta) %>%
             mutate(
                 beta_zeta = beta_adp * zeta,
                 alpha_zeta = omega_zeta / (1 - phi)
@@ -453,7 +498,8 @@ estimate_experiment_transcription_rates <- function(bigwig_plus, bigwig_minus,
 #' 
 #' # Show the object
 #' show(exp_rates)
-methods::setMethod("show", signature = "experiment_transcription_rates", function(object) {
+methods::setMethod("show", signature = "experiment_transcription_rates",
+function(object) {
     cat("An experiment_transcription_rates object with:\n")
     cat("  -", length(unique(counts(object)$gene_id)), "genes\n")
     cat("  -", nrow(rates(object)), "rate estimates\n")
@@ -467,7 +513,8 @@ methods::setMethod("show", signature = "experiment_transcription_rates", functio
 #' Get transcription rates from experiment_transcription_rates object
 #'
 #' @rdname experiment_transcription_rates-class
-#' @description Retrieves the transcription rates from an experiment_transcription_rates object
+#' @description Retrieves the transcription rates from an
+#' experiment_transcription_rates object
 #' @param object An experiment_transcription_rates object
 #' @return A tibble containing the transcription rates
 #' @export
@@ -493,7 +540,8 @@ setMethod("getCounts", "experiment_transcription_rates", function(object) {
 #' @return A GRanges object containing the specified regions
 #' @export
 setGeneric("getRegions", function(object, type) standardGeneric("getRegions"))
-setMethod("getRegions", "experiment_transcription_rates", function(object, type) {
+setMethod("getRegions", "experiment_transcription_rates", 
+function(object, type) {
     if (!type %in% c("pause", "gene_body")) {
         stop("type must be either 'pause' or 'gene_body'")
     }
@@ -508,26 +556,70 @@ setMethod("getRegions", "experiment_transcription_rates", function(object, type)
 #'
 #' @param object An experiment_transcription_rates object
 #' @param file Path to output CSV file
+#' @return Outputs a CSV file with the rates
 #' @export
-setGeneric("exportRatesToCSV", function(object, file) standardGeneric("exportRatesToCSV"))
-setMethod("exportRatesToCSV", "experiment_transcription_rates", function(object, file) {
+setGeneric("exportRatesToCSV", function(object, file) 
+standardGeneric("exportRatesToCSV"))
+setMethod("exportRatesToCSV", "experiment_transcription_rates", 
+function(object, file) {
     write.csv(rates(object), file = file, row.names = FALSE)
 })
+
+# Helper functions for plotting
+create_scatter_plot <- function(data, rate_type) {
+    ggplot2::ggplot(data, ggplot2::aes(x = .data$beta_org, 
+        y = .data[[rate_type]])) +
+        ggplot2::geom_point(color = "#1E88E5", alpha = 0.7, size = 2) +
+        ggplot2::labs(x = "Original Beta", y = rate_type) +
+        apply_common_theme()
+}
+
+create_histogram_plot <- function(data, rate_type) {
+    ggplot2::ggplot(data, ggplot2::aes(x = .data[[rate_type]])) +
+        ggplot2::geom_histogram(bins = 30, fill = "#1E88E5",
+            color = "white", alpha = 0.7) +
+        ggplot2::labs(x = rate_type, y = "Count") +
+        apply_common_theme()
+}
+
+create_density_plot <- function(data, rate_type) {
+    ggplot2::ggplot(data, ggplot2::aes(x = .data[[rate_type]])) +
+        ggplot2::geom_density(fill = "#1E88E5", color = "#0D47A1",
+            alpha = 0.7) +
+        ggplot2::labs(x = rate_type, y = "Density") +
+        apply_common_theme()
+}
+
+apply_common_theme <- function() {
+    ggplot2::theme_bw() +
+        ggplot2::theme(
+            panel.grid.major = ggplot2::element_line(color = "gray90"),
+            panel.grid.minor = ggplot2::element_line(color = "gray95"),
+            axis.text = ggplot2::element_text(color = "black", size = 12),
+            axis.title = ggplot2::element_text(color = "black", size = 14)
+        )
+}
 
 #' Plot transcription rates
 #'
 #' @param object An experiment_transcription_rates object
 #' @param type Type of plot to create ("scatter", "histogram", or "density")
 #' @param rate_type Which rate to plot ("beta_org", "beta_adp", "chi", etc.)
-#' @param file Optional path to save the plot. If provided, the plot will be saved to this location.
+#' @param file Optional path to save the plot. If provided, the plot will be
+#' saved to this location.
 #' @param width Width of the saved plot in inches. Default is 8.
 #' @param height Height of the saved plot in inches. Default is 6.
 #' @param dpi Resolution of the saved plot. Default is 300.
 #' @param ... Additional arguments passed to the plotting function
 #' @return A ggplot object
 #' @export
-setGeneric("plotRates", function(object, type = "scatter", rate_type = "beta_adp", file = NULL, width = 8, height = 6, dpi = 300, ...) standardGeneric("plotRates"))
-setMethod("plotRates", "experiment_transcription_rates", function(object, type = "scatter", rate_type = "beta_adp", file = NULL, width = 8, height = 6, dpi = 300, ...) {
+setGeneric("plotRates", function(object, type = "scatter", 
+rate_type = "beta_adp", file = NULL, width = 8, height = 6, dpi = 300, ...) 
+standardGeneric("plotRates"))
+
+setMethod("plotRates", "experiment_transcription_rates", function(object, 
+type = "scatter", rate_type = "beta_adp", file = NULL, width = 8, height = 6,
+dpi = 300, ...) {
     if (!requireNamespace("ggplot2", quietly = TRUE)) {
         stop("ggplot2 package is required for plotting")
     }
@@ -539,46 +631,13 @@ setMethod("plotRates", "experiment_transcription_rates", function(object, type =
     data <- rates(object)
 
     p <- switch(type,
-        scatter = {
-            ggplot2::ggplot(data, ggplot2::aes(x = .data$beta_org, y = .data[[rate_type]])) +
-                ggplot2::geom_point(color = "#1E88E5", alpha = 0.7, size = 2) + # Blue points
-                ggplot2::labs(x = "Original Beta", y = rate_type) +
-                ggplot2::theme_bw() + # White background with grid
-                ggplot2::theme(
-                    panel.grid.major = ggplot2::element_line(color = "gray90"),
-                    panel.grid.minor = ggplot2::element_line(color = "gray95"),
-                    axis.text = ggplot2::element_text(color = "black", size = 12),
-                    axis.title = ggplot2::element_text(color = "black", size = 14)
-                )
-        },
-        histogram = {
-            ggplot2::ggplot(data, ggplot2::aes(x = .data[[rate_type]])) +
-                ggplot2::geom_histogram(bins = 30, fill = "#1E88E5", color = "white", alpha = 0.7) +
-                ggplot2::labs(x = rate_type, y = "Count") +
-                ggplot2::theme_bw() +
-                ggplot2::theme(
-                    panel.grid.major = ggplot2::element_line(color = "gray90"),
-                    panel.grid.minor = ggplot2::element_line(color = "gray95"),
-                    axis.text = ggplot2::element_text(color = "black", size = 12),
-                    axis.title = ggplot2::element_text(color = "black", size = 14)
-                )
-        },
-        density = {
-            ggplot2::ggplot(data, ggplot2::aes(x = .data[[rate_type]])) +
-                ggplot2::geom_density(fill = "#1E88E5", color = "#0D47A1", alpha = 0.7) +
-                ggplot2::labs(x = rate_type, y = "Density") +
-                ggplot2::theme_bw() +
-                ggplot2::theme(
-                    panel.grid.major = ggplot2::element_line(color = "gray90"),
-                    panel.grid.minor = ggplot2::element_line(color = "gray95"),
-                    axis.text = ggplot2::element_text(color = "black", size = 12),
-                    axis.title = ggplot2::element_text(color = "black", size = 14)
-                )
-        },
-        stop("Invalid plot type. Choose from 'scatter', 'histogram', or 'density'")
+        scatter = create_scatter_plot(data, rate_type),
+        histogram = create_histogram_plot(data, rate_type),
+        density = create_density_plot(data, rate_type),
+        stop("Invalid plot type. Choose from 'scatter', 'histogram', or
+        'density'")
     )
 
-    # Save the plot if file is provided
     if (!is.null(file)) {
         ggplot2::ggsave(file, p, width = width, height = height, dpi = dpi)
     }
@@ -600,15 +659,18 @@ setGeneric("pause_regions", function(object) standardGeneric("pause_regions"))
 
 #' @rdname experiment_transcription_rates-class
 #' @export
-setGeneric("gene_body_regions", function(object) standardGeneric("gene_body_regions"))
+setGeneric("gene_body_regions", function(object) 
+standardGeneric("gene_body_regions"))
 
 #' @rdname experiment_transcription_rates-class
 #' @export
-setGeneric("gene_name_column", function(object) standardGeneric("gene_name_column"))
+setGeneric("gene_name_column", function(object) 
+standardGeneric("gene_name_column"))
 
 #' @rdname experiment_transcription_rates-class
 #' @export
-setGeneric("steric_hindrance", function(object) standardGeneric("steric_hindrance"))
+setGeneric("steric_hindrance", function(object) 
+standardGeneric("steric_hindrance"))
 
 #' @rdname experiment_transcription_rates-class
 #' @export
@@ -642,19 +704,22 @@ setMethod("pause_regions", "experiment_transcription_rates", function(object) {
 
 #' @rdname experiment_transcription_rates-class
 #' @export
-setMethod("gene_body_regions", "experiment_transcription_rates", function(object) {
+setMethod("gene_body_regions", "experiment_transcription_rates", 
+function(object) {
     slot(object, "gene_body_regions")
 })
 
 #' @rdname experiment_transcription_rates-class
 #' @export
-setMethod("gene_name_column", "experiment_transcription_rates", function(object) {
+setMethod("gene_name_column", "experiment_transcription_rates", 
+function(object) {
     slot(object, "gene_name_column")
 })
 
 #' @rdname experiment_transcription_rates-class
 #' @export
-setMethod("steric_hindrance", "experiment_transcription_rates", function(object) {
+setMethod("steric_hindrance", "experiment_transcription_rates", 
+function(object) {
     slot(object, "steric_hindrance")
 })
 
@@ -682,17 +747,20 @@ setGeneric("save_rates", function(object, file) standardGeneric("save_rates"))
 
 #' @rdname experiment_transcription_rates-class
 #' @export
-setMethod("save_rates", "experiment_transcription_rates", function(object, file) {
+setMethod("save_rates", "experiment_transcription_rates", 
+function(object, file) {
     write.csv(rates(object), file = file, row.names = FALSE)
 })
 
 #' @rdname experiment_transcription_rates-class
 #' @export
-setGeneric("plot_rate", function(object, rate_type) standardGeneric("plot_rate"))
+setGeneric("plot_rate", function(object, rate_type) 
+standardGeneric("plot_rate"))
 
 #' @rdname experiment_transcription_rates-class
 #' @export
-setMethod("plot_rate", "experiment_transcription_rates", function(object, rate_type) {
+setMethod("plot_rate", "experiment_transcription_rates", 
+function(object, rate_type) {
     if (!rate_type %in% colnames(rates(object))) {
         stop("rate_type must be a column name in rates")
     }

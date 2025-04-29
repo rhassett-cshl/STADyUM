@@ -7,8 +7,9 @@
 \alias{exp_data2}
 \alias{sc}
 \alias{likelihood_ratio_test}
-\title{Class transcription_rates_lrts for comparing aspects of transcriptional dynamics
-of the same TU under different conditions using Likelihood Ratio Test Statistics}
+\title{Class transcription_rates_lrts for comparing aspects of transcriptional
+dynamics of the same TU under different conditions using Likelihood Ratio
+Test Statistics}
 \usage{
 exp_data1(object)
 

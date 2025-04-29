@@ -21,7 +21,8 @@ steric_hindrance_EM(
 )
 }
 \arguments{
-\item{Xk}{a numeric vector of read counts on each position within the pause peak}
+\item{Xk}{a numeric vector of read counts on each position within the pause
+peak}
 
 \item{kmin}{an integer for lower bound of pause sites}
 
@@ -45,13 +46,15 @@ steric_hindrance_EM(
 
 \item{max_itr}{an integer for the maximum iterations. Default is 100.}
 
-\item{tor}{Tolerance value to determine when to stop iterating. Default is 1e-3}
+\item{tor}{Tolerance value to determine when to stop iterating. Default is
+1e-3}
 }
 \value{
-A list of transcription rates including beta, Yk, fk, fk_mean, fk_var,
-betas, likelihoods and phi
+A list of transcription rates including beta, Yk, fk, fk_mean,
+fk_var, betas, likelihoods and phi
 }
 \description{
-Estimate transcription rates with EM algorithm with varying pause sites and steric hindrance.
+Estimate transcription rates with EM algorithm with varying pause sites and
+steric hindrance.
 Landing pad occupancy is inferred.
 }

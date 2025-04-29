@@ -125,24 +125,27 @@ read_counts(object)
 avg_read_density(object)
 }
 \description{
-Class \code{simulate_polymerase} tracks movement of RNAPs along the DNA templates
-of a large number of cells. It accepts several key user-specified parameters,
-including the initiation rate, pause-escape rate, a constant or variable elongation
-rate, the mean and variance of pause sites across cells, as well as the center-to-center
-spacing constraint between RNAPs, the number of cells being simulated, the gene length,
-and the total time of transcription. The simulator simply allows each RNAP to move forward
-or not, in time slices of 1e-4 minutes, according to the specified position-specific rate parameters.
-It assumes that at most one movement of each RNAP can occur per time slice. The simulator monitors for
-collisions between adjacent RNAPs, prohibiting one RNAP to advance if it is at the boundary
-of the allowable distance from the next. After running for specified time, it outputs
-RNAPs for the last specified number of steps.
+Class \code{simulate_polymerase} tracks movement of RNAPs along the DNA
+templates of a large number of cells. It accepts several key user-specified
+parameters, including the initiation rate, pause-escape rate, a constant or
+variable elongation rate, the mean and variance of pause sites across cells,
+as well as the center-to-center spacing constraint between RNAPs, the number
+of cells being simulated, the gene length, and the total time of
+transcription. The simulator simply allows each RNAP to move forward or not,
+in time slices of 1e-4 minutes, according to the specified position-specific
+rate parameters. It assumes that at most one movement of each RNAP can occur
+per time slice. The simulator monitors for collisions between adjacent
+RNAPs, prohibiting one RNAP to advance if it is at the boundary of the
+allowable distance from the next. After running for specified time, it
+outputs the position of RNAPs for the last specified number of steps.
 }
 \section{Slots}{
 
 \describe{
 \item{\code{k}}{an integer value for the mean of pause sites across cells.}
 
-\item{\code{ksd}}{a numeric value for the standard deviation of pause sites across cells.}
+\item{\code{ksd}}{a numeric value for the standard deviation of pause sites across
+cells.}
 
 \item{\code{k_min}}{an integer value for the upper bound of pause sites allowed.}
 
@@ -156,7 +159,8 @@ RNAPs for the last specified number of steps.
 
 \item{\code{zeta}}{a numeric value for the mean elongation rate across sites.}
 
-\item{\code{zeta_sd}}{a numeric value for the standard deviation of pause sites across sites.}
+\item{\code{zeta_sd}}{a numeric value for the standard deviation of pause sites
+across sites.}
 
 \item{\code{zeta_min}}{a numeric value for the minimum elongation rate.}
 
@@ -166,11 +170,13 @@ RNAPs for the last specified number of steps.
 
 \item{\code{pol_size}}{an integer value for the polymerase II size.}
 
-\item{\code{add_space}}{an integer value for the additional space in addition to RNAP size.}
+\item{\code{add_space}}{an integer value for the additional space in addition to
+RNAP size.}
 
 \item{\code{time}}{a numeric value for the time to simulate.}
 
-\item{\code{steps_to_record}}{an integer value for the number of steps to record in position matrix.}
+\item{\code{steps_to_record}}{an integer value for the number of steps to record in
+position matrix.}
 
 \item{\code{pause_sites}}{a numeric vector of pause sites}
 

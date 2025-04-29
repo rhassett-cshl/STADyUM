@@ -85,7 +85,8 @@ Class \code{experiment_transcription_rates} has read counts, pause and gene
 body genomic region coordinates, steric hindrance and omega scale factor
 parameters used to estimate the transcription rates
 
-Retrieves the transcription rates from an experiment_transcription_rates object
+Retrieves the transcription rates from an
+experiment_transcription_rates object
 }
 \section{Slots}{
 

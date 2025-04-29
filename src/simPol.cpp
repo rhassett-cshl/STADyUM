@@ -77,10 +77,23 @@ vector<double> NormalDistrubtionGenerator(double mean, double stddev, double min
 
 // [[Rcpp::plugins(openmp)]]
 // [[Rcpp::export]]
-Rcpp::List simulate_polymerase_cpp(int k, double ksd, int k_min, int k_max, int gene_len,
-                                 double alpha, double beta, double zeta, double zeta_sd,
-                                 double zeta_min, double zeta_max, int cell_num,
-                                 int pol_size, int add_space, double time, int steps_to_record) {
+Rcpp::List simulate_polymerase_cpp(
+    int k,
+    double ksd,
+    int k_min,
+    int k_max,
+    int gene_len,
+    double alpha,
+    double beta,
+    double zeta,
+    double zeta_sd,
+    double zeta_min,
+    double zeta_max,
+    int cell_num,
+    int pol_size,
+    int add_space,
+    double time,
+    int steps_to_record) {
 
     int steric_hindrance = pol_size + add_space;
     double delta_t = 1e-4; 

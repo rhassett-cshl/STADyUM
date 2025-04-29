@@ -11,6 +11,9 @@ exportRatesToCSV(object, file)
 
 \item{file}{Path to output CSV file}
 }
+\value{
+Outputs a CSV file with the rates
+}
 \description{
 Export rates to CSV
 }

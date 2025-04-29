@@ -22,7 +22,8 @@ plotRates(
 
 \item{rate_type}{Which rate to plot ("beta_org", "beta_adp", "chi", etc.)}
 
-\item{file}{Optional path to save the plot. If provided, the plot will be saved to this location.}
+\item{file}{Optional path to save the plot. If provided, the plot will be
+saved to this location.}
 
 \item{width}{Width of the saved plot in inches. Default is 8.}
 

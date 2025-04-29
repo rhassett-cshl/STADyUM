@@ -18,7 +18,8 @@ pause_escape_EM(
 \arguments{
 \item{fk_int}{a list of the initial pause site values}
 
-\item{Xk}{a numeric vector of read counts on each position within the pause peak}
+\item{Xk}{a numeric vector of read counts on each position within the
+pause peak}
 
 \item{kmin}{an integer for lower bound of pause sites}
 
@@ -30,10 +31,12 @@ pause_escape_EM(
 
 \item{max_itr}{an integer for the maximum iterations. Default is 100.}
 
-\item{tor}{Tolerance value to determine when to stop iterating. Default is 1e-3}
+\item{tor}{Tolerance value to determine when to stop iterating.
+Default is 1e-3}
 }
 \value{
-A list of transcription rates including beta, Yk, fk, fk_mean, fk_var, betas,
+A list of transcription rates including beta, Yk, fk, fk_mean,
+fk_var, betas,
 likelihoods and phi
 }
 \description{

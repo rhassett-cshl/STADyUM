@@ -4,14 +4,19 @@
 #' @title Process bigwigs
 #'
 #' @description
-#' Creates GRanges object with strand information and counts set to single basepair resolution and
-#' absolute value. Keeps only standard chromosome information and excludes count regions set to 0.
+#' Creates GRanges object with strand information and counts set to single
+#' basepair resolution and
+#' absolute value. Keeps only standard chromosome information and excludes
+#' count regions set to 0.
 #'
-#' @param bw \code{\link[GenomicRanges]{GRanges-class}} object representing pro-seq counts
-#' @param strand a string representing if counts are on the plus strand with '+' or the minus
+#' @param bw \code{\link[GenomicRanges]{GRanges-class}} object representing
+#' pro-seq counts
+#' @param strand a string representing if counts are on the plus strand with 
+#' +' or the minus
 #' strand with '-'
 #'
-#' @return A \code{\link[GenomicRanges]{GenomicRanges-class}} object with single basepair
+#' @return A \code{\link[GenomicRanges]{GenomicRanges-class}} object with
+#' single basepair
 #' resolution
 #'
 #' @rdname process_bw
@@ -41,7 +46,8 @@ process_bw <- function(bw, strand) {
 #' @title Summarize Bigwigs
 #'
 #' @description
-#' Creates GRanges object with column of read counts summarized over regions of genes
+#' Creates GRanges object with column of read counts summarized over regions of
+#' genes
 #'
 #' @param bw \code{\link[GenomicRanges]{GRanges-class}} object of read counts
 #' @param grng \code{\link[GenomicRanges]{GRanges-class}} object of regions to
@@ -75,11 +81,12 @@ get_likelihood <- function(beta, chi, Xk, Yk, fk) {
     idx_1 <- fk != 0
     idx_2 <- 1 - fk != 0
     likelihood <- -t * log(beta) - chi / beta +
-        sum(Yk[idx_1] * log(fk[idx_1])) + sum((Xk - Yk)[idx_2] * log(1 - fk[idx_2]))
+        sum(Yk[idx_1] * log(fk[idx_1])) + sum((Xk - Yk)[idx_2] * 
+        log(1 - fk[idx_2]))
     return(likelihood)
 }
 
-############################ functions for adapted model ############################
+######## functions for adapted model #########
 # model allows pause sites to vary across cells
 # EM doesn't include phi estimates
 # functions for EM based on Gaussian distributed k
@@ -110,7 +117,8 @@ pause_escape_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax) {
 
     beta <- chi_hat / t
 
-    return(list("beta" = beta, "fk" = fk, "fk_mean" = fk_mean, "fk_var" = fk_var))
+    return(list("beta" = beta, "fk" = fk, "fk_mean" = fk_mean, 
+    "fk_var" = fk_var))
 }
 
 #' @title Pause Escape Expectation Maximization
@@ -119,21 +127,24 @@ pause_escape_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax) {
 #' Estimate transcription rates with varying pause sites.
 #'
 #' @param fk_int a list of the initial pause site values
-#' @param Xk a numeric vector of read counts on each position within the pause peak
+#' @param Xk a numeric vector of read counts on each position within the 
+#' pause peak
 #' @param kmin an integer for lower bound of pause sites
 #' @param kmax an integer for upper bound of pause sites
 #' @param beta_int a list of initialized beta estimates
 #' @param chi_hat a numeric for read count chi estimate
 #' @param max_itr an integer for the maximum iterations. Default is 100.
-#' @param tor Tolerance value to determine when to stop iterating. Default is 1e-3
+#' @param tor Tolerance value to determine when to stop iterating. 
+#' Default is 1e-3
 #'
-#' @return A list of transcription rates including beta, Yk, fk, fk_mean, fk_var, betas,
+#' @return A list of transcription rates including beta, Yk, fk, fk_mean,
+#' fk_var, betas,
 #' likelihoods and phi
 #'
 #' @rdname pause_escape_EM
 #' @export
-pause_escape_EM <- function(fk_int, Xk, kmin, kmax, beta_int, chi_hat, max_itr = 100,
-                            tor = 1e-3) {
+pause_escape_EM <- function(fk_int, Xk, kmin, kmax, beta_int, chi_hat, 
+max_itr = 100, tor = 1e-3) {
     # lists to record changes of likelihood and betas in iterations
     betas <- list()
     likelihoods <- list()
@@ -143,16 +154,19 @@ pause_escape_EM <- function(fk_int, Xk, kmin, kmax, beta_int, chi_hat, max_itr =
     for (i in seq_len(max_itr)) {
         if (i == 1) {
             Yk <- get_expectation(fk_int, Xk, beta_int)
-            hats <- pause_escape_maximization(chi_hat, Xk, Yk, fk_int, kmin, kmax)
+            hats <- pause_escape_maximization(chi_hat, Xk, Yk, fk_int, kmin,
+            kmax)
             beta <- beta_int
         }
         if (i != 1) {
             Yk <- get_expectation(hats$fk, Xk, hats$beta)
-            hats <- pause_escape_maximization(chi_hat, Xk, Yk, hats$fk, kmin, kmax)
+            hats <- pause_escape_maximization(chi_hat, Xk, Yk, hats$fk, kmin,
+            kmax)
         }
 
         likelihoods[[i]] <-
-            get_likelihood(beta = hats$beta, chi = chi_hat, Xk = Xk, Yk = Yk, fk = hats$fk)
+            get_likelihood(beta = hats$beta, chi = chi_hat, Xk = Xk, Yk = Yk,
+            fk = hats$fk)
 
         betas[[i]] <- hats$beta
 
@@ -179,15 +193,17 @@ pause_escape_EM <- function(fk_int, Xk, kmin, kmax, beta_int, chi_hat, max_itr =
     ))
 }
 
-############################ functions for steric hindrance ############################
-# model allows both varied pause sites and steric hindrance, EM contains phi estimations
+######## functions for steric hindrance #########
+# model allows both varied pause sites and steric hindrance, EM contains phi
+# estimations
 # functions for EM based on Gaussian distributed k
 mult.RNAP.phi <-
     function(alpha, beta, f1, f2) {
         return(
             (1 - f1 - f2) * alpha / (alpha + beta) +
                 f1 * alpha^2 / (alpha^2 + beta^2 + alpha * beta) +
-                f2 * alpha^3 / (beta^2 * alpha + beta^3 + alpha^2 * beta + alpha^3)
+                f2 * alpha^3 / (beta^2 * alpha + beta^3 + alpha^2 * beta +
+                alpha^3)
         )
     }
 
@@ -197,8 +213,9 @@ phi.polynom <- function(phi, beta, omega, f1, f2) {
     return(mult.RNAP.phi(alpha, beta, f1, f2) - phi)
 }
 
-# find phi corresponding to omega and beta by solving polynomial that results from
-# substituting alpha = omega/(1-phi)into the equation that defines phi in terms of alpha and beta
+# find phi corresponding to omega and beta by solving polynomial that results
+# from substituting alpha = omega/(1-phi) into the equation that defines phi in
+# terms of alpha and beta
 mult.RNAP.phi.omega <- function(omega, beta, f1, f2) {
     # set bounds for solution
     lb <- 1e-6
@@ -221,7 +238,8 @@ mult.RNAP.phi.omega <- function(omega, beta, f1, f2) {
         }
     }
 
-    try(phi.root <- uniroot(phi.polynom, c(lb, ub), beta, omega, f1, f2), silent = FALSE)
+    try(phi.root <- uniroot(phi.polynom, c(lb, ub), beta, omega, f1, f2),
+    silent = FALSE)
 
     return(phi.root$root)
 }
@@ -239,7 +257,8 @@ beta.ecll.omega.log <- function(args, omega, chi, t, f1, f2) {
     if (phi <= 0 | phi >= 1) {
         retval <- -Inf
     } else {
-        retval <- -t * log(beta) - chi / beta + (a - 1) * log(phi) + (b - 1) * log(1 - phi)
+        retval <- -t * log(beta) - chi / beta + (a - 1) * log(phi) + (b - 1) *
+        log(1 - phi)
     }
     return(-retval) # minimization!
 }
@@ -261,8 +280,8 @@ beta.M.step.omega <- function(chi, t, f1, f2, oldphi, oldbeta, lambda, zeta) {
     return(list("beta" = beta, "phi" = phi))
 }
 
-steric_hindrance_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax, f1, f2,
-                                    phi, beta, lambda, zeta) {
+steric_hindrance_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax, f1,
+f2, phi, beta, lambda, zeta) {
     t <- sum(Yk)
     u <- sum(Yk * seq(kmin, kmax))
     v <- sum(Yk * seq(kmin, kmax)^2)
@@ -309,10 +328,12 @@ calculate_f <- function(s, k) {
 #' @title Steric Hindrance Expectation-Maximization
 #'
 #' @description
-#' Estimate transcription rates with EM algorithm with varying pause sites and steric hindrance.
+#' Estimate transcription rates with EM algorithm with varying pause sites and
+#' steric hindrance.
 #' Landing pad occupancy is inferred.
 #'
-#' @param Xk a numeric vector of read counts on each position within the pause peak
+#' @param Xk a numeric vector of read counts on each position within the pause
+#' peak
 #' @param kmin an integer for lower bound of pause sites
 #' @param kmax an integer for upper bound of pause sites
 #' @param f1 a numeric
@@ -324,19 +345,18 @@ calculate_f <- function(s, k) {
 #' @param lambda a numeric for zeta scaled
 #' @param zeta a numeric for elongation rate
 #' @param max_itr an integer for the maximum iterations. Default is 100.
-#' @param tor Tolerance value to determine when to stop iterating. Default is 1e-3
+#' @param tor Tolerance value to determine when to stop iterating. Default is
+#' 1e-3
 #'
-#' @return A list of transcription rates including beta, Yk, fk, fk_mean, fk_var,
-#' betas, likelihoods and phi
+#' @return A list of transcription rates including beta, Yk, fk, fk_mean,
+#' fk_var, betas, likelihoods and phi
 #'
 #' @rdname steric_hindrance_EM
 #' @export
-steric_hindrance_EM <- function(Xk, kmin, kmax, f1, f2, fk_int, beta_int, phi_int, chi_hat,
-                                lambda, zeta, max_itr = 100, tor = 1e-3) {
-    # lists to record changes of likelihood and betas in iterations
+steric_hindrance_EM <- function(Xk, kmin, kmax, f1, f2, fk_int, beta_int,
+phi_int, chi_hat, lambda, zeta, max_itr = 100, tor = 1e-3) {
     betas <- list()
     likelihoods <- list()
-    # default flag is normal
     flag <- "normal"
 
     for (i in seq_len(max_itr)) {
@@ -357,7 +377,8 @@ steric_hindrance_EM <- function(Xk, kmin, kmax, f1, f2, fk_int, beta_int, phi_in
         }
 
         likelihoods[[i]] <-
-            get_likelihood(beta = hats$beta, chi = chi_hat, Xk = Xk, Yk = Yk, fk = hats$fk)
+            get_likelihood(beta = hats$beta, chi = chi_hat, Xk = Xk, Yk = Yk,
+            fk = hats$fk)
 
         betas[[i]] <- hats$beta
 
@@ -382,3 +403,4 @@ steric_hindrance_EM <- function(Xk, kmin, kmax, f1, f2, fk_int, beta_int, phi_in
         "phi" = hats$phi, "flag" = flag
     ))
 }
+

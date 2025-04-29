@@ -126,8 +126,8 @@ estimate_simulation_transcription_rates <-
 
         # set a start coordinate for the simulated gene
         start_point <- 0.99 * 1e6
-        # set lambda according to the read coverage of PRO-seq in the control samples
-        # from Dukler et al. 2017
+        # set lambda according to the read coverage of PRO-seq in the control
+        # samples from Dukler et al. 2017
         lambda <- 102.1
 
         # last step of position matrix
@@ -176,7 +176,8 @@ estimate_simulation_transcription_rates <-
         if (count_rnap) rnap_n_ls <- list()
 
         for (i in seq_len(sample_n)) {
-            sel_cells <- sample(seq_len(total_cell), size = sample_cell, replace = TRUE)
+            sel_cells <- sample(seq_len(total_cell), size = sample_cell,
+            replace = TRUE)
             res_pos <- rnap_pos[, sel_cells]
             # get rid of position 1, which is always 1
             res_pos <- res_pos[-1, ]
@@ -184,7 +185,6 @@ estimate_simulation_transcription_rates <-
                 # get pause sites
                 pause_site <- idx[sel_cells, 1] - 1
                 # generate data mask
-                # stackoverflow.com/questions/47732085/sum-of-some-positions-in-a-row-r
                 res_shape <- dim(res_pos)
                 after_pause_len <- res_shape[1] - pause_site
                 mask_mx <- map2(
@@ -244,7 +244,8 @@ estimate_simulation_transcription_rates <-
                 R = (rc_tss + rc_gb) / sample_cell,
                 # number of RNAPs in the pause peak per cell per gene
                 R_pause = rc_tss / sample_cell,
-                # proportion of landing pad being occupied by RNAP, i.e., empirical phi
+                # proportion of landing pad being occupied by RNAP, i.e.,
+                # empirical phi
                 rnap_prop = rc_landing / sample_cell
             )
 
@@ -258,7 +259,8 @@ estimate_simulation_transcription_rates <-
                     length(kmin:kmax),
                     grng$score[kmin:kmax] / sample_cell * lambda
                 )
-                # first 20bp get removed because they are usually not seen in sequencing
+                # first 20bp get removed because they are usually not seen in
+                # sequencing
                 grng$score[seq_len(20)] <- 0
                 return(grng)
             })
@@ -296,7 +298,8 @@ estimate_simulation_transcription_rates <-
 
         bw_dfs$beta_max_rc <- bw_dfs$chi / map_dbl(bw_dfs$Xk, max)
 
-        ## Adapted model: allows uncertainty in the pause site and steric hindrance
+        ## Adapted model: allows uncertainty in the pause site and steric
+        #  hindrance
         # initialize beta using sum of read counts within pause peak
         bw_dfs$Xk_sum <- vapply(bw_dfs$Xk, sum, numeric(1))
 
@@ -311,7 +314,8 @@ estimate_simulation_transcription_rates <-
         }
 
         bw_dfs$beta_int <- rep(NA, nrow(bw_dfs))
-        bw_dfs$beta_int[valid_indices] <- bw_dfs$chi[valid_indices] / bw_dfs$Xk_sum[valid_indices]
+        bw_dfs$beta_int[valid_indices] <- bw_dfs$chi[valid_indices] /
+        bw_dfs$Xk_sum[valid_indices]
 
         # initialize fk with some reasonable values based on heuristic
         fk_int <- dnorm(kmin:kmax, mean = 50, sd = 100)
@@ -326,7 +330,8 @@ estimate_simulation_transcription_rates <-
             f <- calculate_f(s = spacing, k = k)
             phi_int <- 0.5
             zeta <- 2000 # elongation rate
-            # lambda used for scaling in EM, different from one used to match coverage
+            # lambda used for scaling in EM, different from one used to match
+            # coverage
             lambda1 <- 0.0505 * zeta^2
         }
 
@@ -363,7 +368,8 @@ estimate_simulation_transcription_rates <-
         bw_dfs$fk_mean <- map_dbl(em_ls, "fk_mean", .default = NA)
         bw_dfs$fk_var <- map_dbl(em_ls, "fk_var", .default = NA)
         # calculate Yk / Xk
-        # bw_dfs$proportion_Yk <- vapply(bw_dfs$Yk, sum, numeric(1)) / vapply(bw_dfs$Xk, sum, numeric(1))
+        # bw_dfs$proportion_Yk <- vapply(bw_dfs$Yk, sum, numeric(1)) / vapply
+        # (bw_dfs$Xk, sum, numeric(1))
         bw_dfs$flag <- map_chr(em_ls, "flag", .default = NA)
 
         if (steric_hindrance) bw_dfs$phi <- map_dbl(em_ls, "phi", .default = NA)
@@ -375,7 +381,8 @@ estimate_simulation_transcription_rates <-
         bw_dfs$init_rate <- bw_dfs$R / (bw_dfs$R_pause + bw_dfs$R)
 
         # calculate pause release rate
-        bw_dfs$pause_release_rate <- bw_dfs$R_pause / (bw_dfs$R_pause + bw_dfs$R)
+        bw_dfs$pause_release_rate <- bw_dfs$R_pause / (bw_dfs$R_pause +
+        bw_dfs$R)
 
         # calculate landing pad occupancy
         if (steric_hindrance) {
@@ -668,7 +675,8 @@ setMethod(
 setMethod("show", "simulation_transcription_rates", function(object) {
     # Create a data frame for display
     df <- data.frame(
-        Parameter = c("Number of Trials", "Initiation Rate", "Pause Release Rate", "Steric Hindrance"),
+        Parameter = c("Number of Trials", "Initiation Rate", 
+        "Pause Release Rate", "Steric Hindrance"),
         Value = c(
             get_trial(object),
             round(get_chi(object), 4),

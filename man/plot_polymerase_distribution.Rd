@@ -16,7 +16,8 @@ plot_polymerase_distribution(object, file = NULL, width = 8, height = 6)
 \item{height}{Plot height in inches}
 }
 \value{
-A ggplot object showing the distribution of polymerases across the gene
+A ggplot object showing the distribution of polymerases across the
+gene
 }
 \description{
 Plot polymerase distribution

@@ -11,6 +11,9 @@ save_data_frames(object, dir = "results")
 
 \item{dir}{Directory to save the files (default: "results")}
 }
+\value{
+Outputs a CSV file with the data frames
+}
 \description{
 Save all data frames to CSV files
 }
