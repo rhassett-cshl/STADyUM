@@ -107,8 +107,9 @@ You can enable steric hindrance calculations:
 
 ```{r steric_hindrance}
 # Estimate rates with steric hindrance
-srates_sh <- estimate_simulation_transcription_rates(simpol, 
-steric_hindrance = TRUE)
+srates_sh <- estimate_simulation_transcription_rates(simpol,
+    steric_hindrance = TRUE
+)
 
 # Get steric hindrance values
 phi_sh <- get_phi(srates_sh)

@@ -131,8 +131,10 @@ test_that("filterByCounts works", {
         ),
         gene_body_regions = GenomicRanges::GRanges(
             seqnames = c("chr1", "chr1"),
-            ranges = IRanges::IRanges(start = c(1200, 2200), 
-            width = c(1000, 2000)),
+            ranges = IRanges::IRanges(
+                start = c(1200, 2200),
+                width = c(1000, 2000)
+            ),
             gene_id = c("gene1", "gene2")
         ),
         gene_name_column = "gene_id",

@@ -67,9 +67,11 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
     # based on formula (27) and (28), cancel out M and zeta since they are the
     # same between conditions
     lambda1 <- scale_tbl$control_1 + ifelse(is.na(scale_tbl$control_2), 0,
-    scale_tbl$control_2)
+        scale_tbl$control_2
+    )
     lambda2 <- scale_tbl$treated_1 + ifelse(is.na(scale_tbl$treated_2), 0,
-    scale_tbl$treated_2)
+        scale_tbl$treated_2
+    )
 
     ## LRT for omega ##
     tao1 <- lambda1 / (lambda1 + lambda2)
@@ -84,14 +86,15 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
         )
 
     omega_tbl <- omega_tbl %>%
-        bind_cols(bind_rows(map2(exp_data1$s, exp_data2$s, omega_lrt, 
-        tao1 = tao1, tao2 = tao2)))
+        bind_cols(bind_rows(map2(exp_data1$s, exp_data2$s, omega_lrt,
+            tao1 = tao1, tao2 = tao2
+        )))
 
     omega_tbl <- omega_tbl %>%
         mutate(padj = p.adjust(p, method = "BH"))
 
     ## LRT for beta ##
-    # need to jointly do EM one more time for H0, which assume betas are the 
+    # need to jointly do EM one more time for H0, which assume betas are the
     # same between conditions, initialize fk with some reasonable values based
     # on heuristic
     fk_int <- dnorm(kmin:kmax, mean = 50, sd = 100)
@@ -113,7 +116,7 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
     # here
     chi_hat <- (s1 + s2) / M
     # beta_int <- chi_hat / (t1_h1 + t2_h1)
-    beta_int <- chi_hat / (map_dbl(exp_data1$Xk, sum) 
+    beta_int <- chi_hat / (map_dbl(exp_data1$Xk, sum)
     + map_dbl(exp_data2$Xk, sum))
 
     # chi_hat for control and test sets
@@ -155,7 +158,7 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
             fk_var2 = exp_data2$fk_var,
             # use eq (25) instead of (31) to compute T stats
             t_stats = exp_data1$likelihood + exp_data2$likelihood -
-            h0_likelihood
+                h0_likelihood
         )
 
     # some genes with negative T stats, fix them
@@ -223,8 +226,10 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
     beta_tbl <- bind_rows(beta_tbl[!idx, ], beta_tbl_idx)
 
     beta_tbl <- beta_tbl %>%
-        mutate(p = pchisq(2 * t_stats, df = 1, ncp = 0, lower.tail = FALSE, 
-        log.p = FALSE))
+        mutate(p = pchisq(2 * t_stats,
+            df = 1, ncp = 0, lower.tail = FALSE,
+            log.p = FALSE
+        ))
 
     beta_tbl <- beta_tbl %>% mutate(padj = p.adjust(p, method = "BH"))
 
@@ -258,7 +263,7 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
             outlier.shape = NA, notch = TRUE
         ) +
         stat_compare_means(label.x.npc = "left", label.y = scale_tbl$beta_ymax)
-        +
+    +
         scale_x_discrete(labels = c("beta1" = "Control", "beta2" = "Treated")) +
         labs(x = "", y = expression(log[2] * beta * zeta)) +
         coord_cartesian(ylim = c(scale_tbl$beta_ymin, scale_tbl$beta_ymax)) +
@@ -358,8 +363,10 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
             "beta" = expression(beta),
             "chi" = expression(chi)
         )) +
-        geom_text(aes(label = count), position = position_dodge(width = 0.9),
-        vjust = -0.25) +
+        geom_text(aes(label = count),
+            position = position_dodge(width = 0.9),
+            vjust = -0.25
+        ) +
         labs(x = "", y = "Number of Genes", fill = "Category")
 
     ggsave(file.path(result_dir, "gene_number_with_differential_rates.png"),
@@ -379,8 +386,10 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
         ggplot(aes(x = fk_mean1, y = fk_std1)) +
         geom_pointdensity() +
         scale_color_viridis() +
-        geom_vline(xintercept = c(50, 100), linetype = "dashed", 
-        color = "gray") +
+        geom_vline(
+            xintercept = c(50, 100), linetype = "dashed",
+            color = "gray"
+        ) +
         coord_cartesian(xlim = c(0, 200), ylim = c(0, 70)) +
         labs(x = "Mean of k", y = "SD of k")
 
@@ -388,8 +397,10 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
         ggplot(aes(x = fk_mean2, y = fk_std2)) +
         geom_pointdensity() +
         scale_color_viridis() +
-        geom_vline(xintercept = c(50, 100), linetype = "dashed", 
-        color = "gray") +
+        geom_vline(
+            xintercept = c(50, 100), linetype = "dashed",
+            color = "gray"
+        ) +
         coord_cartesian(xlim = c(0, 200), ylim = c(0, 70)) +
         labs(x = "Mean of k", y = "SD of k")
 
@@ -403,7 +414,8 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
 
     # output tables
     write_csv(omega_tbl %>% select(gene_id, chi1, chi2, lfc, t_stats, padj),
-    file = omega_out)
+        file = omega_out
+    )
     write_csv(beta_tbl %>%
         select(
             gene_id, beta1, beta2, lfc, t_stats, padj,
@@ -414,14 +426,16 @@ likelihood_ratio_test <- function(exp_data1, exp_data2, sc) {
 #' @rdname transcription_rates_lrts-class
 #' @export
 setGeneric("exp_data1", function(object) standardGeneric("exp_data1"))
-setMethod("exp_data1", "transcription_rates_lrts", function(object) 
-slot(object, "exp_data1"))
+setMethod("exp_data1", "transcription_rates_lrts", function(object) {
+    slot(object, "exp_data1")
+})
 
 #' @rdname transcription_rates_lrts-class
 #' @export
 setGeneric("exp_data2", function(object) standardGeneric("exp_data2"))
-setMethod("exp_data2", "transcription_rates_lrts", function(object) 
-slot(object, "exp_data2"))
+setMethod("exp_data2", "transcription_rates_lrts", function(object) {
+    slot(object, "exp_data2")
+})
 
 #' @rdname transcription_rates_lrts-class
 #' @export
@@ -430,5 +444,6 @@ setMethod("sc", "transcription_rates_lrts", function(object) slot(object, "sc"))
 
 #' @rdname transcription_rates_lrts-class
 #' @export
-setGeneric("likelihood_ratio_test", function(exp_data1, exp_data2, sc)
-standardGeneric("likelihood_ratio_test"))
+setGeneric("likelihood_ratio_test", function(exp_data1, exp_data2, sc) {
+    standardGeneric("likelihood_ratio_test")
+})

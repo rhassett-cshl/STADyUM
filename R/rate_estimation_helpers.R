@@ -11,7 +11,7 @@
 #'
 #' @param bw \code{\link[GenomicRanges]{GRanges-class}} object representing
 #' pro-seq counts
-#' @param strand a string representing if counts are on the plus strand with 
+#' @param strand a string representing if counts are on the plus strand with
 #' +' or the minus
 #' strand with '-'
 #'
@@ -68,11 +68,13 @@ summarise_bw <-
         return(rc)
     }
 
+#' @keywords internal
 get_expectation <- function(fk, Xk, beta) {
     Yk <- Xk / (1 - beta + beta / fk)
     return(Yk)
 }
 
+#' @keywords internal
 get_likelihood <- function(beta, chi, Xk, Yk, fk) {
     # part of the original likelihood function associated with beta, Xk and Yk
     # used as criteria to terminate EM
@@ -81,8 +83,8 @@ get_likelihood <- function(beta, chi, Xk, Yk, fk) {
     idx_1 <- fk != 0
     idx_2 <- 1 - fk != 0
     likelihood <- -t * log(beta) - chi / beta +
-        sum(Yk[idx_1] * log(fk[idx_1])) + sum((Xk - Yk)[idx_2] * 
-        log(1 - fk[idx_2]))
+        sum(Yk[idx_1] * log(fk[idx_1])) + sum((Xk - Yk)[idx_2] *
+            log(1 - fk[idx_2]))
     return(likelihood)
 }
 
@@ -90,6 +92,7 @@ get_likelihood <- function(beta, chi, Xk, Yk, fk) {
 # model allows pause sites to vary across cells
 # EM doesn't include phi estimates
 # functions for EM based on Gaussian distributed k
+#' @keywords internal
 pause_escape_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax) {
     # Yk is NaNs
 
@@ -117,8 +120,10 @@ pause_escape_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax) {
 
     beta <- chi_hat / t
 
-    return(list("beta" = beta, "fk" = fk, "fk_mean" = fk_mean, 
-    "fk_var" = fk_var))
+    return(list(
+        "beta" = beta, "fk" = fk, "fk_mean" = fk_mean,
+        "fk_var" = fk_var
+    ))
 }
 
 #' @title Pause Escape Expectation Maximization
@@ -127,14 +132,14 @@ pause_escape_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax) {
 #' Estimate transcription rates with varying pause sites.
 #'
 #' @param fk_int a list of the initial pause site values
-#' @param Xk a numeric vector of read counts on each position within the 
+#' @param Xk a numeric vector of read counts on each position within the
 #' pause peak
 #' @param kmin an integer for lower bound of pause sites
 #' @param kmax an integer for upper bound of pause sites
 #' @param beta_int a list of initialized beta estimates
 #' @param chi_hat a numeric for read count chi estimate
 #' @param max_itr an integer for the maximum iterations. Default is 100.
-#' @param tor Tolerance value to determine when to stop iterating. 
+#' @param tor Tolerance value to determine when to stop iterating.
 #' Default is 1e-3
 #'
 #' @return A list of transcription rates including beta, Yk, fk, fk_mean,
@@ -143,30 +148,35 @@ pause_escape_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax) {
 #'
 #' @rdname pause_escape_EM
 #' @export
-pause_escape_EM <- function(fk_int, Xk, kmin, kmax, beta_int, chi_hat, 
-max_itr = 100, tor = 1e-3) {
-    # lists to record changes of likelihood and betas in iterations
+pause_escape_EM <- function(
+    fk_int, Xk, kmin, kmax, beta_int, chi_hat,
+    max_itr = 100, tor = 1e-3) {
     betas <- list()
     likelihoods <- list()
-    # default flag is normal
     flag <- "normal"
 
     for (i in seq_len(max_itr)) {
         if (i == 1) {
             Yk <- get_expectation(fk_int, Xk, beta_int)
-            hats <- pause_escape_maximization(chi_hat, Xk, Yk, fk_int, kmin,
-            kmax)
+            hats <- pause_escape_maximization(
+                chi_hat, Xk, Yk, fk_int, kmin,
+                kmax
+            )
             beta <- beta_int
         }
         if (i != 1) {
             Yk <- get_expectation(hats$fk, Xk, hats$beta)
-            hats <- pause_escape_maximization(chi_hat, Xk, Yk, hats$fk, kmin,
-            kmax)
+            hats <- pause_escape_maximization(
+                chi_hat, Xk, Yk, hats$fk, kmin,
+                kmax
+            )
         }
 
         likelihoods[[i]] <-
-            get_likelihood(beta = hats$beta, chi = chi_hat, Xk = Xk, Yk = Yk,
-            fk = hats$fk)
+            get_likelihood(
+                beta = hats$beta, chi = chi_hat, Xk = Xk, Yk = Yk,
+                fk = hats$fk
+            )
 
         betas[[i]] <- hats$beta
 
@@ -184,8 +194,6 @@ max_itr = 100, tor = 1e-3) {
 
     if (i == max_itr) flag <- "max_iteration"
 
-    # message("Done!")
-
     return(list(
         "beta" = hats$beta, "Yk" = Yk, "fk" = hats$fk,
         "fk_mean" = hats$fk_mean, "fk_var" = hats$fk_var,
@@ -197,16 +205,18 @@ max_itr = 100, tor = 1e-3) {
 # model allows both varied pause sites and steric hindrance, EM contains phi
 # estimations
 # functions for EM based on Gaussian distributed k
+#' @keywords internal
 mult.RNAP.phi <-
     function(alpha, beta, f1, f2) {
         return(
             (1 - f1 - f2) * alpha / (alpha + beta) +
                 f1 * alpha^2 / (alpha^2 + beta^2 + alpha * beta) +
                 f2 * alpha^3 / (beta^2 * alpha + beta^3 + alpha^2 * beta +
-                alpha^3)
+                    alpha^3)
         )
     }
 
+#' @keywords internal
 phi.polynom <- function(phi, beta, omega, f1, f2) {
     alpha <- omega / (1 - phi)
 
@@ -216,6 +226,7 @@ phi.polynom <- function(phi, beta, omega, f1, f2) {
 # find phi corresponding to omega and beta by solving polynomial that results
 # from substituting alpha = omega/(1-phi) into the equation that defines phi in
 # terms of alpha and beta
+#' @keywords internal
 mult.RNAP.phi.omega <- function(omega, beta, f1, f2) {
     # set bounds for solution
     lb <- 1e-6
@@ -239,12 +250,14 @@ mult.RNAP.phi.omega <- function(omega, beta, f1, f2) {
     }
 
     try(phi.root <- uniroot(phi.polynom, c(lb, ub), beta, omega, f1, f2),
-    silent = FALSE)
+        silent = FALSE
+    )
 
     return(phi.root$root)
 }
 
 # version of above that uses log parameterization of beta
+#' @keywords internal
 beta.ecll.omega.log <- function(args, omega, chi, t, f1, f2) {
     beta <- exp(args[1])
 
@@ -258,11 +271,12 @@ beta.ecll.omega.log <- function(args, omega, chi, t, f1, f2) {
         retval <- -Inf
     } else {
         retval <- -t * log(beta) - chi / beta + (a - 1) * log(phi) + (b - 1) *
-        log(1 - phi)
+            log(1 - phi)
     }
     return(-retval) # minimization!
 }
 
+#' @keywords internal
 beta.M.step.omega <- function(chi, t, f1, f2, oldphi, oldbeta, lambda, zeta) {
     omega <- chi * zeta / lambda # this will be const; could just be passed in
     ret <- list("par" = NA_integer_)
@@ -280,8 +294,10 @@ beta.M.step.omega <- function(chi, t, f1, f2, oldphi, oldbeta, lambda, zeta) {
     return(list("beta" = beta, "phi" = phi))
 }
 
-steric_hindrance_maximization <- function(chi_hat, Xk, Yk, fk, kmin, kmax, f1,
-f2, phi, beta, lambda, zeta) {
+#' @keywords internal
+steric_hindrance_maximization <- function(
+    chi_hat, Xk, Yk, fk, kmin, kmax, f1,
+    f2, phi, beta, lambda, zeta) {
     t <- sum(Yk)
     u <- sum(Yk * seq(kmin, kmax))
     v <- sum(Yk * seq(kmin, kmax)^2)
@@ -314,6 +330,7 @@ f2, phi, beta, lambda, zeta) {
     ))
 }
 
+#' @keywords internal
 calculate_f <- function(s, k) {
     # sd is set as 25 here
     x <- round(rnorm(1e7, mean = k, sd = 25))
@@ -353,8 +370,9 @@ calculate_f <- function(s, k) {
 #'
 #' @rdname steric_hindrance_EM
 #' @export
-steric_hindrance_EM <- function(Xk, kmin, kmax, f1, f2, fk_int, beta_int,
-phi_int, chi_hat, lambda, zeta, max_itr = 100, tor = 1e-3) {
+steric_hindrance_EM <- function(
+    Xk, kmin, kmax, f1, f2, fk_int, beta_int,
+    phi_int, chi_hat, lambda, zeta, max_itr = 100, tor = 1e-3) {
     betas <- list()
     likelihoods <- list()
     flag <- "normal"
@@ -377,8 +395,10 @@ phi_int, chi_hat, lambda, zeta, max_itr = 100, tor = 1e-3) {
         }
 
         likelihoods[[i]] <-
-            get_likelihood(beta = hats$beta, chi = chi_hat, Xk = Xk, Yk = Yk,
-            fk = hats$fk)
+            get_likelihood(
+                beta = hats$beta, chi = chi_hat, Xk = Xk, Yk = Yk,
+                fk = hats$fk
+            )
 
         betas[[i]] <- hats$beta
 
@@ -403,4 +423,3 @@ phi_int, chi_hat, lambda, zeta, max_itr = 100, tor = 1e-3) {
         "phi" = hats$phi, "flag" = flag
     ))
 }
-

@@ -4,6 +4,7 @@
 #' @param object a \code{simulation_transcription_rates} object
 #'
 #' @return TRUE if valid, else errors
+#' @keywords internal
 simulation_transcription_rates_valid <- function(object) {
     errors <- character()
 
@@ -176,8 +177,10 @@ estimate_simulation_transcription_rates <-
         if (count_rnap) rnap_n_ls <- list()
 
         for (i in seq_len(sample_n)) {
-            sel_cells <- sample(seq_len(total_cell), size = sample_cell,
-            replace = TRUE)
+            sel_cells <- sample(seq_len(total_cell),
+                size = sample_cell,
+                replace = TRUE
+            )
             res_pos <- rnap_pos[, sel_cells]
             # get rid of position 1, which is always 1
             res_pos <- res_pos[-1, ]
@@ -217,6 +220,7 @@ estimate_simulation_transcription_rates <-
             rm(res_pos, res_all)
         }
 
+        #' @keywords internal
         summarise_bw <- function(bw, grng) {
             rc <- grng %>%
                 plyranges::group_by_overlaps(bw) %>%
@@ -315,7 +319,7 @@ estimate_simulation_transcription_rates <-
 
         bw_dfs$beta_int <- rep(NA, nrow(bw_dfs))
         bw_dfs$beta_int[valid_indices] <- bw_dfs$chi[valid_indices] /
-        bw_dfs$Xk_sum[valid_indices]
+            bw_dfs$Xk_sum[valid_indices]
 
         # initialize fk with some reasonable values based on heuristic
         fk_int <- dnorm(kmin:kmax, mean = 50, sd = 100)
@@ -382,7 +386,7 @@ estimate_simulation_transcription_rates <-
 
         # calculate pause release rate
         bw_dfs$pause_release_rate <- bw_dfs$R_pause / (bw_dfs$R_pause +
-        bw_dfs$R)
+            bw_dfs$R)
 
         # calculate landing pad occupancy
         if (steric_hindrance) {
@@ -675,8 +679,10 @@ setMethod(
 setMethod("show", "simulation_transcription_rates", function(object) {
     # Create a data frame for display
     df <- data.frame(
-        Parameter = c("Number of Trials", "Initiation Rate", 
-        "Pause Release Rate", "Steric Hindrance"),
+        Parameter = c(
+            "Number of Trials", "Initiation Rate",
+            "Pause Release Rate", "Steric Hindrance"
+        ),
         Value = c(
             get_trial(object),
             round(get_chi(object), 4),

@@ -15,3 +15,4 @@ TRUE if valid, else errors
 \description{
 Checks that a \code{simulation_transcription_rates} object is valid
 }
+\keyword{internal}

@@ -1,4 +1,4 @@
-# Validation function for vector/matrix dimensions
+#' @keywords internal
 simulate_polymerase_valid <- function(object) {
     errors <- character()
 
@@ -12,8 +12,8 @@ simulate_polymerase_valid <- function(object) {
     # if (length(object@combined_cells_data) != object@gene_len + 1) {
     # errors <- c(errors, "combined_cells_data length must match gene_len + 1")
     # }
-    if (ncol(position_matrix(object)) != cell_num(object) || 
-    nrow(position_matrix(object)) != gene_len(object) + 1) {
+    if (ncol(position_matrix(object)) != cell_num(object) ||
+        nrow(position_matrix(object)) != gene_len(object) + 1) {
         errors <- c(errors, "position_matrix dimensions do not match cell_num
         and gene_len")
     }
@@ -21,11 +21,11 @@ simulate_polymerase_valid <- function(object) {
     if (length(errors) == 0) TRUE else errors
 }
 
-# Helper function for parameter validation
-validate_simulate_polymerase_params <- function(k, ksd, k_min, k_max, gene_len,
-    alpha, beta, zeta, zeta_sd, zeta_min, zeta_max, cell_num, pol_size, 
+#' @keywords internal
+validate_simulate_polymerase_params <- function(
+    k, ksd, k_min, k_max, gene_len,
+    alpha, beta, zeta, zeta_sd, zeta_min, zeta_max, cell_num, pol_size,
     add_space, time, steps_to_record) {
-    
     errors <- character()
 
     # Check parameter ranges
@@ -123,9 +123,9 @@ validate_simulate_polymerase_params <- function(k, ksd, k_min, k_max, gene_len,
 methods::setClass("simulate_polymerase",
     slots = c(
         k = "integer", ksd = "numeric", k_min = "integer", k_max = "integer",
-        gene_len = "integer", alpha = "numeric", beta = "numeric", 
-        zeta = "numeric", zeta_sd = "numeric", zeta_min = "numeric", 
-        zeta_max = "numeric", cell_num = "integer", pol_size = "integer", 
+        gene_len = "integer", alpha = "numeric", beta = "numeric",
+        zeta = "numeric", zeta_sd = "numeric", zeta_min = "numeric",
+        zeta_max = "numeric", cell_num = "integer", pol_size = "integer",
         add_space = "integer", time = "numeric", delta_t = "numeric",
         steps_to_record = "integer", pause_sites = "numeric",
         probability_vector = "numeric", combined_cells_data = "integer",
@@ -145,24 +145,27 @@ setMethod("pause_sites", "simulate_polymerase", function(object) {
 
 #' @rdname simulate_polymerase-class
 #' @export
-setGeneric("probability_vector", function(object) 
-standardGeneric("probability_vector"))
+setGeneric("probability_vector", function(object) {
+    standardGeneric("probability_vector")
+})
 setMethod("probability_vector", "simulate_polymerase", function(object) {
     slot(object, "probability_vector")
 })
 
 #' @rdname simulate_polymerase-class
 #' @export
-setGeneric("combined_cells_data", function(object) 
-standardGeneric("combined_cells_data"))
+setGeneric("combined_cells_data", function(object) {
+    standardGeneric("combined_cells_data")
+})
 setMethod("combined_cells_data", "simulate_polymerase", function(object) {
     slot(object, "combined_cells_data")
 })
 
 #' @rdname simulate_polymerase-class
 #' @export
-setGeneric("position_matrix", function(object) 
-standardGeneric("position_matrix"))
+setGeneric("position_matrix", function(object) {
+    standardGeneric("position_matrix")
+})
 setMethod("position_matrix", "simulate_polymerase", function(object) {
     slot(object, "position_matrix")
 })
@@ -197,8 +200,9 @@ setMethod("get_parameters", "simulate_polymerase", function(object) {
 #' @param object A simulate_polymerase object
 #' @return A data frame with cell numbers and their pause sites
 #' @export
-setGeneric("get_pause_sites_df", function(object) 
-standardGeneric("get_pause_sites_df"))
+setGeneric("get_pause_sites_df", function(object) {
+    standardGeneric("get_pause_sites_df")
+})
 setMethod("get_pause_sites_df", "simulate_polymerase", function(object) {
     data.frame(
         cell = seq_len(object@cell_num),
@@ -210,8 +214,9 @@ setMethod("get_pause_sites_df", "simulate_polymerase", function(object) {
 #' @param object A simulate_polymerase object
 #' @return A data frame with positions and their transition probabilities
 #' @export
-setGeneric("get_probability_df", function(object) 
-standardGeneric("get_probability_df"))
+setGeneric("get_probability_df", function(object) {
+    standardGeneric("get_probability_df")
+})
 setMethod("get_probability_df", "simulate_polymerase", function(object) {
     data.frame(
         position = 0:object@gene_len,
@@ -223,8 +228,9 @@ setMethod("get_probability_df", "simulate_polymerase", function(object) {
 #' @param object A simulate_polymerase object
 #' @return A data frame with positions and their polymerase counts
 #' @export
-setGeneric("get_polymerase_counts_df", function(object) 
-standardGeneric("get_polymerase_counts_df"))
+setGeneric("get_polymerase_counts_df", function(object) {
+    standardGeneric("get_polymerase_counts_df")
+})
 setMethod("get_polymerase_counts_df", "simulate_polymerase", function(object) {
     data.frame(
         position = 0:object@gene_len,
@@ -236,8 +242,9 @@ setMethod("get_polymerase_counts_df", "simulate_polymerase", function(object) {
 #' @param object A simulate_polymerase object
 #' @return A data frame with cell, position, and polymerase presence
 #' @export
-setGeneric("get_position_df", function(object) 
-standardGeneric("get_position_df"))
+setGeneric("get_position_df", function(object) {
+    standardGeneric("get_position_df")
+})
 setMethod("get_position_df", "simulate_polymerase", function(object) {
     df <- melt(object@position_matrix)
     colnames(df) <- c("cell", "position", "polymerase_present")
@@ -250,33 +257,38 @@ setMethod("get_position_df", "simulate_polymerase", function(object) {
 #' @param file Optional file path to save the plot
 #' @param width Plot width in inches
 #' @param height Plot height in inches
-#' @return A ggplot object showing the distribution of polymerases across the 
+#' @return A ggplot object showing the distribution of polymerases across the
 #' gene
 #' @export
-setGeneric("plot_polymerase_distribution", function(object, file = NULL, 
-width = 8, height = 6) standardGeneric("plot_polymerase_distribution"))
-setMethod("plot_polymerase_distribution", "simulate_polymerase", 
-function(object, file = NULL, width = 8, height = 6) {
-    df <- data.frame(
-        position = 0:object@gene_len,
-        count = object@combined_cells_data
-    )
-
-    p <- ggplot(df, aes(x = position, y = count)) +
-        geom_line() +
-        theme_minimal() +
-        labs(
-            title = "Polymerase Distribution Across Gene",
-            x = "Position",
-            y = "Number of Polymerases"
+setGeneric("plot_polymerase_distribution", function(
+    object, file = NULL,
+    width = 8, height = 6) {
+    standardGeneric("plot_polymerase_distribution")
+})
+setMethod(
+    "plot_polymerase_distribution", "simulate_polymerase",
+    function(object, file = NULL, width = 8, height = 6) {
+        df <- data.frame(
+            position = 0:object@gene_len,
+            count = object@combined_cells_data
         )
 
-    if (!is.null(file)) {
-        ggsave(file, p, width = width, height = height)
-    }
+        p <- ggplot(df, aes(x = position, y = count)) +
+            geom_line() +
+            theme_minimal() +
+            labs(
+                title = "Polymerase Distribution Across Gene",
+                x = "Position",
+                y = "Number of Polymerases"
+            )
 
-    return(p)
-})
+        if (!is.null(file)) {
+            ggsave(file, p, width = width, height = height)
+        }
+
+        return(p)
+    }
+)
 
 #' Plot pause site distribution
 #' @param object A simulate_polymerase object
@@ -285,10 +297,14 @@ function(object, file = NULL, width = 8, height = 6) {
 #' @param height Plot height in inches
 #' @return A ggplot object showing the distribution of pause sites
 #' @export
-setGeneric("plot_pause_sites", function(object, file = NULL, width = 8, 
-height = 6) standardGeneric("plot_pause_sites"))
-setMethod("plot_pause_sites", "simulate_polymerase", function(object, 
-file = NULL, width = 8, height = 6) {
+setGeneric("plot_pause_sites", function(
+    object, file = NULL, width = 8,
+    height = 6) {
+    standardGeneric("plot_pause_sites")
+})
+setMethod("plot_pause_sites", "simulate_polymerase", function(
+    object,
+    file = NULL, width = 8, height = 6) {
     df <- data.frame(
         cell = seq_len(object@cell_num),
         pause_site = object@pause_sites
@@ -317,30 +333,35 @@ file = NULL, width = 8, height = 6) {
 #' @param height Plot height in inches
 #' @return A ggplot object showing the transition probabilities across the gene
 #' @export
-setGeneric("plot_transition_probabilities", function(object, file = NULL, 
-width = 8, height = 6) standardGeneric("plot_transition_probabilities"))
-setMethod("plot_transition_probabilities", "simulate_polymerase", 
-function(object, file = NULL, width = 8, height = 6) {
-    df <- data.frame(
-        position = 0:object@gene_len,
-        probability = object@probability_vector
-    )
-
-    p <- ggplot(df, aes(x = position, y = probability)) +
-        geom_line() +
-        theme_minimal() +
-        labs(
-            title = "Transition Probabilities Across Gene",
-            x = "Position",
-            y = "Transition Probability"
+setGeneric("plot_transition_probabilities", function(
+    object, file = NULL,
+    width = 8, height = 6) {
+    standardGeneric("plot_transition_probabilities")
+})
+setMethod(
+    "plot_transition_probabilities", "simulate_polymerase",
+    function(object, file = NULL, width = 8, height = 6) {
+        df <- data.frame(
+            position = 0:object@gene_len,
+            probability = object@probability_vector
         )
 
-    if (!is.null(file)) {
-        ggsave(file, p, width = width, height = height)
-    }
+        p <- ggplot(df, aes(x = position, y = probability)) +
+            geom_line() +
+            theme_minimal() +
+            labs(
+                title = "Transition Probabilities Across Gene",
+                x = "Position",
+                y = "Transition Probability"
+            )
 
-    return(p)
-})
+        if (!is.null(file)) {
+            ggsave(file, p, width = width, height = height)
+        }
+
+        return(p)
+    }
+)
 
 #' Plot position matrix heatmap
 #' @param object A simulate_polymerase object
@@ -349,10 +370,14 @@ function(object, file = NULL, width = 8, height = 6) {
 #' @param height Plot height in inches
 #' @return A ggplot object showing the position matrix as a heatmap
 #' @export
-setGeneric("plot_position_matrix", function(object, file = NULL, width = 8,
-height = 6) standardGeneric("plot_position_matrix"))
-setMethod("plot_position_matrix", "simulate_polymerase", function(object, 
-file = NULL, width = 8, height = 6) {
+setGeneric("plot_position_matrix", function(
+    object, file = NULL, width = 8,
+    height = 6) {
+    standardGeneric("plot_position_matrix")
+})
+setMethod("plot_position_matrix", "simulate_polymerase", function(
+    object,
+    file = NULL, width = 8, height = 6) {
     df <- melt(object@position_matrix)
     colnames(df) <- c("Cell", "Position", "Value")
 
@@ -378,28 +403,39 @@ file = NULL, width = 8, height = 6) {
 #' @param dir Directory to save the files (default: "results")
 #' @return Outputs a CSV file with the data frames
 #' @export
-setGeneric("save_data_frames", function(object, dir = "results") 
-standardGeneric("save_data_frames"))
-setMethod("save_data_frames", "simulate_polymerase", function(object, 
-dir = "results") {
+setGeneric("save_data_frames", function(object, dir = "results") {
+    standardGeneric("save_data_frames")
+})
+setMethod("save_data_frames", "simulate_polymerase", function(
+    object,
+    dir = "results") {
     # Create directory if it doesn't exist
     if (!dir.exists(dir)) {
         dir.create(dir, recursive = TRUE)
     }
 
     # Save each data frame
-    write.csv(get_pause_sites_df(object), 
-    file.path(dir, "pause_sites.csv"), row.names = FALSE)
-    write.csv(get_probability_df(object), file.path(dir,
-    "transition_probabilities.csv"), row.names = FALSE)
-    write.csv(get_polymerase_counts_df(object), file.path(dir,
-    "polymerase_counts.csv"), row.names = FALSE)
+    write.csv(get_pause_sites_df(object),
+        file.path(dir, "pause_sites.csv"),
+        row.names = FALSE
+    )
+    write.csv(get_probability_df(object), file.path(
+        dir,
+        "transition_probabilities.csv"
+    ), row.names = FALSE)
+    write.csv(get_polymerase_counts_df(object), file.path(
+        dir,
+        "polymerase_counts.csv"
+    ), row.names = FALSE)
     write.csv(get_position_df(object), file.path(dir, "position_matrix.csv"),
-    row.names = FALSE)
+        row.names = FALSE
+    )
 
     # Save parameters
-    write.csv(as.data.frame(get_parameters(object)), file.path(dir, 
-    "parameters.csv"), row.names = TRUE)
+    write.csv(as.data.frame(get_parameters(object)), file.path(
+        dir,
+        "parameters.csv"
+    ), row.names = TRUE)
 })
 
 #' Save all plots to files
@@ -409,38 +445,52 @@ dir = "results") {
 #' @param height Plot height in inches
 #' @return Outputs directory where plots were saved to pdf files
 #' @export
-setGeneric("save_plots", function(object, dir = "results", width = 8, 
-height = 6) standardGeneric("save_plots"))
-setMethod("save_plots", "simulate_polymerase", function(object, 
-dir = "results", width = 8, height = 6) {
+setGeneric("save_plots", function(
+    object, dir = "results", width = 8,
+    height = 6) {
+    standardGeneric("save_plots")
+})
+setMethod("save_plots", "simulate_polymerase", function(
+    object,
+    dir = "results", width = 8, height = 6) {
     # Create directory if it doesn't exist
     if (!dir.exists(dir)) {
         dir.create(dir, recursive = TRUE)
     }
 
     # Save each plot
-    plot_polymerase_distribution(object, file.path(dir,
-    "polymerase_distribution.pdf"), width, height)
-    plot_pause_sites(object, file.path(dir, "pause_sites_distribution.pdf"),
-    width, height)
-    plot_transition_probabilities(object, file.path(dir,
-    "transition_probabilities.pdf"), width, height)
-    plot_position_matrix(object, file.path(dir, "position_matrix.pdf"), width,
-    height)
+    plot_polymerase_distribution(object, file.path(
+        dir,
+        "polymerase_distribution.pdf"
+    ), width, height)
+    plot_pause_sites(
+        object, file.path(dir, "pause_sites_distribution.pdf"),
+        width, height
+    )
+    plot_transition_probabilities(object, file.path(
+        dir,
+        "transition_probabilities.pdf"
+    ), width, height)
+    plot_position_matrix(
+        object, file.path(dir, "position_matrix.pdf"), width,
+        height
+    )
 })
 
 
 #' @name simulate_polymerase
 #' @rdname simulate_polymerase-class
 #' @export
-simulate_polymerase <- function(k, ksd, k_min, k_max, gene_len,
-    alpha, beta, zeta, zeta_sd, zeta_min, zeta_max, cell_num, pol_size, 
+simulate_polymerase <- function(
+    k, ksd, k_min, k_max, gene_len,
+    alpha, beta, zeta, zeta_sd, zeta_min, zeta_max, cell_num, pol_size,
     add_space, time, steps_to_record) {
-    
     # Validate parameters
-    validate_simulate_polymerase_params(k, ksd, k_min, k_max, gene_len,
+    validate_simulate_polymerase_params(
+        k, ksd, k_min, k_max, gene_len,
         alpha, beta, zeta, zeta_sd, zeta_min, zeta_max, cell_num, pol_size,
-        add_space, time, steps_to_record)
+        add_space, time, steps_to_record
+    )
 
     # Call the C++ function
     result <- simulate_polymerase_cpp(
@@ -485,12 +535,15 @@ simulate_polymerase <- function(k, ksd, k_min, k_max, gene_len,
 
 #' Sample read counts from a simulate_polymerase object
 #' @param object A simulate_polymerase object
-#' @param read_density A numeric value for the read density within gene body in 
+#' @param read_density A numeric value for the read density within gene body in
 #' Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
 #' @return The read count per nucleotide value
 #' @export
-setGeneric("sample_read_counts_per_nucleotide", function(object, 
-read_density = 0.0489) standardGeneric("sample_read_counts_per_nucleotide"))
+setGeneric("sample_read_counts_per_nucleotide", function(
+    object,
+    read_density = 0.0489) {
+    standardGeneric("sample_read_counts_per_nucleotide")
+})
 setMethod("sample_read_counts_per_nucleotide", "simulate_polymerase", function
 (object, read_density = 0.0489) {
     cell_num <- object@cell_num
@@ -508,7 +561,7 @@ setMethod("sample_read_counts_per_nucleotide", "simulate_polymerase", function
 
     # If we assume the read counts following a Poisson distribution, we can
     # then sample the read counts with mean equals to the RNAP frequency
-    # multiplied by lambda. 
+    # multiplied by lambda.
 
     # TODO: handle case if lambda is INF because sum is 0
     lambda <- read_density / (sum(total_rnap[(k_max + 1):N]) / (L * cell_num))
@@ -533,23 +586,28 @@ setMethod("sample_read_counts_per_nucleotide", "simulate_polymerase", function
 #' _Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
 #' @return The read count per nucleotide value
 #' @export
-setGeneric("sample_gene_body_avg_read_density", function(object, 
-read_density = 0.0489) standardGeneric("sample_gene_body_avg_read_density"))
-setMethod("sample_gene_body_avg_read_density", "simulate_polymerase", 
-function(object, read_density = 0.0489) {
-    cell_num <- object@cell_num
-    k_max <- object@k_max
-    total_rnap <- object@combined_cells_data
-
-    N <- length(total_rnap)
-    L <- N - k_max
-
-    sim_avg_read_density <- sum(total_rnap[(k_max + 1):N]) / L
-
-    object@avg_read_density <- sim_avg_read_density
-
-    return(sim_avg_read_density)
+setGeneric("sample_gene_body_avg_read_density", function(
+    object,
+    read_density = 0.0489) {
+    standardGeneric("sample_gene_body_avg_read_density")
 })
+setMethod(
+    "sample_gene_body_avg_read_density", "simulate_polymerase",
+    function(object, read_density = 0.0489) {
+        cell_num <- object@cell_num
+        k_max <- object@k_max
+        total_rnap <- object@combined_cells_data
+
+        N <- length(total_rnap)
+        L <- N - k_max
+
+        sim_avg_read_density <- sum(total_rnap[(k_max + 1):N]) / L
+
+        object@avg_read_density <- sim_avg_read_density
+
+        return(sim_avg_read_density)
+    }
+)
 
 #' @rdname simulate_polymerase-class
 #' @export
@@ -575,28 +633,33 @@ setMethod("show", "simulate_polymerase", function(object) {
 
 #' @rdname simulate_polymerase-class
 #' @export
-setGeneric("plot_probability", function(object) 
-standardGeneric("plot_probability"))
+setGeneric("plot_probability", function(object) {
+    standardGeneric("plot_probability")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
-setGeneric("plot_combined_cells", function(object) 
-standardGeneric("plot_combined_cells"))
+setGeneric("plot_combined_cells", function(object) {
+    standardGeneric("plot_combined_cells")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
-setGeneric("plot_avg_read_density", function(object)
-standardGeneric("plot_avg_read_density"))
+setGeneric("plot_avg_read_density", function(object) {
+    standardGeneric("plot_avg_read_density")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
-setGeneric("simulate_read_counts", function(object) 
-standardGeneric("simulate_read_counts"))
+setGeneric("simulate_read_counts", function(object) {
+    standardGeneric("simulate_read_counts")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
-setGeneric("simulate_avg_read_density", function(object) 
-standardGeneric("simulate_avg_read_density"))
+setGeneric("simulate_avg_read_density", function(object) {
+    standardGeneric("simulate_avg_read_density")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
@@ -655,13 +718,13 @@ setMethod("simulate_read_counts", "simulate_polymerase", function(object) {
     cell_num <- cell_num(object)
     k_max <- k_max(object)
     total_rnap <- combined_cells_data(object)
-    
+
     # Calculate read counts per nucleotide
     rc_per_nt <- total_rnap / cell_num
-    
+
     # Store read counts in object
     slot(object, "read_counts") <- rc_per_nt
-    
+
     return(object)
 })
 
@@ -671,13 +734,13 @@ setMethod("simulate_avg_read_density", "simulate_polymerase", function(object) {
     cell_num <- cell_num(object)
     k_max <- k_max(object)
     total_rnap <- combined_cells_data(object)
-    
+
     # Calculate average read density
     sim_avg_read_density <- total_rnap / (cell_num * k_max)
-    
+
     # Store average read density in object
     slot(object, "avg_read_density") <- sim_avg_read_density
-    
+
     return(object)
 })
 
@@ -694,26 +757,30 @@ setMethod("ksd", "simulate_polymerase", function(object) slot(object, "ksd"))
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("k_min", function(object) standardGeneric("k_min"))
-setMethod("k_min", "simulate_polymerase", function(object) 
-slot(object, "k_min"))
+setMethod("k_min", "simulate_polymerase", function(object) {
+    slot(object, "k_min")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("k_max", function(object) standardGeneric("k_max"))
-setMethod("k_max", "simulate_polymerase", function(object) 
-slot(object, "k_max"))
+setMethod("k_max", "simulate_polymerase", function(object) {
+    slot(object, "k_max")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("gene_len", function(object) standardGeneric("gene_len"))
-setMethod("gene_len", "simulate_polymerase", function(object) 
-slot(object, "gene_len"))
+setMethod("gene_len", "simulate_polymerase", function(object) {
+    slot(object, "gene_len")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("alpha", function(object) standardGeneric("alpha"))
-setMethod("alpha", "simulate_polymerase", function(object) 
-slot(object, "alpha"))
+setMethod("alpha", "simulate_polymerase", function(object) {
+    slot(object, "alpha")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
@@ -728,38 +795,44 @@ setMethod("zeta", "simulate_polymerase", function(object) slot(object, "zeta"))
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("zeta_sd", function(object) standardGeneric("zeta_sd"))
-setMethod("zeta_sd", "simulate_polymerase", function(object) 
-slot(object, "zeta_sd"))
+setMethod("zeta_sd", "simulate_polymerase", function(object) {
+    slot(object, "zeta_sd")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("zeta_min", function(object) standardGeneric("zeta_min"))
-setMethod("zeta_min", "simulate_polymerase", function(object) 
-slot(object, "zeta_min"))
+setMethod("zeta_min", "simulate_polymerase", function(object) {
+    slot(object, "zeta_min")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("zeta_max", function(object) standardGeneric("zeta_max"))
-setMethod("zeta_max", "simulate_polymerase", function(object) 
-slot(object, "zeta_max"))
+setMethod("zeta_max", "simulate_polymerase", function(object) {
+    slot(object, "zeta_max")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("cell_num", function(object) standardGeneric("cell_num"))
-setMethod("cell_num", "simulate_polymerase", function(object) 
-slot(object, "cell_num"))
+setMethod("cell_num", "simulate_polymerase", function(object) {
+    slot(object, "cell_num")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("pol_size", function(object) standardGeneric("pol_size"))
-setMethod("pol_size", "simulate_polymerase", function(object) 
-slot(object, "pol_size"))
+setMethod("pol_size", "simulate_polymerase", function(object) {
+    slot(object, "pol_size")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("add_space", function(object) standardGeneric("add_space"))
-setMethod("add_space", "simulate_polymerase", function(object) 
-slot(object, "add_space"))
+setMethod("add_space", "simulate_polymerase", function(object) {
+    slot(object, "add_space")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
@@ -768,20 +841,25 @@ setMethod("time", "simulate_polymerase", function(object) slot(object, "time"))
 
 #' @rdname simulate_polymerase-class
 #' @export
-setGeneric("steps_to_record", function(object) 
-standardGeneric("steps_to_record"))
-setMethod("steps_to_record", "simulate_polymerase", function(object) 
-slot(object, "steps_to_record"))
+setGeneric("steps_to_record", function(object) {
+    standardGeneric("steps_to_record")
+})
+setMethod("steps_to_record", "simulate_polymerase", function(object) {
+    slot(object, "steps_to_record")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
 setGeneric("read_counts", function(object) standardGeneric("read_counts"))
-setMethod("read_counts", "simulate_polymerase", function(object) 
-slot(object, "read_counts"))
+setMethod("read_counts", "simulate_polymerase", function(object) {
+    slot(object, "read_counts")
+})
 
 #' @rdname simulate_polymerase-class
 #' @export
-setGeneric("avg_read_density", function(object) 
-standardGeneric("avg_read_density"))
-setMethod("avg_read_density", "simulate_polymerase", function(object) 
-slot(object, "avg_read_density"))
+setGeneric("avg_read_density", function(object) {
+    standardGeneric("avg_read_density")
+})
+setMethod("avg_read_density", "simulate_polymerase", function(object) {
+    slot(object, "avg_read_density")
+})

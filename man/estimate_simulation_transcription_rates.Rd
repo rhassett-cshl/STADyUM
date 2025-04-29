@@ -22,3 +22,4 @@ and landing pad occupancy, from simulated data, such as nascent RNA
 sequencing read counts and genomic coordinates, and contructs an object
 that holds these rates
 }
+\keyword{internal}
