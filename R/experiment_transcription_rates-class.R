@@ -252,20 +252,20 @@ prepare_read_count_table <- function(bigwig_plus, bigwig_minus, pause_regions,
 }
 
 #' @keywords internal
-estimate_em_rates <- function(rc1, bw1_p3, pause_regions, kmin, kmax, fk_int,
+prepare_em_data <- function(rc1, bw1_p3, pause_regions, kmin, kmax, 
                             steric_hindrance, omega_scale, zeta) {
-    # prepare data for running EM
+    # Create base DataFrame
     em_rate <- DataFrame(
-        gene_id = rc1$gene_id, s = rc1$summarized_gb_counts, N = rc1$gb_length
+        gene_id = rc1$gene_id, 
+        s = rc1$summarized_gb_counts, 
+        N = rc1$gb_length
     )
-
-    # use read count within gene body to pre-estimate chi hat
+    
+    # Calculate chi and get read counts
     em_rate$chi <- em_rate$s / em_rate$N
-
-    # get read counts on each position within pause peak (from kmin to kmax)
-    Xk <- GenomicRanges::coverage(bw1_p3, weight = "score")
-    Xk <- Xk[pause_regions]
-
+    Xk <- GenomicRanges::coverage(bw1_p3, weight = "score")[pause_regions]
+    
+    # Process read counts for each region
     Xk_list <- lapply(seq_along(pause_regions), function(i) {
         region <- pause_regions[i]
         counts <- as.numeric(Xk[[seqnames(region)]][ranges(region)])
@@ -273,25 +273,27 @@ estimate_em_rates <- function(rc1, bw1_p3, pause_regions, kmin, kmax, fk_int,
         counts
     })
     names(Xk_list) <- pause_regions$gene_id
-
     em_rate$Xk <- Xk_list[em_rate$gene_id]
-
-    # initialize beta using sum of read counts within pause peak
+    
+    # Initialize beta
     em_rate$Xk_sum <- vapply(em_rate$Xk, sum, numeric(1))
     em_rate$beta_int <- em_rate$chi / em_rate$Xk_sum
-
-    em_ls <- list()
+    
+    # Handle steric hindrance
     if (steric_hindrance) {
         em_rate$omega_zeta <- em_rate$chi * omega_scale
         em_rate$omega <- em_rate$omega_zeta / zeta
-
-        # compute scaling factor lambda to use the same params as simulations
-        lambda <- zeta^2 / omega_scale
     }
+    
+    return(em_rate)
+}
 
+#' @keywords internal
+run_em_algorithm <- function(em_rate, kmin, kmax, fk_int, steric_hindrance, 
+                            zeta, lambda = NULL) {
+    em_ls <- list()
     for (i in seq_len(NROW(em_rate))) {
         rc <- em_rate[i, ]
-
         if (!steric_hindrance) {
             em_ls[[i]] <- pause_escape_EM(
                 Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
@@ -300,39 +302,62 @@ estimate_em_rates <- function(rc1, bw1_p3, pause_regions, kmin, kmax, fk_int,
             )
         } else {
             em_ls[[i]] <- steric_hindrance_EM(
-                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, f1 = 0.517,
-                f2 = 0.024, fk_int = fk_int, beta_int = rc$beta_int[[1]],
-                phi_int = 0.5, chi_hat = rc$chi, lambda = lambda, zeta = zeta,
+                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, 
+                f1 = 0.517, f2 = 0.024, fk_int = fk_int, 
+                beta_int = rc$beta_int[[1]], phi_int = 0.5, 
+                chi_hat = rc$chi, lambda = lambda, zeta = zeta,
                 max_itr = 500, tor = 1e-4
             )
         }
     }
-
     names(em_ls) <- em_rate$gene_id
+    return(em_ls)
+}
 
-    # get rate estimates and posterior distribution of pause sites
+#' @keywords internal
+process_em_results <- function(em_rate, em_ls, steric_hindrance, zeta) {
+    # Extract results
     em_rate$beta_adp <- map_dbl(em_ls, "beta", .default = NA)
     em_rate$Yk <- map(em_ls, "Yk", .default = NA)
     em_rate$fk <- map(em_ls, "fk", .default = NA)
     em_rate$fk_mean <- map_dbl(em_ls, "fk_mean", .default = NA)
     em_rate$fk_var <- map_dbl(em_ls, "fk_var", .default = NA)
-    # calculate Yk / Xk
+    
+    # Calculate proportions and likelihood
     em_rate$t <- vapply(em_rate$Yk, sum, numeric(1))
     em_rate$proportion_Yk <- em_rate$t / vapply(em_rate$Xk, sum, numeric(1))
-    em_rate$likelihood <- map_dbl(
-        em_ls, ~ .x$likelihoods[[length(.x$likelihoods)]]
-    )
-
-    em_rate <- em_rate %>% as_tibble()
-
+    em_rate$likelihood <- map_dbl(em_ls, ~ .x$likelihoods[[length(
+        x$likelihoods)]])
+    
+    # Convert to tibble and handle steric hindrance
+    em_rate <- as_tibble(em_rate)
     if (steric_hindrance) {
         em_rate$phi <- map_dbl(em_ls, "phi", .default = NA)
         em_rate <- em_rate %>%
             mutate(
-                beta_zeta = beta_adp * zeta, alpha_zeta = omega_zeta / (1 - phi)
+                beta_zeta = beta_adp * zeta,
+                alpha_zeta = omega_zeta / (1 - phi)
             )
     }
+    
+    return(em_rate)
+}
 
+#' @keywords internal
+estimate_em_rates <- function(rc1, bw1_p3, pause_regions, kmin, kmax, fk_int,
+                            steric_hindrance, omega_scale, zeta) {
+    # Prepare data
+    em_rate <- prepare_em_data(rc1, bw1_p3, pause_regions, kmin, kmax,
+                            steric_hindrance, omega_scale, zeta)
+    
+    # Run EM algorithm
+    lambda <- if (steric_hindrance) zeta^2 / omega_scale else NULL
+    em_ls <- run_em_algorithm(em_rate, kmin, kmax, fk_int, steric_hindrance,
+                            zeta, lambda)
+    
+    # Process results
+    em_rate <- process_em_results(em_rate, em_ls, steric_hindrance, zeta)
+    
     return(em_rate)
 }
 
