@@ -264,6 +264,7 @@ prepare_em_data <- function(rc1, bw1_p3, pause_regions, kmin, kmax,
     # Calculate chi and get read counts
     em_rate$chi <- em_rate$s / em_rate$N
     Xk <- GenomicRanges::coverage(bw1_p3, weight = "score")[pause_regions]
+    message("coverage complete")
     
     # Process read counts for each region
     Xk_list <- lapply(seq_along(pause_regions), function(i) {
@@ -272,19 +273,21 @@ prepare_em_data <- function(rc1, bw1_p3, pause_regions, kmin, kmax,
         names(counts) <- start(region):end(region)
         counts
     })
+    message("Xk_list complete")
     names(Xk_list) <- pause_regions$gene_id
     em_rate$Xk <- Xk_list[em_rate$gene_id]
     
     # Initialize beta
     em_rate$Xk_sum <- vapply(em_rate$Xk, sum, numeric(1))
     em_rate$beta_int <- em_rate$chi / em_rate$Xk_sum
+    message("beta_int complete")
     
     # Handle steric hindrance
     if (steric_hindrance) {
         em_rate$omega_zeta <- em_rate$chi * omega_scale
         em_rate$omega <- em_rate$omega_zeta / zeta
     }
-    
+    message("steric hindrance complete")
     return(em_rate)
 }
 
@@ -349,15 +352,15 @@ estimate_em_rates <- function(rc1, bw1_p3, pause_regions, kmin, kmax, fk_int,
     # Prepare data
     em_rate <- prepare_em_data(rc1, bw1_p3, pause_regions, kmin, kmax,
                             steric_hindrance, omega_scale, zeta)
-    
+    message("prepare_em_data complete")
     # Run EM algorithm
     lambda <- if (steric_hindrance) zeta^2 / omega_scale else NULL
     em_ls <- run_em_algorithm(em_rate, kmin, kmax, fk_int, steric_hindrance,
                             zeta, lambda)
-    
+    message("run_em_algorithm complete")
     # Process results
     em_rate <- process_em_results(em_rate, em_ls, steric_hindrance, zeta)
-    
+    message("process_em_results complete")
     return(em_rate)
 }
 
@@ -440,9 +443,12 @@ omega_scale = NULL) {
 
     fk_int <- dnorm(kmin:kmax, mean = 50, sd = 100)
     fk_int <- fk_int / sum(fk_int)
-
+    message("estimated fk_int complete")
     em_rate <- estimate_em_rates(rc1, bw1_p3, pause_regions, kmin, kmax, fk_int,
     steric_hindrance, omega_scale, zeta)
+    message("estimated em rates complete")
+    message(fk_int)
+    message(em_rate)
     em_rate <- prepare_rate_table(em_rate, analytical_rate_tbl,
     steric_hindrance)
 

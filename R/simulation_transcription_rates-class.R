@@ -9,40 +9,40 @@ simulation_transcription_rates_valid <- function(object) {
     errors <- character()
 
     # Check if required slots are present and have correct types
-    if (!is(simpol(object), "simulate_polymerase")) {
+    if (!is(slot(object, "simpol"), "simulate_polymerase")) {
         errors <- c(errors, "simpol must be a simulate_polymerase object")
     }
-    if (!is.logical(steric_hindrance(object))) {
+    if (!is.logical(slot(object, "steric_hindrance"))) {
         errors <- c(errors, "steric_hindrance must be logical")
     }
-    if (!is.numeric(trial(object))) {
+    if (!is.numeric(slot(object, "trial"))) {
         errors <- c(errors, "trial must be numeric")
     }
-    if (!is.numeric(chi(object))) {
+    if (!is.numeric(slot(object, "chi"))) {
         errors <- c(errors, "chi must be numeric")
     }
-    if (!is.numeric(beta_org(object))) {
+    if (!is.numeric(slot(object, "beta_org"))) {
         errors <- c(errors, "beta_org must be numeric")
     }
-    if (!is.numeric(beta_adp(object))) {
+    if (!is.numeric(slot(object, "beta_adp"))) {
         errors <- c(errors, "beta_adp must be numeric")
     }
-    if (!is.numeric(phi(object))) {
+    if (!is.numeric(slot(object, "phi"))) {
         errors <- c(errors, "phi must be numeric")
     }
-    if (!is.list(fk(object))) {
+    if (!is.list(slot(object, "fk"))) {
         errors <- c(errors, "fk must be a list")
     }
-    if (!is.numeric(fk_mean(object))) {
+    if (!is.numeric(slot(object, "fk_mean"))) {
         errors <- c(errors, "fk_mean must be numeric")
     }
-    if (!is.numeric(fk_var(object))) {
+    if (!is.numeric(slot(object, "fk_var"))) {
         errors <- c(errors, "fk_var must be numeric")
     }
-    if (!is.character(flag(object))) {
+    if (!is.character(slot(object, "flag"))) {
         errors <- c(errors, "flag must be character")
     }
-    if (!is.list(rnap_n(object))) {
+    if (!is.list(slot(object, "rnap_n"))) {
         errors <- c(errors, "rnap_n must be a list")
     }
 
@@ -62,6 +62,7 @@ simulation_transcription_rates_valid <- function(object) {
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom GenomicRanges CompressedGRangesList
 #' @importClassesFrom data.table data.table
+#' @importFrom purrr map map_chr map_dbl
 #' @exportClass simulation_transcription_rates
 methods::setClass("simulation_transcription_rates",
     slots = c(
@@ -95,6 +96,296 @@ methods::setClass("simulation_transcription_rates",
     validity = simulation_transcription_rates_valid
 )
 
+#' @keywords internal
+summarise_simulation_bw <- function(bw, grng, region_names) {
+    rc <- grng %>%
+        plyranges::group_by_overlaps(bw) %>%
+        plyranges::group_by(query) %>%
+        plyranges::summarise(score = sum(score))
+    if (!1 %in% rc$query) {
+        rc <- rbind(DataFrame(list(query = 1, score = 0)), rc)
+    }
+    rc <- as.list(rc$score)
+    names(rc) <- region_names
+    return(rc)
+}
+
+#' @keywords internal
+prepare_simulation_parameters <- function(simpol) {
+    sample_cell <- 5000
+    sample_n <- 50
+    matched_len <- 2e4
+    kmin <- 1
+    kmax <- 200
+    matched_gb_len <- matched_len - kmax
+    count_rnap <- FALSE
+
+    spacing <- simpol@s + simpol@h#simpol@pol_size + simpol@add_space
+    k <- k(simpol)
+    start_point <- 0.99 * 1e6
+    lambda <- 102.1  # from Dukler et al. 2017
+
+    rnap_pos <- position_matrix(simpol)
+    total_cell <- NCOL(rnap_pos)
+    gene_len <- NROW(rnap_pos) - 1
+
+    return(list(
+        sample_cell = sample_cell,
+        sample_n = sample_n,
+        matched_len = matched_len,
+        kmin = kmin,
+        kmax = kmax,
+        matched_gb_len = matched_gb_len,
+        count_rnap = count_rnap,
+        spacing = spacing,
+        k = k,
+        start_point = start_point,
+        lambda = lambda,
+        rnap_pos = rnap_pos,
+        total_cell = total_cell,
+        gene_len = gene_len
+    ))
+}
+
+#' @keywords internal
+create_genomic_regions <- function(params) {
+    gn_rng <- GRanges(seqnames = rep("chr1", 3),
+        IRanges(start = c(1, params$kmax + 1, 1), 
+                end = c(params$kmax, params$gene_len, params$spacing))
+    )
+
+    gn_rng <- IRanges::shift(gn_rng, shift = params$start_point)
+
+    region_names <- c("tss", "gb", "landing")
+    names(gn_rng) <- region_names
+
+    len <- as.list(width(gn_rng))
+    names(len) <- region_names
+
+    return(list(
+        gn_rng = gn_rng,
+        region_names = region_names,
+        len = len
+    ))
+}
+
+#' @keywords internal
+generate_rnap_positions <- function(params, regions) {
+    seeds <- seq(from = 2013, by = 1, length.out = params$sample_n)
+    rnap_grng <- list()
+    rnap_n_ls <- list()
+
+    for (i in seq_len(params$sample_n)) {
+        sel_cells <- sample(seq_len(params$total_cell), 
+            size = params$sample_cell, replace = TRUE)
+        res_pos <- params$rnap_pos[, sel_cells]
+        res_pos <- res_pos[-1, ]
+
+        if (params$count_rnap) {
+            pause_site <- idx[sel_cells, 1] - 1
+            res_shape <- dim(res_pos)
+            after_pause_len <- res_shape[1] - pause_site
+            mask_mx <- map2(pause_site, after_pause_len,
+                function(x, y) c(rep(TRUE, x), rep(FALSE, y))
+            )
+            mask_mx <- Matrix::Matrix(unlist(mask_mx), 
+                nrow = res_shape[1], ncol = res_shape[2])
+            rnap_n_ls[[i]] <- colSums(res_pos * mask_mx)
+        }
+
+        res_all <- rowSums(res_pos)
+        rnap_grng[[i]] <- GRanges(seqnames = "chr1",
+            IRanges(start = (1 + params$start_point):
+                (params$gene_len + params$start_point),
+                width = 1), 
+            score = res_all,
+            strand = "+",
+            seqlengths = c("chr1" = params$gene_len * 10) + 
+                params$start_point)
+
+        rm(res_pos, res_all)
+    }
+
+    return(list(rnap_grng = rnap_grng, rnap_n_ls = rnap_n_ls))
+}
+
+#' @keywords internal
+calculate_read_counts <- function(rnap_data, regions, params) {
+    bw_dfs <- tibble(trial = seq_len(params$sample_n))
+    bw_dfs$rc_region <- map(rnap_data$rnap_grng, 
+        ~ summarise_simulation_bw(.x, regions$gn_rng, regions$region_names))
+
+    bw_dfs$rc_tss <- map_dbl(bw_dfs$rc_region, "tss")
+    bw_dfs$rc_gb <- map_dbl(bw_dfs$rc_region, "gb")
+    bw_dfs$rc_landing <- map_dbl(bw_dfs$rc_region, "landing")
+
+    bw_dfs <- bw_dfs %>% mutate(
+        R = (rc_tss + rc_gb) / params$sample_cell,
+        R_pause = rc_tss / params$sample_cell,
+        rnap_prop = rc_landing / params$sample_cell
+    )
+
+    return(bw_dfs)
+}
+
+#' @keywords internal
+adjust_read_coverage <- function(rnap_data, regions, params, bw_dfs) {
+    if (!is.null(params$lambda)) {
+        rnap_grng <- map(rnap_data$rnap_grng, function(grng) {
+            grng$score[params$kmin:params$kmax] <- rpois(
+                length(params$kmin:params$kmax),
+                grng$score[params$kmin:params$kmax] / 
+                    params$sample_cell * params$lambda
+            )
+            grng$score[seq_len(20)] <- 0
+            return(grng)
+        })
+        
+        bw_dfs$rc_region <- map(rnap_grng, 
+            ~ summarise_simulation_bw(.x, regions$gn_rng, regions$region_names))
+        bw_dfs$rc_tss <- map_dbl(bw_dfs$rc_region, "tss")
+
+        pois_mean <- (params$lambda * bw_dfs$rc_gb / params$sample_cell) *
+            (params$matched_gb_len / regions$len$gb)
+        bw_dfs$rc_gb <- rpois(length(pois_mean), pois_mean)
+        regions$len$gb <- params$matched_gb_len
+    }
+
+    return(list(bw_dfs = bw_dfs, rnap_grng = rnap_grng))
+}
+
+#' @keywords internal
+calculate_initial_rates <- function(bw_dfs, regions, params, simpol, rnap_grng) {
+    bw_dfs$Xk <- map(
+        rnap_grng,
+        ~ .x[(start(.x) >= 990000 + params$kmin) &
+            (start(.x) <= 990000 + params$kmax), ]$score
+    )
+
+    bw_dfs$chi <- bw_dfs$rc_gb / regions$len$gb
+
+    if (ksd(simpol) == 0) {
+        bw_dfs$beta_org <- bw_dfs$chi / map_dbl(bw_dfs$Xk, params$k)
+    } else {
+        bw_dfs$beta_org <- bw_dfs$chi / (bw_dfs$rc_tss / regions$len$tss)
+    }
+
+    bw_dfs$beta_max_rc <- bw_dfs$chi / map_dbl(bw_dfs$Xk, max)
+    bw_dfs$Xk_sum <- vapply(bw_dfs$Xk, sum, numeric(1))
+
+    valid_indices <- which(bw_dfs$Xk_sum > 0 &
+        bw_dfs$chi > 0 &
+        !is.infinite(bw_dfs$chi))
+
+    if (length(valid_indices) == 0) {
+        stop("No RNAPs in the pause region or gene body")
+    }
+
+    bw_dfs$beta_int <- rep(NA, nrow(bw_dfs))
+    bw_dfs$beta_int[valid_indices] <- bw_dfs$chi[valid_indices] /
+        bw_dfs$Xk_sum[valid_indices]
+
+    return(bw_dfs)
+}
+
+#' @keywords internal
+run_em_algorithm <- function(bw_dfs, params, steric_hindrance) {
+    fk_int <- dnorm(params$kmin:params$kmax, mean = 50, sd = 100)
+    fk_int <- fk_int / sum(fk_int)
+    em_ls <- list()
+
+    if (steric_hindrance) {
+        f <- calculate_f(s = params$spacing, k = params$k)
+        phi_int <- 0.5
+        zeta <- 2000
+        lambda1 <- 0.0505 * zeta^2
+    }
+
+    message("Starting EM algorithm...")
+
+    for (i in seq_len(NROW(bw_dfs))) {
+        rc <- bw_dfs[i, ]
+        if (!steric_hindrance) {
+            em_ls[[i]] <- pause_escape_EM(
+                Xk = rc$Xk[[1]], 
+                kmin = params$kmin, 
+                kmax = params$kmax,
+                fk_int = fk_int, 
+                beta_int = rc$beta_int[[1]],
+                chi_hat = rc$chi, 
+                max_itr = 500, 
+                tor = 1e-4
+            )
+        } else {
+            em_ls[[i]] <- steric_hindrance_EM(
+                Xk = rc$Xk[[1]], 
+                kmin = params$kmin,
+                kmax = params$kmax, 
+                f1 = f[["f1"]], 
+                f2 = f[["f2"]],
+                fk_int = fk_int, 
+                beta_int = rc$beta_int[[1]],
+                chi_hat = rc$chi, 
+                phi_int = phi_int,
+                lambda = lambda1, 
+                zeta = zeta, 
+                max_itr = 500,
+                tor = 1e-4
+            )
+        }
+    }
+
+    return(em_ls)
+}
+
+#' @keywords internal
+process_em_results <- function(bw_dfs, em_ls, steric_hindrance) {
+    bw_dfs$beta_adp <- map_dbl(em_ls, "beta", .default = NA)
+    bw_dfs$Yk <- map(em_ls, "Yk", .default = NA)
+    bw_dfs$fk <- map(em_ls, "fk", .default = NA)
+    bw_dfs$fk_mean <- map_dbl(em_ls, "fk_mean", .default = NA)
+    bw_dfs$fk_var <- map_dbl(em_ls, "fk_var", .default = NA)
+    bw_dfs$flag <- map_chr(em_ls, "flag", .default = NA)
+    
+    if (steric_hindrance) {
+        bw_dfs$phi <- map_dbl(em_ls, "phi", .default = NA)
+    }
+
+    bw_dfs$init_rate <- bw_dfs$R / (bw_dfs$R_pause + bw_dfs$R)
+    bw_dfs$pause_release_rate <- bw_dfs$R_pause / 
+        (bw_dfs$R_pause + bw_dfs$R)
+
+    if (steric_hindrance) {
+        bw_dfs$landing_pad_occupancy <- bw_dfs$rnap_prop
+    }
+
+    return(bw_dfs)
+}
+
+#' @keywords internal
+calculate_final_rates <- function(bw_dfs, steric_hindrance) {
+    init_rate_mean <- mean(bw_dfs$init_rate)
+    init_rate_var <- var(bw_dfs$init_rate)
+    pause_release_rate_mean <- mean(bw_dfs$pause_release_rate)
+    pause_release_rate_var <- var(bw_dfs$pause_release_rate)
+
+    results <- list(
+        init_rate = init_rate_mean,
+        init_rate_var = init_rate_var,
+        pause_release_rate = pause_release_rate_mean,
+        pause_release_rate_var = pause_release_rate_var
+    )
+
+    if (steric_hindrance) {
+        landing_pad_occupancy_mean <- mean(bw_dfs$landing_pad_occupancy)
+        landing_pad_occupancy_var <- var(bw_dfs$landing_pad_occupancy)
+        results$landing_pad_occupancy <- landing_pad_occupancy_mean
+        results$landing_pad_occupancy_var <- landing_pad_occupancy_var
+    }
+
+    return(results)
+}
+
 #' estimate_simulation_transcription_rates
 #'
 #' Estimates the transcription rates, such as initiation, pause-release rates
@@ -111,331 +402,52 @@ methods::setClass("simulation_transcription_rates",
 #' @return an \code{\link{_transcription_rates-class}} object
 #'
 #' @export
-estimate_simulation_transcription_rates <-
-    function(simpol, steric_hindrance = FALSE) {
-        sample_cell <- 5000 # number of cells sampled each time
-        sample_n <- 50 # number of times to sample
-        matched_len <- 2e4 # gene length to be matched
-
-        kmin <- 1
-        kmax <- 200
-        matched_gb_len <- matched_len - kmax
-        count_rnap <- FALSE
-
-        spacing <- spacing(simpol) + height(simpol)
-        k <- k(simpol)
-
-        # set a start coordinate for the simulated gene
-        start_point <- 0.99 * 1e6
-        # set lambda according to the read coverage of PRO-seq in the control
-        # samples from Dukler et al. 2017
-        lambda <- 102.1
-
-        # last step of position matrix
-        rnap_pos <- position_matrix(simpol)
-        total_cell <- NCOL(rnap_pos)
-        gene_len <- NROW(rnap_pos) - 1
-
-        # count number of RNAP before the pause site
-        # if (count_rnap) {
-        # get probability vector
-        # prob <- readRDS(str_replace(rds_in, ".RDS", "_prob_init.RDS"))
-        # alpha <- as.double(gsub(".*a([0-9].*)b.*", "\\1", sel_sample))
-        # beta <- as.double(gsub(".*b([0-9].*)g.*", "\\1", sel_sample))
-        # zeta <- as.double(gsub(".*z([0-9].*)zsd.*", "\\1", sel_sample))
-
-        # calculate time slice first then get corresponding probability for beta
-        # beta_prob <- prob[1, 1] / alpha * beta
-        # get pause position for every cell
-        # idx <- which(prob == beta_prob, arr.ind = TRUE)
-        # idx <- idx[idx[, 1] != 1, ]
-        # }
-
-        #### initiation and pause release rate estimates ####
-        # generate regions for read counting
-        gn_rng <- GRanges(
-            seqnames = rep("chr1", 3),
-            IRanges(
-                start = c(1, kmax + 1, 1),
-                end = c(kmax, gene_len, spacing)
-            )
-        )
-
-        gn_rng <- IRanges::shift(gn_rng, shift = start_point)
-
-        region_names <- c("tss", "gb", "landing")
-        names(gn_rng) <- region_names
-
-        len <- as.list(width(gn_rng))
-        names(len) <- region_names
-
-        # set seeds for random sampling
-        seeds <- seq(from = 2013, by = 1, length.out = sample_n)
-        # a list to Granges for rnap positions
-        rnap_grng <- list()
-        # a list recording number of RNAPs at or before the pause site
-        if (count_rnap) rnap_n_ls <- list()
-
-        for (i in seq_len(sample_n)) {
-            sel_cells <- sample(seq_len(total_cell),
-                size = sample_cell,
-                replace = TRUE
-            )
-            res_pos <- rnap_pos[, sel_cells]
-            # get rid of position 1, which is always 1
-            res_pos <- res_pos[-1, ]
-            if (count_rnap) {
-                # get pause sites
-                pause_site <- idx[sel_cells, 1] - 1
-                # generate data mask
-                res_shape <- dim(res_pos)
-                after_pause_len <- res_shape[1] - pause_site
-                mask_mx <- map2(
-                    pause_site,
-                    after_pause_len,
-                    function(x, y) c(rep(TRUE, x), rep(FALSE, y))
-                )
-                mask_mx <- Matrix::Matrix(
-                    unlist(mask_mx),
-                    nrow = res_shape[1],
-                    ncol = res_shape[2]
-                )
-                # calculate rnap number before pause site for every cell
-                rnap_n_ls[[i]] <- colSums(res_pos * mask_mx)
-            }
-            # combine rnap positions across all cells
-            res_all <- rowSums(res_pos)
-            # generate bigwig for positive strand
-            rnap_grng[[i]] <- GRanges(
-                seqnames = "chr1",
-                IRanges(
-                    start = (1 + start_point):(gene_len + start_point),
-                    width = 1
-                ),
-                score = res_all,
-                strand = "+",
-                seqlengths = c("chr1" = gene_len * 10) + start_point
-            )
-
-            rm(res_pos, res_all)
-        }
-
-        #' @keywords internal
-        summarise_bw <- function(bw, grng) {
-            rc <- grng %>%
-                plyranges::group_by_overlaps(bw) %>%
-                plyranges::group_by(query) %>%
-                plyranges::summarise(score = sum(score))
-            if (!1 %in% rc$query) {
-                rc <- rbind(DataFrame(list(query = 1, score = 0)), rc)
-            }
-            rc <- as.list(rc$score)
-            names(rc) <- region_names
-            return(rc)
-        }
-
-        bw_dfs <- tibble(trial = seq_len(sample_n))
-        bw_dfs$rc_region <- map(rnap_grng, ~ summarise_bw(.x, gn_rng))
-
-        bw_dfs$rc_tss <- map_dbl(bw_dfs$rc_region, "tss")
-        bw_dfs$rc_gb <- map_dbl(bw_dfs$rc_region, "gb")
-        bw_dfs$rc_landing <- map_dbl(bw_dfs$rc_region, "landing")
-
-        #### empirical way to calculate steric hindrance at pause site ####
-        bw_dfs <- bw_dfs %>%
-            mutate(
-                R = (rc_tss + rc_gb) / sample_cell,
-                R_pause = rc_tss / sample_cell,
-                rnap_prop = rc_landing / sample_cell
-            )
-
-        # whether to match the simulated number of RNAPs to read coverage in
-        # experimental data or not
-        # here match RNAP number within kmin to kmax, RNAP in gene body will be
-        # taken care of afterwards
-        if (!is.null(lambda)) {
-            rnap_grng <- map(rnap_grng, function(grng) {
-                grng$score[kmin:kmax] <- rpois(
-                    length(kmin:kmax),
-                    grng$score[kmin:kmax] / sample_cell * lambda
-                )
-                # first 20bp get removed because they are usually not seen in
-                # sequencing
-                grng$score[seq_len(20)] <- 0
-                return(grng)
-            })
-            bw_dfs$rc_region <- map(rnap_grng, ~ summarise_bw(.x, gn_rng))
-            bw_dfs$rc_tss <- map_dbl(bw_dfs$rc_region, "tss")
-        }
-
-        # match RNAP number within gene bodies to desired read coverage
-        if (!is.null(lambda)) {
-            pois_mean <- (lambda * bw_dfs$rc_gb / sample_cell) *
-                (matched_gb_len / len$gb)
-            bw_dfs$rc_gb <- rpois(length(pois_mean), pois_mean)
-            # assign matched gene body length as gene body length
-            len$gb <- matched_gb_len
-        }
-
-        # get read counts on each position within pause peak (from kmin to kmax)
-        bw_dfs$Xk <- map(
-            rnap_grng,
-            ~ .x[(start(.x) >= 990000 + kmin) &
-                (start(.x) <= 990000 + kmax), ]$score
-        )
-
-        ## Initial model: Poisson based MLEs ##
-        # use read count within gene body to pre-estimate chi hat
-        bw_dfs$chi <- bw_dfs$rc_gb / len$gb
-
-        # TODO??
-        # take care of single pause site or variable pause sites (pause peak)
-        if (ksd(simpol) == 0) {
-            bw_dfs$beta_org <- bw_dfs$chi / map_dbl(bw_dfs$Xk, k)
-        } else {
-            bw_dfs$beta_org <- bw_dfs$chi / (bw_dfs$rc_tss / len$tss)
-        }
-
-        bw_dfs$beta_max_rc <- bw_dfs$chi / map_dbl(bw_dfs$Xk, max)
-
-        ## Adapted model: allows uncertainty in the pause site and steric
-        #  hindrance
-        # initialize beta using sum of read counts within pause peak
-        bw_dfs$Xk_sum <- vapply(bw_dfs$Xk, sum, numeric(1))
-
-        # Handle cases where Xk_sum is 0 or chi is 0/Inf
-        valid_indices <- which(bw_dfs$Xk_sum > 0 &
-            bw_dfs$chi > 0 &
-            !is.infinite(bw_dfs$chi))
-
-        if (length(valid_indices) == 0) {
-            stop("No valid data points found - check if there are any RNA
-    polymerases in the pause region or gene body")
-        }
-
-        bw_dfs$beta_int <- rep(NA, nrow(bw_dfs))
-        bw_dfs$beta_int[valid_indices] <- bw_dfs$chi[valid_indices] /
-            bw_dfs$Xk_sum[valid_indices]
-
-        # initialize fk with some reasonable values based on heuristic
-        fk_int <- dnorm(kmin:kmax, mean = 50, sd = 100)
-        fk_int <- fk_int / sum(fk_int)
-
-        # estimate rates using EM
-        em_ls <- list()
-        # wrap the EM function in case there is an error
-        # main_EM <- possibly(main_EM, otherwise = NA)
-
-        if (steric_hindrance) {
-            f <- calculate_f(s = spacing, k = k)
-            phi_int <- 0.5
-            zeta <- 2000 # elongation rate
-            # lambda used for scaling in EM, different from one used to match
-            # coverage
-            lambda1 <- 0.0505 * zeta^2
-        }
-
-        message("Starting EM algorithm...")
-
-        for (i in seq_len(NROW(bw_dfs))) {
-            rc <- bw_dfs[i, ]
-
-            if (!steric_hindrance) {
-                # rc$beta_int[[1]] is NaN
-
-                em_ls[[i]] <- pause_escape_EM(
-                    Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
-                    fk_int = fk_int, beta_int = rc$beta_int[[1]],
-                    chi_hat = rc$chi, max_itr = 500, tor = 1e-4
-                )
-            } else {
-                em_ls[[i]] <- steric_hindrance_EM(
-                    Xk = rc$Xk[[1]], kmin = kmin,
-                    kmax = kmax, f1 = f[["f1"]], f2 = f[["f2"]],
-                    fk_int = fk_int, beta_int = rc$beta_int[[1]],
-                    chi_hat = rc$chi, phi_int = phi_int,
-                    lambda = lambda1, zeta = zeta, max_itr = 500,
-                    tor = 1e-4
-                )
-            }
-        }
-
-
-        # get rate estimates and posterior distribution of pause sites
-        bw_dfs$beta_adp <- map_dbl(em_ls, "beta", .default = NA)
-        bw_dfs$Yk <- map(em_ls, "Yk", .default = NA)
-        bw_dfs$fk <- map(em_ls, "fk", .default = NA)
-        bw_dfs$fk_mean <- map_dbl(em_ls, "fk_mean", .default = NA)
-        bw_dfs$fk_var <- map_dbl(em_ls, "fk_var", .default = NA)
-        # calculate Yk / Xk
-        # bw_dfs$proportion_Yk <- vapply(bw_dfs$Yk, sum, numeric(1)) / vapply
-        # (bw_dfs$Xk, sum, numeric(1))
-        bw_dfs$flag <- map_chr(em_ls, "flag", .default = NA)
-
-        if (steric_hindrance) bw_dfs$phi <- map_dbl(em_ls, "phi", .default = NA)
-
-        # add number of RNAP before pause site to output if it exists
-        if (count_rnap) bw_dfs$rnap_n <- rnap_n_ls
-
-        # calculate initiation rate
-        bw_dfs$init_rate <- bw_dfs$R / (bw_dfs$R_pause + bw_dfs$R)
-
-        # calculate pause release rate
-        bw_dfs$pause_release_rate <- bw_dfs$R_pause / (bw_dfs$R_pause +
-            bw_dfs$R)
-
-        # calculate landing pad occupancy
-        if (steric_hindrance) {
-            bw_dfs$landing_pad_occupancy <- bw_dfs$rnap_prop
-        }
-
-        # calculate mean and variance of initiation rate
-        init_rate_mean <- mean(bw_dfs$init_rate)
-        init_rate_var <- var(bw_dfs$init_rate)
-
-        # calculate mean and variance of pause release rate
-        pause_release_rate_mean <- mean(bw_dfs$pause_release_rate)
-        pause_release_rate_var <- var(bw_dfs$pause_release_rate)
-
-        # calculate mean and variance of landing pad occupancy
-        if (steric_hindrance) {
-            landing_pad_occupancy_mean <- mean(bw_dfs$landing_pad_occupancy)
-            landing_pad_occupancy_var <- var(bw_dfs$landing_pad_occupancy)
-        }
-
-        # create a list to hold the results
-        results <- list(
-            init_rate = init_rate_mean,
-            init_rate_var = init_rate_var,
-            pause_release_rate = pause_release_rate_mean,
-            pause_release_rate_var = pause_release_rate_var
-        )
-
-        if (steric_hindrance) {
-            results$landing_pad_occupancy <- landing_pad_occupancy_mean
-            results$landing_pad_occupancy_var <- landing_pad_occupancy_var
-        }
-
-        # create and return the simulation_transcription_rates object
-        new("simulation_transcription_rates",
-            simpol = simpol,
-            steric_hindrance = steric_hindrance,
-            trial = sample_n,
-            chi = init_rate_mean,
-            beta_org = pause_release_rate_mean,
-            beta_adp = if (steric_hindrance) landing_pad_occupancy_mean else 0,
-            phi = if (steric_hindrance) landing_pad_occupancy_mean else 0,
-            fk = results,
-            fk_mean = c(init_rate_mean, pause_release_rate_mean),
-            fk_var = c(init_rate_var, pause_release_rate_var),
-            flag = if (steric_hindrance) {
-                "with_steric_hindrance"
-            } else {
-                "no_steric_hindrance"
-            },
-            rnap_n = if (count_rnap) rnap_n_ls else list()
-        )
-    }
+estimate_simulation_transcription_rates <- function(simpol, 
+                                                    steric_hindrance = FALSE) {
+    # Prepare parameters and regions
+    params <- prepare_simulation_parameters(simpol)
+    regions <- create_genomic_regions(params)
+    
+    # Generate RNAP positions
+    rnap_data <- generate_rnap_positions(params, regions)
+    
+    # Calculate initial read counts
+    bw_dfs <- calculate_read_counts(rnap_data, regions, params)
+    
+    # Adjust read coverage if needed
+    adjusted_data <- adjust_read_coverage(rnap_data, regions, params, bw_dfs)
+    bw_dfs <- adjusted_data$bw_dfs
+    rnap_grng <- adjusted_data$rnap_grng
+    
+    # Calculate initial rates
+    bw_dfs <- calculate_initial_rates(bw_dfs, regions, params, simpol, rnap_grng)
+    
+    # Run EM algorithm
+    em_ls <- run_em_algorithm(bw_dfs, params, steric_hindrance)
+    
+    # Process EM results
+    bw_dfs <- process_em_results(bw_dfs, em_ls, steric_hindrance)
+    
+    # Calculate final rates
+    results <- calculate_final_rates(bw_dfs, steric_hindrance)
+    
+    # Create and return the final object
+    new("simulation_transcription_rates",
+        simpol = simpol, 
+        steric_hindrance = steric_hindrance,
+        trial = params$sample_n, 
+        chi = results$init_rate,
+        beta_org = results$pause_release_rate,
+        beta_adp = if (steric_hindrance) results$landing_pad_occupancy else 0,
+        phi = if (steric_hindrance) results$landing_pad_occupancy else 0,
+        fk = results, 
+        fk_mean = c(results$init_rate, results$pause_release_rate),
+        fk_var = c(results$init_rate_var, results$pause_release_rate_var),
+        flag = if (steric_hindrance) "with_steric_hindrance" else 
+            "no_steric_hindrance",
+        rnap_n = if (params$count_rnap) rnap_data$rnap_n_ls else list()
+    )
+}
 
 # Accessor methods
 #' @rdname simulation_transcription_rates-class
