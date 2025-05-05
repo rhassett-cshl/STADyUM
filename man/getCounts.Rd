@@ -7,7 +7,7 @@
 getCounts(object)
 }
 \arguments{
-\item{object}{An experiment_transcription_rates object}
+\item{object}{An experimentTranscriptionRates object}
 }
 \value{
 A data.frame containing the read counts

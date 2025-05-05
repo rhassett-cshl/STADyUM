@@ -7,9 +7,9 @@
 getRegions(object, type)
 }
 \arguments{
-\item{object}{An experiment_transcription_rates object}
+\item{object}{An experimentTranscriptionRates object}
 
-\item{type}{Either "pause" or "gene_body" to specify which regions to return}
+\item{type}{Either "pause" or "geneBody" to specify which regions to return}
 }
 \value{
 A GRanges object containing the specified regions

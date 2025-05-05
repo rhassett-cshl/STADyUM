@@ -7,7 +7,7 @@
 plotRates(
   object,
   type = "scatter",
-  rate_type = "beta_adp",
+  rateType = "betaAdp",
   file = NULL,
   width = 8,
   height = 6,
@@ -16,11 +16,11 @@ plotRates(
 )
 }
 \arguments{
-\item{object}{An experiment_transcription_rates object}
+\item{object}{An experimentTranscriptionRates object}
 
 \item{type}{Type of plot to create ("scatter", "histogram", or "density")}
 
-\item{rate_type}{Which rate to plot ("beta_org", "beta_adp", "chi", etc.)}
+\item{rateType}{Which rate to plot ("betaOrg", "betaAdp", "chi", etc.)}
 
 \item{file}{Optional path to save the plot. If provided, the plot will be
 saved to this location.}

@@ -7,7 +7,7 @@
 exportRatesToCSV(object, file)
 }
 \arguments{
-\item{object}{An experiment_transcription_rates object}
+\item{object}{An experimentTranscriptionRates object}
 
 \item{file}{Path to output CSV file}
 }
