@@ -170,7 +170,8 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
                 ),
                 error = function(err) {
                     list(
-                        "beta"=NA, "Yk"=NA, "fkMean"=NA, "fkVar"=NA, "likelihoods"=NA
+                        "beta"=NA, "Yk"=NA, "fkMean"=NA, "fkVar"=NA,
+                        "likelihoods"=NA
                     )
                 }
             )

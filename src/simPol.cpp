@@ -93,7 +93,8 @@ Rcpp::List simulate_polymerase_cpp(
     int pol_size,
     int add_space,
     double time,
-    int steps_to_record) {
+    int steps_to_record,
+    Rcpp::Nullable<Rcpp::NumericVector> zeta_vec) {
 
     int steric_hindrance = pol_size + add_space;
     double delta_t = 1e-4; 
@@ -102,6 +103,7 @@ Rcpp::List simulate_polymerase_cpp(
 
     /* Initialize an array to hold Pol II presence and absence*/
     std::vector<std::vector<int>> pos_matrix;
+
     for (int i = 0; i < cell_num; i++)
     {
         std::vector<int> sites;
@@ -118,21 +120,15 @@ Rcpp::List simulate_polymerase_cpp(
      * cols are cells, rows are positions
      */
     std::vector<double> zv;
-    if(true)//zeta_vec_str == "")
-    {
-        zv = NormalDistrubtionGenerator(zeta, zeta_sd, zeta_min, zeta_max, total_sites, false, delta_t);
-    }
-    else {
-        /*std::ifstream data(zeta_vec_str);
-        if(data.is_open())
-        {
-            std::string line;
-            while(getline(data, line, '\n')) {
-                zv.emplace_back(std::stod(line));
-            }
-        }
-        if((int)zv.size() >= total_sites)
-        {
+    if (zeta_vec.isNull()) {
+        zv = NormalDistrubtionGenerator(zeta, zeta_sd, zeta_min, zeta_max, 
+                                      total_sites, false, delta_t);
+    } else {
+        // Convert Rcpp::NumericVector to std::vector<double>
+        zv = Rcpp::as<std::vector<double>>(zeta_vec);
+        
+        // Ensure correct length
+        if ((int)zv.size() > total_sites) {
             zv.resize(total_sites);
         }
         else if((int)zv.size() == total_sites - 1)
@@ -145,7 +141,10 @@ Rcpp::List simulate_polymerase_cpp(
             return -1;
         }
         double transform_val = zeta * delta_t;
-        std::transform(zv.begin(), zv.end(), zv.begin(), [&transform_val](auto& c){return c*transform_val;});*/
+        std::transform(zv.begin(), zv.end(), zv.begin(), 
+                      [transform_val](double c) -> double {
+                          return c * transform_val;
+                      });
     }
 
     std::random_device rd; // Get seed for random number generator
@@ -236,9 +235,9 @@ Rcpp::List simulate_polymerase_cpp(
     }
 
     return Rcpp::List::create(
-        Rcpp::Named("probability_vector") = zv,
-        Rcpp::Named("pause_sites") = y,
-        Rcpp::Named("combined_cells_data") = res_all,
-        Rcpp::Named("position_matrix") = pos_matrix_r
+        Rcpp::Named("probabilityVector") = zv,
+        Rcpp::Named("pauseSites") = y,
+        Rcpp::Named("combinedCellsData") = res_all,
+        Rcpp::Named("positionMatrix") = pos_matrix_r
     );
 }
