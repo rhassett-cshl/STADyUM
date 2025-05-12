@@ -9,7 +9,7 @@ estimateExperimentTranscriptionRates(
   bigwigMinus,
   pauseRegions,
   geneBodyRegions,
-  geneNameColumn,
+  geneNameColumn = "gene_id",
   stericHindrance = FALSE,
   omegaScale = NULL
 )
@@ -28,7 +28,7 @@ contain a geneId}
 must contain a geneId}
 
 \item{geneNameColumn}{a string that indicates which column in the GRanges
-gene names}
+represents gene names information. Defaults to "gene_id"}
 
 \item{stericHindrance}{a logical value to determine whether to infer
 landing-pad occupancy or not. Defaults to FALSE.}

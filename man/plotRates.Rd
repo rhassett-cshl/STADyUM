@@ -18,9 +18,11 @@ plotRates(
 \arguments{
 \item{object}{An experimentTranscriptionRates object}
 
-\item{type}{Type of plot to create ("scatter", "histogram", or "density")}
+\item{type}{Type of plot to create ("scatter", "histogram", or "density").
+Defaults to "scatter"}
 
-\item{rateType}{Which rate to plot ("betaOrg", "betaAdp", "chi", etc.)}
+\item{rateType}{Which rate to plot ("betaOrg", "betaAdp", "chi", etc.).
+Defaults to "betaAdp"}
 
 \item{file}{Optional path to save the plot. If provided, the plot will be
 saved to this location.}

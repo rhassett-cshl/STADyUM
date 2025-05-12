@@ -120,8 +120,8 @@ prepareSimulationParameters <- function(simpol) {
     matchedGbLen <- matchedLen - kmax
     countRnap <- FALSE
 
-    spacing <- simpol@s + simpol@h#simpol@pol_size + simpol@add_space
-    k <- k(simpol)
+    spacing <- slot(simpol, "polSize") + slot(simpol, "addSpace")
+    k <- slot(simpol, "k")
     startPoint <- 0.99 * 1e6
     lambda <- 102.1  # from Dukler et al. 2017
 
@@ -264,7 +264,7 @@ calculateInitialRates <- function(bwDfs, regions, params, simpol, rnapGrng) {
 
     bwDfs$chi <- bwDfs$rcGb / regions$len$gb
 
-    if (ksd(simpol) == 0) {
+    if (slot(simpol, "ksd") == 0) {
         bwDfs$betaOrg <- bwDfs$chi / map_dbl(bwDfs$Xk, params$k)
     } else {
         bwDfs$betaOrg <- bwDfs$chi / (bwDfs$rcTss / regions$len$tss)
@@ -615,14 +615,9 @@ setMethod(
 
 #' @rdname simulationTranscriptionRates-class
 #' @export
-setGeneric(
-    "stericHindrance",
-    function(object) standardGeneric("stericHindrance")
-)
-setMethod(
-    "stericHindrance", "simulationTranscriptionRates",
-    function(object) slot(object, "stericHindrance")
-)
+setMethod("stericHindrance", "simulationTranscriptionRates", function(object) {
+    slot(object, "stericHindrance")
+})
 
 #' @rdname simulationTranscriptionRates-class
 #' @export

@@ -1,11 +1,11 @@
 #' @importFrom rtracklayer import.bw
 #' @import GenomicRanges
 #' @import tibble
-#' @importFrom methods new
+#' @importFrom methods new slot
 #' @importFrom S4Vectors elementMetadata DataFrame splitAsList
 #' @importFrom dplyr mutate select %>% left_join
 #' @importFrom purrr map map_dbl
-#' @importFrom stats dnorm
+#' @importFrom stats dnorm rpois optim rnorm var
 #' @importFrom utils write.csv
 #' @import ggplot2
 #' @import progress
@@ -233,10 +233,10 @@ prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
     pauseRegions <- promoters(pauseRegions, upstream = 0, downstream = kmax)
 
     message("\nSummarizing pause and gene body regions...")
-    rc1Pause <- summariseBw(bw = bw1P3, regions = pauseRegions, 
-                            "summarizedPauseCounts")    
-    rc1Gb <- summariseBw(bw = bw1P3, regions = geneBodyRegions, 
-                        "summarizedGbCounts")
+    rc1Pause <- summariseBw(bw = bw1P3, grng = pauseRegions, 
+                            colName = "summarizedPauseCounts")    
+    rc1Gb <- summariseBw(bw = bw1P3, grng = geneBodyRegions, 
+                        colName = "summarizedGbCounts")
     rc1Pause$pauseLength <- kmax
     rc1Gb$gbLength <- width(geneBodyRegions)[match(
             rc1Gb$geneId, geneBodyRegions$geneId)]
@@ -659,20 +659,6 @@ setMethod(
 
 #' @rdname experimentTranscriptionRates-class
 #' @export
-setGeneric("stericHindrance", function(object) {
-    standardGeneric("stericHindrance")
-})
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setMethod(
-    "stericHindrance", "experimentTranscriptionRates",
-    function(object) {
-        slot(object, "stericHindrance")
-    }
-)
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
 setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
 
 #' @rdname experimentTranscriptionRates-class
@@ -680,3 +666,10 @@ setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
 setMethod("omegaScale", "experimentTranscriptionRates", function(object) {
     slot(object, "omegaScale")
 })
+
+#' @rdname experimentTranscriptionRates-class
+#' @export
+setMethod("stericHindrance", "experimentTranscriptionRates", function(object) {
+    slot(object, "stericHindrance")
+})
+

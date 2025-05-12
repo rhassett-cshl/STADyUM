@@ -61,10 +61,10 @@ simpol <- simulatePolymerase(
     zetaSd = 1000, # standard deviation of elongation rate
     zetaMin = 1500, # minimum elongation rate
     zetaMax = 2500, # maximum elongation rate
-    cellNum = 20000, # number of cells
+    cellNum = 1000, # number of cells
     polSize = 33, # polymerase size
     addSpace = 17, # additional space
-    time = 40, # simulation time
+    time = 1, # simulation time
     stepsToRecord = 1 # steps to record
 )
 ```
@@ -91,12 +91,6 @@ The package provides several plotting functions:
 ```{r plotting}
 # Plot transcription rates
 plotTranscriptionRates(srates)
-
-# Plot pause site distribution
-plotPauseSitesDistribution(srates)
-
-# Plot RNAP counts (if available)
-plotRNAPCounts(srates)
 ```
 
 # Advanced Usage

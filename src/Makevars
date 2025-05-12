@@ -1,6 +1,6 @@
-PKG_CPPFLAGS = -I$(R_HOME)/include -I$(R_HOME)/library/Rcpp/include
-PKG_CXXFLAGS = -fopenmp -std=c++11
-PKG_LIBS = -fopenmp
+PKG_CPPFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) -std=c++11
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 # Ensure the shared library is built in the libs directory
 SHLIB = $(SHLIB_LIBADD)
@@ -9,5 +9,6 @@ SHLIB_LDFLAGS = -shared
 SHLIB_EXT = .so
 
 PKG_CPPFLAGS += -D__STDC_WANT_LIB_EXT1__=1
-CXX_STD = CXX14
-PKG_LIBS += $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS) 
+CXX_STD = CXX11
+
+PKG_CPPFLAGS += -I$(R_HOME)/include -I$(R_HOME)/library/Rcpp/include 

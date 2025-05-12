@@ -4,12 +4,12 @@
 \alias{exportRatesToCSV}
 \title{Export rates to CSV}
 \usage{
-exportRatesToCSV(object, file)
+exportRatesToCSV(object, file = "experiment_rates.csv")
 }
 \arguments{
 \item{object}{An experimentTranscriptionRates object}
 
-\item{file}{Path to output CSV file}
+\item{file}{Path to output CSV file. Defaults to "experiment_rates.csv"}
 }
 \value{
 Outputs a CSV file with the rates

@@ -112,7 +112,7 @@ pauseEscapeMaximization <- function(chiHat, Xk, Yk, fk, kmin, kmax) {
         fk <- fk / sum(fk)
     }
 
-    beta <- chi_hat / t
+    beta <- chiHat / t
 
     return(list(
         "beta" = beta, "fk" = fk, "fkMean" = fkMean,

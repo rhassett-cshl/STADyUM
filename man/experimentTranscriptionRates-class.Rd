@@ -3,90 +3,63 @@
 \docType{class}
 \name{experimentTranscriptionRates-class}
 \alias{experimentTranscriptionRates-class}
-\alias{getRates}
+\alias{plotRates,experimentTranscriptionRates-method}
 \alias{rates}
-\alias{counts}
-\alias{pauseRegions}
-\alias{geneBodyRegions}
-\alias{geneNameColumn}
-\alias{stericHindrance}
-\alias{omegaScale}
-\alias{bigwigPlus}
-\alias{bigwigMinus}
 \alias{rates,experimentTranscriptionRates-method}
+\alias{counts}
 \alias{counts,experimentTranscriptionRates-method}
+\alias{pauseRegions}
 \alias{pauseRegions,experimentTranscriptionRates-method}
+\alias{geneBodyRegions}
 \alias{geneBodyRegions,experimentTranscriptionRates-method}
+\alias{geneNameColumn}
 \alias{geneNameColumn,experimentTranscriptionRates-method}
-\alias{stericHindrance,experimentTranscriptionRates-method}
+\alias{omegaScale}
 \alias{omegaScale,experimentTranscriptionRates-method}
-\alias{bigwigPlus,experimentTranscriptionRates-method}
-\alias{bigwigMinus,experimentTranscriptionRates-method}
-\alias{saveRates}
-\alias{saveRates,experimentTranscriptionRates-method}
-\alias{plotRate}
-\alias{plotRate,experimentTranscriptionRates-method}
+\alias{stericHindrance,experimentTranscriptionRates-method}
 \title{Class experimentTranscriptionRates}
 \usage{
-getRates(object)
+\S4method{plotRates}{experimentTranscriptionRates}(
+  object,
+  type = "scatter",
+  rateType = "betaAdp",
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  ...
+)
 
 rates(object)
 
-counts(object)
-
-pauseRegions(object)
-
-geneBodyRegions(object)
-
-geneNameColumn(object)
-
-stericHindrance(object)
-
-omegaScale(object)
-
-bigwigPlus(object)
-
-bigwigMinus(object)
-
 \S4method{rates}{experimentTranscriptionRates}(object)
+
+counts(object)
 
 \S4method{counts}{experimentTranscriptionRates}(object)
 
+pauseRegions(object)
+
 \S4method{pauseRegions}{experimentTranscriptionRates}(object)
+
+geneBodyRegions(object)
 
 \S4method{geneBodyRegions}{experimentTranscriptionRates}(object)
 
+geneNameColumn(object)
+
 \S4method{geneNameColumn}{experimentTranscriptionRates}(object)
 
-\S4method{stericHindrance}{experimentTranscriptionRates}(object)
+omegaScale(object)
 
 \S4method{omegaScale}{experimentTranscriptionRates}(object)
 
-\S4method{bigwigPlus}{experimentTranscriptionRates}(object)
-
-\S4method{bigwigMinus}{experimentTranscriptionRates}(object)
-
-saveRates(object, file)
-
-\S4method{saveRates}{experimentTranscriptionRates}(object, file)
-
-plotRate(object, rateType)
-
-\S4method{plotRate}{experimentTranscriptionRates}(object, rateType)
-}
-\arguments{
-\item{object}{An experimentTranscriptionRates object}
-}
-\value{
-A tibble containing the transcription rates
+\S4method{stericHindrance}{experimentTranscriptionRates}(object)
 }
 \description{
 Class \code{experimentTranscriptionRates} has read counts, pause and gene
 body genomic region coordinates, steric hindrance and omega scale factor
 parameters used to estimate the transcription rates
-
-Retrieves the transcription rates from an
-experimentTranscriptionRates object
 }
 \section{Slots}{
 

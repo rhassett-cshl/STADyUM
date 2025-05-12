@@ -662,9 +662,14 @@ setMethod("positionMatrix", "simulatePolymerase", function(object) {
 
 #' Get all simulation parameters
 #' @param object A simulatePolymerase object
-#' @return A list containing all simulation parameters
+#' @return A list containing all simulation parameters including k, ksd, kMin, kMax,
+#' geneLen, alpha, beta, zeta, zetaSd, zetaMin, zetaMax, zetaVec, cellNum,
+#' polSize, addSpace, time, and stepsToRecord
 #' @export
 setGeneric("parameters", function(object) standardGeneric("parameters"))
+
+#' @rdname parameters
+#' @export
 setMethod("parameters", "simulatePolymerase", function(object) {
     list(
         k = slot(object, "k"),

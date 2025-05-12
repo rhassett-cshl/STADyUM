@@ -42,3 +42,4 @@ likelihoods and phi
 \description{
 Estimate transcription rates with varying pause sites.
 }
+\keyword{internal}

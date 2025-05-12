@@ -1,20 +1,29 @@
+# Hidden files and directories
+^\.RData$
+^\.Rhistory$
+^\.Ruserdata$
+^\.Rcheck$
+^\.Rbuildignore$
+^\.gitignore$
+^\.DS_Store$
+^Thumbs\.db$
+
+# Git related
+^\.git/
+^\.github/
+
+# R related
+^\.Rproj\.user/
 ^STADyUM\.Rproj$
-^\.Rproj\.user$
-^LICENSE\.md$
-^README\.Rmd$
-^\.github$
+
+# IDE related
+^\.vscode/
+^\.cursor/
+
+# Build artifacts
 ^.*\.o$
 ^.*\.so$
 ^.*\.dylib$
-^\.DS_Store$
-^\.git$
-^\.gitignore$
-^\.Rhistory$
-^\.RData$
-^\.Ruserdata$
-^\.vscode$
-^.github$
-^.gitignore$
-^..Rcheck$
-^.Rproj.user$
-^.git$
+^src/.*\.o$
+^src/.*\.so$
+^src/.*\.dylib$

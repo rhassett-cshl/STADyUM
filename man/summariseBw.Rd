@@ -21,3 +21,4 @@ A \code{\link[GenomicRanges]{GenomicRanges-class}} object
 Creates GRanges object with column of read counts summarized over regions of
 genes
 }
+\keyword{internal}

@@ -3,42 +3,56 @@
 \docType{class}
 \name{simulatePolymerase-class}
 \alias{simulatePolymerase-class}
+\alias{simulatePolymerase}
+\alias{simulateReadCounts}
+\alias{simulateReadCounts,simulatePolymerase-method}
+\alias{simulateAvgReadDensity}
+\alias{simulateAvgReadDensity,simulatePolymerase-method}
+\alias{show,simulatePolymerase-method}
+\alias{plotAvgReadDensity}
+\alias{plotAvgReadDensity,simulatePolymerase-method}
 \alias{pauseSites}
 \alias{probabilityVector}
 \alias{combinedCellsData}
 \alias{positionMatrix}
-\alias{simulatePolymerase}
-\alias{show,simulatePolymerase-method}
-\alias{plotProbability}
-\alias{plotCombinedCells}
-\alias{plotAvgReadDensity}
-\alias{simulateReadCounts}
-\alias{simulateAvgReadDensity}
-\alias{plotProbability,simulatePolymerase-method}
-\alias{plotCombinedCells,simulatePolymerase-method}
-\alias{plotAvgReadDensity,simulatePolymerase-method}
-\alias{simulateReadCounts,simulatePolymerase-method}
-\alias{simulateAvgReadDensity,simulatePolymerase-method}
-\alias{k}
-\alias{ksd}
-\alias{kMin}
-\alias{kMax}
-\alias{geneLen}
-\alias{alpha}
-\alias{beta}
-\alias{zeta}
-\alias{zetaSd}
-\alias{zetaMin}
-\alias{zetaMax}
-\alias{cellNum}
-\alias{polSize}
-\alias{addSpace}
-\alias{time}
-\alias{stepsToRecord}
 \alias{readCounts}
 \alias{avgReadDensity}
 \title{Class simulatePolymerase}
 \usage{
+simulatePolymerase(
+  k = 50,
+  ksd = 25,
+  kMin = 17,
+  kMax = 200,
+  geneLen = 1950,
+  alpha = 1,
+  beta = 1,
+  zeta = 2000,
+  zetaSd = 1000,
+  zetaMin = 1500,
+  zetaMax = 2500,
+  zetaVec = NULL,
+  cellNum = 1000,
+  polSize = 33,
+  addSpace = 17,
+  time = 1,
+  stepsToRecord = 1
+)
+
+simulateReadCounts(object)
+
+\S4method{simulateReadCounts}{simulatePolymerase}(object)
+
+simulateAvgReadDensity(object)
+
+\S4method{simulateAvgReadDensity}{simulatePolymerase}(object)
+
+\S4method{show}{simulatePolymerase}(object)
+
+plotAvgReadDensity(object)
+
+\S4method{plotAvgReadDensity}{simulatePolymerase}(object)
+
 pauseSites(object)
 
 probabilityVector(object)
@@ -46,79 +60,6 @@ probabilityVector(object)
 combinedCellsData(object)
 
 positionMatrix(object)
-
-simulatePolymerase(
-  k,
-  ksd,
-  kMin,
-  kMax,
-  geneLen,
-  alpha,
-  beta,
-  zeta,
-  zetaSd,
-  zetaMin,
-  zetaMax,
-  cellNum,
-  polSize,
-  addSpace,
-  time,
-  stepsToRecord
-)
-
-\S4method{show}{simulatePolymerase}(object)
-
-plotProbability(object)
-
-plotCombinedCells(object)
-
-plotAvgReadDensity(object)
-
-simulateReadCounts(object)
-
-simulateAvgReadDensity(object)
-
-\S4method{plotProbability}{simulatePolymerase}(object)
-
-\S4method{plotCombinedCells}{simulatePolymerase}(object)
-
-\S4method{plotAvgReadDensity}{simulatePolymerase}(object)
-
-\S4method{simulateReadCounts}{simulatePolymerase}(object)
-
-\S4method{simulateAvgReadDensity}{simulatePolymerase}(object)
-
-k(object)
-
-ksd(object)
-
-kMin(object)
-
-kMax(object)
-
-geneLen(object)
-
-alpha(object)
-
-beta(object)
-
-zeta(object)
-
-zetaSd(object)
-
-zetaMin(object)
-
-zetaMax(object)
-
-cellNum(object)
-
-polSize(object)
-
-addSpace(object)
-
-time(object)
-
-stepsToRecord(object)
 
 readCounts(object)
 
