@@ -252,7 +252,7 @@ mult.RNAP.phi.omega <- function(omega, beta, f1, f2) {
 beta.ecll.omega.log <- function(args, omega, chi, t, f1, f2) {
     beta <- exp(args[1])
 
-    # fix Beta prior with a=b=2
+    ## fix Beta prior with a=b=2
     a <- 2
     b <- 2
 
@@ -264,12 +264,12 @@ beta.ecll.omega.log <- function(args, omega, chi, t, f1, f2) {
         retval <- -t * log(beta) - chi / beta + (a - 1) * log(phi) + (b - 1) *
             log(1 - phi)
     }
-    return(-retval) # minimization!
+    return(-retval)
 }
 
 #' @keywords internal
 beta.M.step.omega <- function(chi, t, f1, f2, oldphi, oldbeta, lambda, zeta) {
-    omega <- chi * zeta / lambda # this will be const; could just be passed in
+    omega <- chi * zeta / lambda 
     ret <- list("par" = NA_integer_)
 
     try(ret <-
@@ -279,7 +279,6 @@ beta.M.step.omega <- function(chi, t, f1, f2, oldphi, oldbeta, lambda, zeta) {
         ), silent = FALSE)
 
     beta <- exp(ret$par)
-    # set a ceiling for phi
     phi <- mult.RNAP.phi.omega(omega, beta, f1, f2)
 
     return(list("beta" = beta, "phi" = phi))
@@ -300,10 +299,8 @@ stericHindranceMaximization <- function(
     fkMean <- (u - z) / (t - w)
     fkVar <- (v - r) / (t - w) - fkMean^2
 
-    # avoid small and negative values
     if (fkVar < 1e-10) {
         fk[seq_len(length(fk))] <- 0
-        # sometimes it looks like an integer but actually it's not
         fk[round(fkMean)] <- 1
     } else {
         fk <- dnorm(kmin:kmax, mean = fkMean, sd = fkVar^0.5)
@@ -323,7 +320,6 @@ stericHindranceMaximization <- function(
 
 #' @keywords internal
 calculateF <- function(s, k) {
-    # sd is set as 25 here
     x <- round(rnorm(1e7, mean = k, sd = 25))
     x <- x[x >= 17 & x <= 200]
     f <- mean(x > s)

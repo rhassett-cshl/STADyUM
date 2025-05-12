@@ -78,10 +78,10 @@ Now we can estimate transcription rates from the simulation:
 srates <- estimateSimulationTranscriptionRates(simpol)
 
 # Get the rates
-chi <- getChi(srates)
-beta_org <- getBetaOrg(srates)
-beta_adp <- getBetaAdp(srates)
-phi <- getPhi(srates)
+chi <- chi(srates)
+beta_org <- betaOrg(srates)
+beta_adp <- betaAdp(srates)
+phi <- phi(srates)
 ```
 
 ## Visualizing Results
@@ -112,7 +112,7 @@ srates_sh <- estimateSimulationTranscriptionRates(simpol,
 )
 
 # Get steric hindrance values
-phi_sh <- getPhi(srates_sh)
+phi_sh <- phi(srates_sh)
 ```
 
 ## Saving and Loading Results
@@ -133,7 +133,7 @@ You can access the original simulation parameters:
 
 ```{r parameters}
 # Get parameters
-params <- getParameters(simpol)
+params <- parameters(simpol)
 
 # Print parameters
 print(params)

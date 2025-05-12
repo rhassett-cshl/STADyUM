@@ -37,35 +37,25 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
 
     theme_set(cowplot::theme_cowplot())
 
-    # set up parameters
-    k <- 50
-    kmin <- 1
-    kmax <- 200 # also used as k on the poisson case
+    k <- 50; kmin <- 1; kmax <- 200; rnapSize <- 50; zeta <- 2000
 
-    rnapSize <- 50
-    zeta <- 2000
+    ## criteria for significance, p.adj < 0.05 and 2 fold differences
+    sigP <- 0.05; lfc1 <- 0; lfc2 <- 0
 
-    # criteria for significance, p.adj < 0.05 and 2 fold differences
-    sigP <- 0.05
-    lfc1 <- 0
-    lfc2 <- 0
-
-    # read in summary statistics from the varied pause site model expData1 and
-    # expData2
-    # union set of genes being analyzed
+    ## read in summary statistics from the varied pause site model
+    ## union set of genes being analyzed
     gnUnion <- intersect(expData1$geneId, expData2$geneId)
     expData1 <- expData1[match(gnUnion, expData1$geneId), ]
     expData2 <- expData2[match(gnUnion, expData2$geneId), ]
 
-    #### Poisson-based Likelihood Ratio Tests ####
-    # read in number of spike-in or total number of mappable reads
-    # use them as scaling factor
+    ## Poisson-based Likelihood Ratio Tests
+    ## read in number of spike-in or total number of mappable reads
+    ## use them as scaling factor
     scaleTbl <- readCsv(spikeIn, showColTypes = FALSE)
-    # subset the right table
+    ## subset the right table
     scaleTbl <- scaleTbl[strDetect(expData2, scaleTbl$sample), ]
-    #
-    # based on formula (27) and (28), cancel out M and zeta since they are the
-    # same between conditions
+    ## based on formula (27) and (28), cancel out M and zeta since they are the
+    ## same between conditions
     lambda1 <- scaleTbl$control1 + ifelse(is.na(scaleTbl$control2), 0,
         scaleTbl$control2
     )
@@ -73,7 +63,7 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
         scaleTbl$treated2
     )
 
-    ## LRT for omega ##
+    ## LRT for omega
     tao1 <- lambda1 / (lambda1 + lambda2)
     tao2 <- 1 - tao1
 
@@ -93,39 +83,26 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
     omegaTbl <- omegaTbl %>%
         mutate(padj = p.adjust(p, method = "BH"))
 
-    # LRT for beta #
-    # need to jointly do EM one more time for H0, which assume betas are the
-    # same between conditions, initialize fk with some reasonable values based
-    # on heuristic
+    ## LRT for beta
     fkInt <- dnorm(kmin:kmax, mean = 50, sd = 100)
     fkInt <- fkInt / sum(fkInt)
-    # try uniform distribution which gives similar results
-    # fk_int <- rep(1 / kmax, kmax)
 
-    # collect and construct stats
     s1 <- expData1$s
     s2 <- expData2$s
     t1H1 <- mapDbl(expData1$Yk, sum)
     t2H1 <- mapDbl(expData2$Yk, sum)
     Xk1 <- expData1$Xk
     Xk2 <- expData2$Xk
-    # gene body length, assumed to be same between conditions
+    ## gene body length, assumed to be same between conditions
     M <- expData1$N
 
-    # some values inherit from EM for H1, could be further integrated into EM
-    # here
     chiHat <- (s1 + s2) / M
-    # beta_int <- chi_hat / (t1_h1 + t2_h1)
-    betaInt <- chiHat / (mapDbl(expData1$Xk, sum)
-    + mapDbl(expData2$Xk, sum))
-
-    # chiHat for control and test sets
+    betaInt <- chiHat / (mapDbl(expData1$Xk, sum) + mapDbl(expData2$Xk, sum))
     chiHat1 <- expData1$chi
     chiHat2 <- expData2$chi
-    # max iterations and tolerance for EM
-    maxItr <- 500
-    tor <- 1e-6
-    # run EM for multiple combinations of parameters
+
+    maxItr <- 500; tor <- 1e-6
+
     emRes <- pmap(
         list(Xk1, Xk2, betaInt, chiHat, chiHat1, chiHat2),
         function(x, y, z, k, m, n) {
@@ -136,8 +113,6 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
                     maxItr, tor
                 ),
                 error = function(err) {
-                    # handling the error, one of the cases is when
-                    # there is no read counts in the pause region
                     list("beta" = NA, "Yk1" = NA, "Yk2" = NA)
                 }
             )
@@ -146,7 +121,7 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
 
     h0Likelihood <- map_dbl(emRes, ~ .x$likelihoods[[length(.x$likelihoods)]])
 
-    # use eq (25) instead of (31) to compute T stats
+    ## use eq (25) instead of (31) to compute T stats
     betaTbl <-
         tibble(
             geneId = expData1$geneId,
@@ -161,10 +136,10 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
                 h0Likelihood
         )
 
-    # some genes with negative T stats, fix them
+    ## some genes with negative T stats, fix them
     idx <- betaTbl$tStats < 0
 
-    # use parameter estimates from h0 as initial values for EM in h1
+    ## use parameter estimates from h0 as initial values for EM in h1
     h0Beta <- map_dbl(emRes, "beta")
     h0Fk1 <- map(emRes, "fk1")
     h0Fk2 <- map(emRes, "fk2")
@@ -174,14 +149,11 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
         function(x, y, z, k) {
             tryCatch(
                 mainEM(
-                    fkInt = x, Xk = y, kmin = kmin, kmax = kmax,
-                    betaInt = z, chiHat = k,
-                    maxItr = maxItr, tor = tor
+                    fkInt=x,Xk=y,kmin=kmin,kmax=kmax,betaInt=z,chiHat=k,maxItr=maxItr, tor=tor
                 ),
                 error = function(err) {
                     list(
-                        "beta" = NA, "Yk" = NA,
-                        "fkMean" = NA, "fkVar" = NA, "likelihoods" = NA
+                        "beta"=NA, "Yk"=NA,"fkMean"=NA, "fkVar"=NA, "likelihoods"=NA
                     )
                 }
             )
@@ -193,14 +165,12 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
         function(x, y, z, k) {
             tryCatch(
                 mainEM(
-                    fkInt = x, Xk = y, kmin = kmin, kmax = kmax,
-                    betaInt = z, chiHat = k,
-                    maxItr = maxItr, tor = tor
+                    fkInt=x, Xk=y, kmin=kmin, kmax=kmax, betaInt=z, chiHat=k,
+                    maxItr=maxItr, tor=tor
                 ),
                 error = function(err) {
                     list(
-                        "beta" = NA, "Yk" = NA,
-                        "fkMean" = NA, "fkVar" = NA, "likelihoods" = NA
+                        "beta"=NA, "Yk"=NA, "fkMean"=NA, "fkVar"=NA, "likelihoods"=NA
                     )
                 }
             )
@@ -226,9 +196,8 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
     betaTbl <- bind_rows(betaTbl[!idx, ], betaTblIdx)
 
     betaTbl <- betaTbl %>%
-        mutate(p = pchisq(2 * tStats,
-            df = 1, ncp = 0, lower.tail = FALSE,
-            log.p = FALSE
+        mutate(p = pchisq(2 * tStats,df=1, ncp=0, lower.tail=FALSE,
+            log.p=FALSE
         ))
 
     betaTbl <- betaTbl %>% mutate(padj = p.adjust(p, method = "BH"))
@@ -245,12 +214,10 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
         stat_compare_means() +
         scale_x_discrete(labels = c("chi1" = "Control", "chi2" = "Treated")) +
         labs(x = "", y = expression(log[2] * chi)) +
-        # coord_cartesian(ylim = c(scale_tbl$chi_ymin, scale_tbl$chi_ymax)) +
         theme(legend.position = "none")
 
     ggsave(file.path(resultDir, "chi_distribution.png"),
-        plot = p,
-        width = 4, height = 5
+        plot=p,width=4, height=5
     )
 
     p <- betaTbl %>%
@@ -258,9 +225,8 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
         pivot_longer(cols = contains("beta")) %>%
         mutate(value = log2(value * zeta)) %>%
         ggboxplot(
-            x = "name", y = "value", fill = "name",
-            palette = c("#00AFBB", "#E7B800", "#FC4E07"),
-            outlier.shape = NA, notch = TRUE
+            x="name", y="value", fill="name",palette=c("#00AFBB", "#E7B800",
+            "#FC4E07"), outlier.shape=NA, notch=TRUE
         ) +
         stat_compare_means(label.x.npc = "left", label.y = scaleTbl$betaYmax) +
         scale_x_discrete(labels = c("beta1" = "Control", "beta2" = "Treated")) +
@@ -268,12 +234,10 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
         coord_cartesian(ylim = c(scaleTbl$betaYmin, scaleTbl$betaYmax)) +
         theme(legend.position = "none")
 
-    ggsave(file.path(resultDir, "beta_distribution.png"),
-        plot = p,
-        width = 4, height = 5
+    ggsave(file.path(resultDir, "beta_distribution.png"),plot=p,width=4,       
+        height=5
     )
 
-    # mean vs. LFC
     omegaTbl <- omegaTbl %>%
         mutate(
             chi = (chi1 + chi2) / 2,
@@ -301,8 +265,7 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
         cowplot::theme_cowplot()
 
     ggsave(file.path(resultDir, "chi_mean_vs_lfc.png"),
-        plot = p,
-        width = 6, height = 3
+        plot=p,width=6, height=3
     )
 
 
@@ -334,19 +297,16 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
         cowplot::theme_cowplot()
 
     ggsave(file.path(resultDir, "beta_mean_vs_lfc.png"),
-        plot = p,
-        width = 6, height = 3
+        plot=p,width=6, height=3
     )
 
-
-    # Changes of initiation and pause release rates
     lfcTbl <- omegaTbl %>%
         select(geneId, lfc, category) %>%
         inner_join(betaTbl %>% select(geneId, lfc, category),
             by = "geneId", suffix = c("_chi", "_beta")
         )
-    #
-    # Number of genes with differential rates
+
+    ## Number of genes with differential rates
     lfcSummary <- lfcTbl %>%
         select(contains("category")) %>%
         pivot_longer(everything()) %>%
@@ -369,18 +329,16 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
         labs(x = "", y = "Number of Genes", fill = "Category")
 
     ggsave(file.path(resultDir, "gene_number_with_differential_rates.png"),
-        plot = p,
-        width = 6, height = 4
+        plot=p, width=6, height=4
     )
 
-    # mean and variance of pause sites in different beta categories
+    ## mean and variance of pause sites in different beta categories
     betaTbl <- betaTbl %>%
         mutate(
-            fkStd1 = fkVar1^0.5,
-            fkStd2 = fkVar2^0.5
+            fkStd1=fkVar1^0.5, fkStd2=fkVar2^0.5
         )
 
-    # plot mean and std of pause sites side by side
+    ## plot mean and std of pause sites side by side
     p1 <- betaTbl %>%
         ggplot(aes(x = fkMean1, y = fkStd1)) +
         geom_pointdensity() +
@@ -407,8 +365,7 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
 
     ggsave(
         filename = file.path(resultDir, "mean_vs_std_of_k_pointdensity.png"),
-        plot = p,
-        width = 14, height = 5
+        plot = p,width = 14,height = 5
     )
 
     # output tables

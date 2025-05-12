@@ -208,68 +208,46 @@ inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
 #' @keywords internal
 prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
                                     geneBodyRegions, kmax) {
-    ## read count cut-off for both gene body and pause peak
     rcCutoff <- 20
-    
     pb <- progress::progress_bar$new(
         format = "Processing [:bar] :percent eta: :eta",
-        total = 6,  
-        clear = FALSE,
-        width = 60
+        total = 4,  
     )
     
-    message("\nStarting bigwig processing...")
+    message("\nImporting bigwig files...")
     pb$tick(0)
-    
-    message("\nLoading plus strand bigwig...")
     bwp1P3 <- import.bw(bigwigPlus)
-    pb$tick()
-    
-    message("\nLoading minus strand bigwig...")
     bwm1P3 <- import.bw(bigwigMinus)
-    pb$tick()
-
     if (sum(bwp1P3$score) == 0 || sum(bwm1P3$score) == 0) {
         stop("No reads found in plus or minus strand bigwig file")
     }
+    pb$tick()
 
-    message("\nProcessing plus strand bigwig...")
-    bwp1P3 <- processBw(bw = bwp1P3, strand = "+")
-    pb$tick()
-    
-    message("\nProcessing minus strand bigwig...")
+    message("\nProcessing plus and minus strands bigwig...")
+    bwp1P3 <- processBw(bw = bwp1P3, strand = "+")    
     bwm1P3 <- processBw(bw = bwm1P3, strand = "-")
-    pb$tick()
-    
     bw1P3 <- c(bwp1P3, bwm1P3)
     rm(bwp1P3, bwm1P3)
+    pb$tick()  
 
-    ## make sure pause region is the same as kmax used in EM
     pauseRegions <- promoters(pauseRegions, upstream = 0, downstream = kmax)
 
-    message("\nSummarizing pause regions...")
+    message("\nSummarizing pause and gene body regions...")
     rc1Pause <- summariseBw(bw = bw1P3, regions = pauseRegions, 
-                            "summarizedPauseCounts")
-    pb$tick()
-    
-    message("\nSummarizing gene body regions...")
+                            "summarizedPauseCounts")    
     rc1Gb <- summariseBw(bw = bw1P3, regions = geneBodyRegions, 
                         "summarizedGbCounts")
-    pb$tick()
-
     rc1Pause$pauseLength <- kmax
     rc1Gb$gbLength <- width(geneBodyRegions)[match(
             rc1Gb$geneId, geneBodyRegions$geneId)]
+    pb$tick()
 
-    # SHOULDN'T IT STILL BE MERGED BY GENE_ID?
 
     message("\nGenerating read counts table...")
     rc1 <- Reduce(
-        function(x, y) merge(x, y, by = "geneId", all = TRUE),
+        function(x, y) merge(x, y, by=geneNameColumn, all=TRUE),
         list(rc1Pause, rc1Gb)
     )
-
-    ## clean up some genes with missing values in tss length or gene body length
     rc1 <- rc1[!(is.na(rc1$pauseLength) | is.na(rc1$gbLength)), ]
     rc1 <- rc1[(rc1$summarizedPauseCounts > rcCutoff) &
         (rc1$summarizedGbCounts > rcCutoff), ]
@@ -434,7 +412,8 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #'
 #' @export
 estimateExperimentTranscriptionRates <- function(bigwigPlus, bigwigMinus,
-pauseRegions, geneBodyRegions, geneNameColumn="gene_id", stericHindrance=FALSE, omegaScale=NULL) {
+pauseRegions, geneBodyRegions, geneNameColumn="gene_id", stericHindrance=FALSE,
+omegaScale=NULL) {
 
     inputValidationChecks(
         bigwigPlus, bigwigMinus, pauseRegions,
@@ -506,54 +485,6 @@ methods::setMethod("show",
         cat("  - Steric hindrance:", stericHindrance(object), "\n")
         if (stericHindrance(object)) {
             cat("  - Omega scale:", omegaScale(object), "\n")
-        }
-    }
-)
-
-
-#' Get transcription rates from experimentTranscriptionRates object
-#'
-#' @rdname experimentTranscriptionRates-class
-#' @description Retrieves the transcription rates from an
-#' experimentTranscriptionRates object
-#' @param object An experimentTranscriptionRates object
-#' @return A tibble containing the transcription rates
-#' @export
-setGeneric("getRates", function(object) standardGeneric("getRates"))
-setMethod("getRates", "experimentTranscriptionRates", function(object) {
-    slot(object, "rates")
-})
-
-#' Get read counts
-#'
-#' @param object An experimentTranscriptionRates object
-#' @return A data.frame containing the read counts
-#' @export
-setGeneric("getCounts", function(object) standardGeneric("getCounts"))
-setMethod("getCounts", "experimentTranscriptionRates", function(object) {
-    counts(object)
-})
-
-#' Get genomic regions
-#'
-#' @param object An experimentTranscriptionRates object
-#' @param type Either "pause" or "geneBody" to specify which regions to return.
-#' Defaults to "pause"  
-#' @return A GRanges object containing the specified regions
-#' @export
-setGeneric("getRegions", function(object, type="pause") {
-    standardGeneric("getRegions")
-})
-setMethod(
-    "getRegions", "experimentTranscriptionRates",
-    function(object, type) {
-        if (!type %in% c("pause", "geneBody")) {
-            stop("type must be either 'pause' or 'geneBody'")
-        }
-        if (type == "pause") {
-            pauseRegions(object)
-        } else {
-            geneBodyRegions(object)
         }
     }
 )
@@ -639,6 +570,8 @@ setGeneric("plotRates", function(
     standardGeneric("plotRates")
 })
 
+#' @rdname experimentTranscriptionRates-class
+#' @export
 setMethod("plotRates", "experimentTranscriptionRates", function(
     object, type = "scatter", rateType = "betaAdp", file = NULL, width = 8,
     height = 6, dpi = 300, ...) {
@@ -667,48 +600,11 @@ setMethod("plotRates", "experimentTranscriptionRates", function(
     return(p)
 })
 
+## Accessors
+
 #' @rdname experimentTranscriptionRates-class
 #' @export
 setGeneric("rates", function(object) standardGeneric("rates"))
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setGeneric("counts", function(object) standardGeneric("counts"))
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setGeneric("pauseRegions", function(object) standardGeneric("pauseRegions"))
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setGeneric("geneBodyRegions", function(object) {
-    standardGeneric("geneBodyRegions")
-})
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setGeneric("geneNameColumn", function(object) {
-    standardGeneric("geneNameColumn")
-})
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setGeneric("stericHindrance", function(object) {
-    standardGeneric("stericHindrance")
-})
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setGeneric("bigwigPlus", function(object) standardGeneric("bigwigPlus"))
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setGeneric("bigwigMinus", function(object) standardGeneric("bigwigMinus"))
-
 #' @rdname experimentTranscriptionRates-class
 #' @export
 setMethod("rates", "experimentTranscriptionRates", function(object) {
@@ -717,16 +613,27 @@ setMethod("rates", "experimentTranscriptionRates", function(object) {
 
 #' @rdname experimentTranscriptionRates-class
 #' @export
+setGeneric("counts", function(object) standardGeneric("counts"))
+#' @rdname experimentTranscriptionRates-class
+#' @export
 setMethod("counts", "experimentTranscriptionRates", function(object) {
     slot(object, "counts")
 })
 
 #' @rdname experimentTranscriptionRates-class
 #' @export
+setGeneric("pauseRegions", function(object) standardGeneric("pauseRegions"))
+#' @rdname experimentTranscriptionRates-class
+#' @export
 setMethod("pauseRegions", "experimentTranscriptionRates", function(object) {
     slot(object, "pauseRegions")
 })
 
+#' @rdname experimentTranscriptionRates-class
+#' @export
+setGeneric("geneBodyRegions", function(object) {
+    standardGeneric("geneBodyRegions")
+})
 #' @rdname experimentTranscriptionRates-class
 #' @export
 setMethod(
@@ -738,6 +645,11 @@ setMethod(
 
 #' @rdname experimentTranscriptionRates-class
 #' @export
+setGeneric("geneNameColumn", function(object) {
+    standardGeneric("geneNameColumn")
+})
+#' @rdname experimentTranscriptionRates-class
+#' @export
 setMethod(
     "geneNameColumn", "experimentTranscriptionRates",
     function(object) {
@@ -745,6 +657,11 @@ setMethod(
     }
 )
 
+#' @rdname experimentTranscriptionRates-class
+#' @export
+setGeneric("stericHindrance", function(object) {
+    standardGeneric("stericHindrance")
+})
 #' @rdname experimentTranscriptionRates-class
 #' @export
 setMethod(
@@ -756,18 +673,10 @@ setMethod(
 
 #' @rdname experimentTranscriptionRates-class
 #' @export
+setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
+
+#' @rdname experimentTranscriptionRates-class
+#' @export
 setMethod("omegaScale", "experimentTranscriptionRates", function(object) {
     slot(object, "omegaScale")
-})
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setMethod("bigwigPlus", "experimentTranscriptionRates", function(object) {
-    slot(object, "bigwigPlus")
-})
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setMethod("bigwigMinus", "experimentTranscriptionRates", function(object) {
-    slot(object, "bigwigMinus")
 })

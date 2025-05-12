@@ -401,7 +401,8 @@ calculateFinalRates <- function(bwDfs, stericHindrance) {
 #' @return an \code{\link{simulationTranscriptionRates-class}} object
 #'
 #' @export
-estimateSimulationTranscriptionRates <- function(simpol, stericHindrance=FALSE) {
+estimateSimulationTranscriptionRates <- function(simpol, stericHindrance=FALSE)
+{
     # Prepare parameters and regions
     params <- prepareSimulationParameters(simpol)
     regions <- createGenomicRegions(params)
@@ -447,105 +448,28 @@ estimateSimulationTranscriptionRates <- function(simpol, stericHindrance=FALSE) 
     )
 }
 
-# Accessor methods
 #' @rdname simulationTranscriptionRates-class
 #' @export
-setGeneric("getSimpol", function(object) standardGeneric("getSimpol"))
-setMethod(
-    "getSimpol", "simulationTranscriptionRates",
-    function(object) slot(object, "simpol")
-)
+setMethod("show", "simulationTranscriptionRates", function(object) {
+    # Create a data frame for display
+    df <- data.frame(
+        Parameter = c(
+            "Number of Trials", "Initiation Rate",
+            "Pause Release Rate", "Steric Hindrance"
+        ),
+        Value = c(
+            trial(object),
+            round(chi(object), 4),
+            round(betaOrg(object), 4),
+            stericHindrance(object)
+        )
+    )
 
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric(
-    "getStericHindrance",
-    function(object) standardGeneric("getStericHindrance")
-)
-setMethod(
-    "getStericHindrance", "simulationTranscriptionRates",
-    function(object) slot(object, "stericHindrance")
-)
+    # Print the object information
+    cat("A simulationTranscriptionRates object:\n\n")
+    print(df, row.names = FALSE)
+})
 
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric("getTrial", function(object) standardGeneric("getTrial"))
-setMethod(
-    "getTrial", "simulationTranscriptionRates",
-    function(object) slot(object, "trial")
-)
-
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric("getChi", function(object) standardGeneric("getChi"))
-setMethod(
-    "getChi", "simulationTranscriptionRates",
-    function(object) slot(object, "chi")
-)
-
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric("getBetaOrg", function(object) standardGeneric("getBetaOrg"))
-setMethod(
-    "getBetaOrg", "simulationTranscriptionRates",
-    function(object) slot(object, "betaOrg")
-)
-
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric("getBetaAdp", function(object) standardGeneric("getBetaAdp"))
-setMethod(
-    "getBetaAdp", "simulationTranscriptionRates",
-    function(object) slot(object, "betaAdp")
-)
-
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric("getPhi", function(object) standardGeneric("getPhi"))
-setMethod(
-    "getPhi", "simulationTranscriptionRates",
-    function(object) slot(object, "phi")
-)
-
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric("getFk", function(object) standardGeneric("getFk"))
-setMethod(
-    "getFk", "simulationTranscriptionRates",
-    function(object) slot(object, "fk")
-)
-
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric("getFkMean", function(object) standardGeneric("getFkMean"))
-setMethod(
-    "getFkMean", "simulationTranscriptionRates",
-    function(object) slot(object, "fkMean")
-)
-
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric("getFkVar", function(object) standardGeneric("getFkVar"))
-setMethod(
-    "getFkVar", "simulationTranscriptionRates",
-    function(object) slot(object, "fkVar")
-)
-
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric("getFlag", function(object) standardGeneric("getFlag"))
-setMethod(
-    "getFlag", "simulationTranscriptionRates",
-    function(object) slot(object, "flag")
-)
-
-#' @rdname simulationTranscriptionRates-class
-#' @export
-setGeneric("getRnapN", function(object) standardGeneric("getRnapN"))
-setMethod(
-    "getRnapN", "simulationTranscriptionRates",
-    function(object) slot(object, "rnapN")
-)
 
 # Plotting methods
 #' Plot transcription rates
@@ -565,13 +489,13 @@ setMethod(
     function(object, file = NULL, width = 8, height = 6) {
         # Create data frame for plotting
         df <- data.frame(
-            trial = getTrial(object),
-            chi = getChi(object),
-            betaOrg = getBetaOrg(object),
-            betaAdp = getBetaAdp(object),
-            phi = getPhi(object),
-            fkMean = getFkMean(object),
-            fkVar = getFkVar(object)
+            trial = trial(object),
+            chi = chi(object),
+            betaOrg = betaOrg(object),
+            betaAdp = betaAdp(object),
+            phi = phi(object),
+            fkMean = fkMean(object),
+            fkVar = fkVar(object)
         )
 
         # Create plot
@@ -613,9 +537,9 @@ setMethod(
     function(object, file = NULL, width = 8, height = 6) {
         # Create data frame for plotting
         df <- data.frame(
-            trial = getTrial(object),
-            fkMean = getFkMean(object),
-            fkVar = getFkVar(object)
+            trial = trial(object),
+            fkMean = fkMean(object),
+            fkVar = fkVar(object)
         )
 
         # Create plot
@@ -651,14 +575,14 @@ setGeneric("plotRnapCounts", function(
 setMethod(
     "plotRnapCounts", "simulationTranscriptionRates",
     function(object, file = NULL, width = 8, height = 6) {
-        rnapN <- getRnapN(object)
+        rnapN <- rnapN(object)
         if (length(rnapN) == 0) {
             stop("No RNAP counts available")
         }
 
         # Create data frame for plotting
         df <- data.frame(
-            trial = rep(getTrial(object), each = length(rnapN[[1]])),
+            trial = rep(trial(object), each = length(rnapN[[1]])),
             rnapCount = unlist(rnapN)
         )
 
@@ -680,27 +604,105 @@ setMethod(
     }
 )
 
+# Accessor methods
 #' @rdname simulationTranscriptionRates-class
 #' @export
-setMethod("show", "simulationTranscriptionRates", function(object) {
-    # Create a data frame for display
-    df <- data.frame(
-        Parameter = c(
-            "Number of Trials", "Initiation Rate",
-            "Pause Release Rate", "Steric Hindrance"
-        ),
-        Value = c(
-            getTrial(object),
-            round(getChi(object), 4),
-            round(getBetaOrg(object), 4),
-            getStericHindrance(object)
-        )
-    )
+setGeneric("simpol", function(object) standardGeneric("simpol"))
+setMethod(
+    "simpol", "simulationTranscriptionRates",
+    function(object) slot(object, "simpol")
+)
 
-    # Print the object information
-    cat("A simulationTranscriptionRates object:\n\n")
-    print(df, row.names = FALSE)
-})
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric(
+    "stericHindrance",
+    function(object) standardGeneric("stericHindrance")
+)
+setMethod(
+    "stericHindrance", "simulationTranscriptionRates",
+    function(object) slot(object, "stericHindrance")
+)
+
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric("trial", function(object) standardGeneric("trial"))
+setMethod(
+    "trial", "simulationTranscriptionRates",
+    function(object) slot(object, "trial")
+)
+
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric("chi", function(object) standardGeneric("chi"))
+setMethod(
+    "chi", "simulationTranscriptionRates",
+    function(object) slot(object, "chi")
+)
+
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric("betaOrg", function(object) standardGeneric("betaOrg"))
+setMethod(
+    "betaOrg", "simulationTranscriptionRates",
+    function(object) slot(object, "betaOrg")
+)
+
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric("betaAdp", function(object) standardGeneric("betaAdp"))
+setMethod(
+    "betaAdp", "simulationTranscriptionRates",
+    function(object) slot(object, "betaAdp")
+)
+
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric("phi", function(object) standardGeneric("phi"))
+setMethod(
+    "phi", "simulationTranscriptionRates",
+    function(object) slot(object, "phi")
+)
+
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric("fk", function(object) standardGeneric("fk"))
+setMethod(
+    "fk", "simulationTranscriptionRates",
+    function(object) slot(object, "fk")
+)
+
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric("fkMean", function(object) standardGeneric("fkMean"))
+setMethod(
+    "fkMean", "simulationTranscriptionRates",
+    function(object) slot(object, "fkMean")
+)
+
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric("fkVar", function(object) standardGeneric("fkVar"))
+setMethod(
+    "fkVar", "simulationTranscriptionRates",
+    function(object) slot(object, "fkVar")
+)
+
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric("flag", function(object) standardGeneric("flag"))
+setMethod(
+    "flag", "simulationTranscriptionRates",
+    function(object) slot(object, "flag")
+)
+
+#' @rdname simulationTranscriptionRates-class
+#' @export
+setGeneric("rnapN", function(object) standardGeneric("rnapN"))
+setMethod(
+    "rnapN", "simulationTranscriptionRates",
+    function(object) slot(object, "rnapN")
+)
 
 #' @examples
 #' # Create a simulationTranscriptionRates object
