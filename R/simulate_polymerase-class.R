@@ -85,25 +85,20 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
         stop("zetaVec file is not readable")
     }
     
-    # Try to read the file
-    tryCatch({
-        # Read first line to check column count
-        first_line <- readLines(zetaVec, n = 1)
-        if (length(strsplit(first_line, ",")[[1]]) != 1) {
-            stop("zetaVec file must contain exactly one column")
-        }
-        
-        # Read the full file
-        zeta_data <- read.csv(zetaVec, header = FALSE, 
-                            colClasses = "numeric")
-        
-        # Convert to numeric vector and ensure correct length
-        zeta_vec <- as.numeric(zeta_data[[1]])
-        
-        return(zeta_vec)
-    }, error = function(e) {
-        stop("Error reading zetaVec file: ", e$message)
-    })
+    # Read first line to check column count
+    first_line <- readLines(zetaVec, n = 1)
+    if (length(strsplit(first_line, ",")[[1]]) != 1) {
+        stop("zetaVec file must contain exactly one column")
+    }
+    
+    # Read the full file
+    zeta_data <- read.csv(zetaVec, header = FALSE, 
+                        colClasses = "numeric")
+    
+    # Convert to numeric vector and ensure correct length
+    zeta_vec <- as.numeric(zeta_data[[1]])
+    
+    return(zeta_vec)
 }
 
 #' Class simulatePolymerase
@@ -662,8 +657,8 @@ setMethod("positionMatrix", "simulatePolymerase", function(object) {
 
 #' Get all simulation parameters
 #' @param object A simulatePolymerase object
-#' @return A list containing all simulation parameters including k, ksd, kMin, kMax,
-#' geneLen, alpha, beta, zeta, zetaSd, zetaMin, zetaMax, zetaVec, cellNum,
+#' @return A list containing all simulation parameters including k, ksd, kMin,
+#' kMax, geneLen, alpha, beta, zeta, zetaSd, zetaMin, zetaMax, zetaVec, cellNum,
 #' polSize, addSpace, time, and stepsToRecord
 #' @export
 setGeneric("parameters", function(object) standardGeneric("parameters"))

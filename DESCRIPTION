@@ -20,8 +20,6 @@ Authors@R:
             comment = c(ORCID = "0000-0001-5133-9387")
         )
     )
-Author: Rebecca Hassett <hassett@cshl.edu>
-Maintainer: Rebecca Hassett <hassett@cshl.edu>
 Description: STADyUM is a package with functionality for analyzing nascent
     RNA read counts to infer transcription rates. This includes utilities for
     processing experimental nascent RNA read counts as well as for simulating 
@@ -44,7 +42,6 @@ Imports:
     methods,
     tibble,
     dplyr,
-    tidyr,
     ggplot2,
     progress,
     plyranges,

@@ -149,11 +149,13 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
         function(x, y, z, k) {
             tryCatch(
                 mainEM(
-                    fkInt=x,Xk=y,kmin=kmin,kmax=kmax,betaInt=z,chiHat=k,maxItr=maxItr, tor=tor
+                    fkInt=x,Xk=y,kmin=kmin,kmax=kmax,betaInt=z,chiHat=k,
+                    maxItr=maxItr, tor=tor
                 ),
                 error = function(err) {
                     list(
-                        "beta"=NA, "Yk"=NA,"fkMean"=NA, "fkVar"=NA, "likelihoods"=NA
+                        "beta"=NA, "Yk"=NA,"fkMean"=NA, "fkVar"=NA,
+                        "likelihoods"=NA
                     )
                 }
             )
