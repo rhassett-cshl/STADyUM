@@ -56,7 +56,7 @@ processBw <- function(bw, strand) {
 #' @return A \code{\link[GenomicRanges]{GenomicRanges-class}} object
 #'
 #' @rdname summariseBw
-#' @export
+#' @keywords internal
 summariseBw <-
     function(bw, grng, colName) {
         rc <- bw %>%
@@ -120,8 +120,6 @@ pauseEscapeMaximization <- function(chiHat, Xk, Yk, fk, kmin, kmax) {
     ))
 }
 
-# TODO how to handle flags?
-
 #' @title Pause Escape Expectation Maximization
 #'
 #' @description
@@ -143,7 +141,7 @@ pauseEscapeMaximization <- function(chiHat, Xk, Yk, fk, kmin, kmax) {
 #' likelihoods and phi
 #'
 #' @rdname pauseEscapeEM
-#' @export
+#' @keywords internal
 pauseEscapeEM <- function(
     fkInt, Xk, kmin, kmax, betaInt, chiHat, maxItr = 100, tor = 1e-3) {
     betas <- list(); likelihoods <- list(); flag <- "normal"
@@ -362,7 +360,7 @@ calculateF <- function(s, k) {
 #' fk_var, betas, likelihoods and phi
 #'
 #' @rdname stericHindranceEM
-#' @export
+#' @keywords internal
 stericHindranceEM <- function(
     Xk, kmin, kmax, f1, f2, fkInt, betaInt, phiInt, chiHat, lambda, zeta,
     maxItr = 100, tor = 1e-3) {

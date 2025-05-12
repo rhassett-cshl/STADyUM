@@ -401,8 +401,7 @@ calculateFinalRates <- function(bwDfs, stericHindrance) {
 #' @return an \code{\link{simulationTranscriptionRates-class}} object
 #'
 #' @export
-estimateSimulationTranscriptionRates <- function(simpol, 
-                                                    stericHindrance = FALSE) {
+estimateSimulationTranscriptionRates <- function(simpol, stericHindrance=FALSE) {
     # Prepare parameters and regions
     params <- prepareSimulationParameters(simpol)
     regions <- createGenomicRegions(params)

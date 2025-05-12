@@ -49,23 +49,23 @@ First, let's create a simulate_polymerase object with some parameters:
 library(STADyUM)
 
 # Create a simulate_polymerase object
-simpol <- simulate_polymerase(
+simpol <- simulatePolymerase(
     k = 50, # mean pause sites
     ksd = 25, # standard deviation of pause sites
-    k_min = 17, # minimum pause sites
-    k_max = 200, # maximum pause sites
-    gene_len = 1950, # gene length
+    kMin = 17, # minimum pause sites
+    kMax = 200, # maximum pause sites
+    geneLen = 1950, # gene length
     alpha = 1, # initiation rate
     beta = 1, # pause release rate
     zeta = 2000, # mean elongation rate
-    zeta_sd = 1000, # standard deviation of elongation rate
-    zeta_min = 1500, # minimum elongation rate
-    zeta_max = 2500, # maximum elongation rate
-    cell_num = 20000, # number of cells
-    pol_size = 33, # polymerase size
-    add_space = 17, # additional space
+    zetaSd = 1000, # standard deviation of elongation rate
+    zetaMin = 1500, # minimum elongation rate
+    zetaMax = 2500, # maximum elongation rate
+    cellNum = 20000, # number of cells
+    polSize = 33, # polymerase size
+    addSpace = 17, # additional space
     time = 40, # simulation time
-    steps_to_record = 1 # steps to record
+    stepsToRecord = 1 # steps to record
 )
 ```
 
@@ -75,13 +75,13 @@ Now we can estimate transcription rates from the simulation:
 
 ```{r estimate_rates}
 # Estimate transcription rates
-srates <- estimate_simulation_transcription_rates(simpol)
+srates <- estimateSimulationTranscriptionRates(simpol)
 
 # Get the rates
-chi <- get_chi(srates)
-beta_org <- get_beta_org(srates)
-beta_adp <- get_beta_adp(srates)
-phi <- get_phi(srates)
+chi <- getChi(srates)
+beta_org <- getBetaOrg(srates)
+beta_adp <- getBetaAdp(srates)
+phi <- getPhi(srates)
 ```
 
 ## Visualizing Results
@@ -90,13 +90,13 @@ The package provides several plotting functions:
 
 ```{r plotting}
 # Plot transcription rates
-plot_transcription_rates(srates)
+plotTranscriptionRates(srates)
 
 # Plot pause site distribution
-plot_pause_site_distribution(srates)
+plotPauseSitesDistribution(srates)
 
 # Plot RNAP counts (if available)
-plot_rnap_counts(srates)
+plotRNAPCounts(srates)
 ```
 
 # Advanced Usage
@@ -107,12 +107,12 @@ You can enable steric hindrance calculations:
 
 ```{r steric_hindrance}
 # Estimate rates with steric hindrance
-srates_sh <- estimate_simulation_transcription_rates(simpol,
-    steric_hindrance = TRUE
+srates_sh <- estimateSimulationTranscriptionRates(simpol,
+    stericHindrance = TRUE
 )
 
 # Get steric hindrance values
-phi_sh <- get_phi(srates_sh)
+phi_sh <- getPhi(srates_sh)
 ```
 
 ## Saving and Loading Results
@@ -133,7 +133,7 @@ You can access the original simulation parameters:
 
 ```{r parameters}
 # Get parameters
-params <- get_parameters(simpol)
+params <- getParameters(simpol)
 
 # Print parameters
 print(params)

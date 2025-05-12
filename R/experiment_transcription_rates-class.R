@@ -35,14 +35,6 @@ validateCounts <- function(object) {
         errors <- c(errors, "counts must be a data.frame")
     }
 
-    #required_cols <- c("gene_id", "tss", "gb", "landing")
-    #missing_cols <- setdiff(required_cols, colnames(counts(object)))
-    #if (length(missing_cols) > 0) {
-   #     errors <- c(errors, paste(
-   #       "Missing required columns in counts:",
-   #       paste(missing_cols, collapse = ", ")
-   #   ))
-   # }
     return(errors)
 }
 
@@ -295,7 +287,6 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
         N = rc1$gbLength
     )
     
-    ## Calculate chi and get read counts
     emRate$chi <- emRate$s / emRate$N
 
     bwCov <- coverage(bw1P3, weight = "score")
@@ -326,8 +317,6 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
     names(Xk) <- pauseRegions$geneId
     
     emRate$Xk <- Xk[emRate$geneId]
-
-    print(head(emRate$Xk, 5))
     
     emRate$XkSum <- vapply(emRate$Xk, sum, numeric(1))
     emRate$betaInt <- emRate$chi / emRate$XkSum
@@ -396,7 +385,8 @@ estimateEmRates <- function(rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
     emRate <- prepareEmData(rc1, bw1P3, pauseRegions, kmin, kmax,
                             stericHindrance, omegaScale, zeta)
     lambda <- if (stericHindrance) zeta^2 / omegaScale else NULL
-    emLs <- experimentRunEmAlgorithm(emRate, kmin, kmax, fkInt, stericHindrance, zeta, lambda)
+    emLs <- experimentRunEmAlgorithm(emRate, kmin, kmax, fkInt,
+                                    stericHindrance, zeta, lambda)
     emRate <- experimentProcessEmResults(emRate, emLs, stericHindrance, zeta)
     return(emRate)
 }
@@ -435,7 +425,7 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #' @param geneBodyRegions a \link[GenomicRanges]{GRanges-class} object that
 #' must contain a geneId
 #' @param geneNameColumn a string that indicates which column in the GRanges
-#' gene names
+#' represents gene names information. Defaults to "gene_id"
 #' @param stericHindrance a logical value to determine whether to infer
 #' landing-pad occupancy or not. Defaults to FALSE.
 #' @param omegaScale a numeric value for scaling omega. Defaults to NULL.
@@ -444,8 +434,7 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #'
 #' @export
 estimateExperimentTranscriptionRates <- function(bigwigPlus, bigwigMinus,
-pauseRegions, geneBodyRegions, geneNameColumn, stericHindrance = FALSE,
-omegaScale = NULL) {
+pauseRegions, geneBodyRegions, geneNameColumn="gene_id", stericHindrance=FALSE, omegaScale=NULL) {
 
     inputValidationChecks(
         bigwigPlus, bigwigMinus, pauseRegions,
@@ -548,10 +537,13 @@ setMethod("getCounts", "experimentTranscriptionRates", function(object) {
 #' Get genomic regions
 #'
 #' @param object An experimentTranscriptionRates object
-#' @param type Either "pause" or "geneBody" to specify which regions to return
+#' @param type Either "pause" or "geneBody" to specify which regions to return.
+#' Defaults to "pause"  
 #' @return A GRanges object containing the specified regions
 #' @export
-setGeneric("getRegions", function(object, type) standardGeneric("getRegions"))
+setGeneric("getRegions", function(object, type="pause") {
+    standardGeneric("getRegions")
+})
 setMethod(
     "getRegions", "experimentTranscriptionRates",
     function(object, type) {
@@ -569,10 +561,10 @@ setMethod(
 #' Export rates to CSV
 #'
 #' @param object An experimentTranscriptionRates object
-#' @param file Path to output CSV file
+#' @param file Path to output CSV file. Defaults to "experiment_rates.csv"
 #' @return Outputs a CSV file with the rates
 #' @export
-setGeneric("exportRatesToCSV", function(object, file) {
+setGeneric("exportRatesToCSV", function(object, file="experiment_rates.csv") {
     standardGeneric("exportRatesToCSV")
 })
 setMethod(
@@ -629,8 +621,10 @@ applyCommonTheme <- function() {
 #' Plot transcription rates
 #'
 #' @param object An experimentTranscriptionRates object
-#' @param type Type of plot to create ("scatter", "histogram", or "density")
-#' @param rateType Which rate to plot ("betaOrg", "betaAdp", "chi", etc.)
+#' @param type Type of plot to create ("scatter", "histogram", or "density").
+#' Defaults to "scatter"
+#' @param rateType Which rate to plot ("betaOrg", "betaAdp", "chi", etc.).
+#' Defaults to "betaAdp"
 #' @param file Optional path to save the plot. If provided, the plot will be
 #' saved to this location.
 #' @param width Width of the saved plot in inches. Default is 8.
@@ -777,42 +771,3 @@ setMethod("bigwigPlus", "experimentTranscriptionRates", function(object) {
 setMethod("bigwigMinus", "experimentTranscriptionRates", function(object) {
     slot(object, "bigwigMinus")
 })
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setGeneric("saveRates", function(object, file) standardGeneric("saveRates"))
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setMethod(
-    "saveRates", "experimentTranscriptionRates",
-    function(object, file) {
-        write.csv(rates(object), file = file, row.names = FALSE)
-    }
-)
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setGeneric("plotRate", function(object, rateType) {
-    standardGeneric("plotRate")
-})
-
-#' @rdname experimentTranscriptionRates-class
-#' @export
-setMethod(
-    "plotRate", "experimentTranscriptionRates",
-    function(object, rateType) {
-        if (!rateType %in% colnames(rates(object))) {
-            stop("rateType must be a column name in rates")
-        }
-        data <- rates(object)
-        ggplot(data, aes_string(x = rateType)) +
-            geom_histogram(bins = 30) +
-            theme_minimal() +
-            labs(
-                title = paste("Distribution of", rateType),
-                x = rateType,
-                y = "Count"
-            )
-    }
-)

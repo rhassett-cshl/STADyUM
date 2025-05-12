@@ -485,9 +485,8 @@ setMethod("savePlots", "simulatePolymerase", function(
 #' @rdname simulatePolymerase-class
 #' @export
 simulatePolymerase <- function(
-    k, ksd, kMin, kMax, geneLen,
-    alpha, beta, zeta, zetaSd, zetaMin, zetaMax, cellNum, polSize,
-    addSpace, time, stepsToRecord) {
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500, cellNum=20000, polSize=33, addSpace=17, time=40, stepsToRecord=1) {
     # Validate parameters
     validateSimulatePolymeraseParams(
         k, ksd, kMin, kMax, geneLen,
@@ -496,11 +495,12 @@ simulatePolymerase <- function(
     )
 
     # Call the C++ function
-    result <- simulatePolymeraseCpp(
+    result <- .Call("_STADyUM_simulate_polymerase_cpp",
         k, kMin, kMax, ksd, geneLen,
         alpha, beta, zeta, zetaSd,
         zetaMax, zetaMin, cellNum,
-        polSize, addSpace, time, stepsToRecord
+        polSize, addSpace, time, stepsToRecord,
+        PACKAGE = "STADyUM"
     )
 
     # Create and return a simulatePolymerase object
