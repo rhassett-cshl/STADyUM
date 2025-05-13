@@ -1,3 +1,7 @@
+
+#' @rdname simulatePolymerase-class
+#' @param object an \code{simulatePolymerase} object
+#' @return a character vector of errors
 #' @keywords internal
 simulatePolymeraseValid <- function(object) {
     errors <- character()
@@ -21,6 +25,29 @@ simulatePolymeraseValid <- function(object) {
     if (length(errors) == 0) TRUE else errors
 }
 
+#' @rdname simulatePolymerase-class
+#' @param k an integer value for the mean of pause sites across cells.
+#' @param ksd a numeric value for the standard deviation of pause sites across
+#' cells.
+#' @param kMin an integer value for the upper bound of pause sites allowed.
+#' @param kMax an integer value for the lower bound of pause sites allowed.
+#' @param geneLen an integer value for the length of the gene.  
+#' @param alpha a numeric value for the initiation rate.
+#' @param beta a numeric value for the pause release rate.
+#' @param zeta a numeric value for the mean elongation rate across sites.
+#' @param zetaSd a numeric value for the standard deviation of pause sites
+#' across sites.
+#' @param zetaMin a numeric value for the minimum elongation rate.
+#' @param zetaMax a numeric value for the maximum elongation rate.
+#' @param zetaVec a character value for the path to the zetaVec file.
+#' @param cellNum an integer value for the number of cells to simulate.
+#' @param polSize an integer value for the polymerase II size.
+#' @param addSpace an integer value for the additional space in addition to
+#' RNAP size.
+#' @param time a numeric value for the time to simulate.
+#' @param stepsToRecord an integer value for the number of steps to record in
+#' position matrix.
+#' @return NULL
 #' @keywords internal
 validateSimulatePolymeraseParams <- function(
     k, ksd, kMin, kMax, geneLen,
@@ -71,6 +98,12 @@ validateSimulatePolymeraseParams <- function(
     }
 }
 
+
+#' @rdname simulatePolymerase-class
+#' @param zetaVec a character value for the path to the zetaVec file containing
+#' elongation rate scaling factors
+#' @param geneLen an integer value for the length of the gene.
+#' @return a numeric vector of the elongation rates
 #' @keywords internal
 validateAndLoadZetaVec <- function(zetaVec, geneLen) {
     if (is.null(zetaVec)) {
@@ -168,6 +201,33 @@ methods::setClass("simulatePolymerase",
 
 #' @name simulatePolymerase
 #' @rdname simulatePolymerase-class
+#' @param k an integer value for the mean of pause sites across cells.
+#' @param ksd a numeric value for the standard deviation of pause sites across
+#' cells.
+#' @param kMin an integer value for the upper bound of pause sites allowed.
+#' @param kMax an integer value for the lower bound of pause sites allowed.
+#' @param geneLen an integer value for the length of the gene.  
+#' @param alpha a numeric value for the initiation rate.
+#' @param beta a numeric value for the pause release rate.
+#' @param zeta a numeric value for the mean elongation rate across sites.
+#' @param zetaSd a numeric value for the standard deviation of pause sites
+#' across sites.
+#' @param zetaMin a numeric value for the minimum elongation rate.
+#' @param zetaMax a numeric value for the maximum elongation rate.
+#' @param zetaVec a character value for the path to the zetaVec file.
+#' @param cellNum an integer value for the number of cells to simulate.
+#' @param polSize an integer value for the polymerase II size.
+#' @param addSpace an integer value for the additional space in addition to
+#' RNAP size.
+#' @param time a numeric value for the time to simulate.
+#' @param stepsToRecord an integer value for the number of steps to record in
+#' position matrix.
+#' @return a \code{simulatePolymerase} object
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #' @export
 simulatePolymerase <- function(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
@@ -228,13 +288,29 @@ simulatePolymerase <- function(
     return(obj)
 }
 
-# TODO add another sample read counts method that takes a different gene length
-
-#' Sample read counts from a simulatePolymerase object
+#' Sample read counts from a simulatePolymerase object. To match our simulated
+#' read counts to reality, we need to compute a scaling factor lambda. One way
+#' of doing it is computing the read density based on real experiments. For
+#' example, we have computed the read density within gene body in 
+#' _Dukler et al_ (2017) for genes with median expression (i.e., 0.0489). 
+#' If we assume the read counts following a Poisson distribution, we can then
+#' sample the read counts with mean equals to the RNAP frequency multiplied by
+#' lambda.
 #' @param object A simulatePolymerase object
 #' @param readDensity A numeric value for the read density within gene body in
-#' Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
+#' _Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
 #' @return The read count per nucleotide value
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Sample read counts per nucleotide
+#' readCounts <- sampleReadCountsPerNucleotide(sim)
+#' # Print the read counts per nucleotide
+#' print(readCounts)
 #' @export
 setGeneric("sampleReadCountsPerNucleotide", function(
     object,
@@ -250,16 +326,6 @@ setMethod("sampleReadCountsPerNucleotide", "simulatePolymerase", function(
     N <- length(totalRnap)
     L <- N - kMax
 
-    # To match our simulated read counts to reality, we need to compute a
-    # scaling factor lambda. One way of doing it is computing the read density
-    # based on real experiments. For example, we have computed the read density
-    # within gene body in _Dukler et al._ (2017) for genes with median
-    # expression (i.e., 0.0489).
-
-    # If we assume the read counts following a Poisson distribution, we can
-    # then sample the read counts with mean equals to the RNAP frequency
-    # multiplied by lambda.
-
     # TODO: handle case if lambda is INF because sum is 0
     lambda <- readDensity / (sum(totalRnap[(kMax + 1):N]) / (L * cellNum))
 
@@ -267,13 +333,11 @@ setMethod("sampleReadCountsPerNucleotide", "simulatePolymerase", function(
 
     gbRc <- sum(rc[(kMax + 1):N])
 
-    # read count per nucleotide
+    ## read count per nucleotide
     rcPerNt <- gbRc / L
 
-    # Update the readCounts field in the object
     slot(object, "readCounts") <- rcPerNt
 
-    # Return the read count per nucleotide value
     return(rcPerNt)
 })
 
@@ -281,7 +345,18 @@ setMethod("sampleReadCountsPerNucleotide", "simulatePolymerase", function(
 #' @param object A simulatePolymerase object
 #' @param readDensity A numeric value for the read density within gene body in
 #' _Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
-#' @return The read count per nucleotide value
+#' @return The average read density within gene body
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1) 
+#' # Sample average read density within gene body
+#' avgReadDensity <- sampleGeneBodyAvgReadDensity(sim)
+#' # Print the average read density within gene body
+#' print(avgReadDensity)
 #' @export
 setGeneric("sampleGeneBodyAvgReadDensity", function(
     object,
@@ -308,6 +383,8 @@ setMethod(
 
 
 #' @rdname simulatePolymerase-class
+#' @param object a \code{simulatePolymerase} object
+#' @return a \code{simulatePolymerase} object
 #' @export
 setGeneric("simulateReadCounts", function(object) {
     standardGeneric("simulateReadCounts")

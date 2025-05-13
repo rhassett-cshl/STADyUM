@@ -29,6 +29,9 @@ experimentTranscriptionRatesValid <- function(object) {
 }
 
 # Helper validation functions
+#' @param object A \code{experimentTranscriptionRates} object
+#' @return A character vector of errors
+#' @keywords internal
 validateCounts <- function(object) {
     errors <- character()
     if (!is.data.frame(counts(object))) {
@@ -38,6 +41,9 @@ validateCounts <- function(object) {
     return(errors)
 }
 
+#' @param object A \code{experimentTranscriptionRates} object
+#' @return A character vector of errors
+#' @keywords internal
 validateBigwigFiles <- function(object) {
     errors <- character()
     if (!file.exists(bigwigPlus(object))) {
@@ -49,6 +55,9 @@ validateBigwigFiles <- function(object) {
     return(errors)
 }
 
+#' @param object A \code{experimentTranscriptionRates} object
+#' @return A character vector of errors
+#' @keywords internal
 validateRegions <- function(object) {
     errors <- character()
     if (!inherits(pauseRegions(object), "GRanges")) {
@@ -60,6 +69,9 @@ validateRegions <- function(object) {
     return(errors)
 }
 
+#' @param object A \code{experimentTranscriptionRates} object
+#' @return A character vector of errors
+#' @keywords internal
 validateGeneNameColumn <- function(object) {
     errors <- character()
     if (!is.character(geneNameColumn(object)) ||
@@ -70,6 +82,9 @@ validateGeneNameColumn <- function(object) {
     return(errors)
 }
 
+#' @param object A \code{experimentTranscriptionRates} object
+#' @return A character vector of errors
+#' @keywords internal
 validateStericHindrance <- function(object) {
     errors <- character()
     if (!is.logical(stericHindrance(object)) ||
@@ -88,6 +103,9 @@ validateStericHindrance <- function(object) {
     return(errors)
 }
 
+#' @param object A \code{experimentTranscriptionRates} object
+#' @return A character vector of errors
+#' @keywords internal
 validateRates <- function(object) {
     errors <- character()
     if (!inherits(rates(object), "tbl_df")) {
@@ -154,6 +172,20 @@ methods::setClass("experimentTranscriptionRates",
     validity = experimentTranscriptionRatesValid
 )
 
+#' @param bigwigPlus a path to a bigwig file from the plus strand recording
+#' PRO-seq read counts
+#' @param bigwigMinus a path to a bigwig file from the minus strand recording
+#' PRO-seq read counts
+#' @param pauseRegions a \link[GenomicRanges]{GRanges-class} object that must
+#' contain a geneId
+#' @param geneBodyRegions a \link[GenomicRanges]{GRanges-class} object that
+#' must contain a geneId
+#' @param geneNameColumn a string that indicates which column in the GRanges
+#' represents gene names information. Defaults to "gene_id"
+#' @param stericHindrance a logical value to determine whether to infer
+#' landing-pad occupancy or not. Defaults to FALSE.
+#' @param omegaScale a numeric value for scaling omega. Defaults to NULL.
+#' @return NULL
 #' @keywords internal
 inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
     geneBodyRegions, geneNameColumn, stericHindrance, omegaScale) {
@@ -205,6 +237,17 @@ inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
     }
 }
 
+#' @param bigwigPlus a path to a bigwig file from the plus strand recording
+#' PRO-seq read counts
+#' @param bigwigMinus a path to a bigwig file from the minus strand recording
+#' PRO-seq read counts
+#' @param pauseRegions a \link[GenomicRanges]{GRanges-class} object that must
+#' contain a geneId
+#' @param geneBodyRegions a \link[GenomicRanges]{GRanges-class} object that
+#' must contain a geneId
+#' @param kmax the maximum number of pause sites to consider
+#' @return A list with two elements: rc1, a data.frame with read counts and
+#' bw1P3, a GRanges object with the processed bigwig data
 #' @keywords internal
 prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
                                     geneBodyRegions, kmax) {
@@ -256,6 +299,26 @@ prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
     return(list(rc1 = rc1, bw1P3 = bw1P3))
 }
 
+#' @param rc1 a data.frame with read counts
+#' @param bw1P3 a GRanges object with the processed bigwig data
+#' @param pauseRegions a \link[GenomicRanges]{GRanges-class} object that must
+#' contain a geneId and pause region coordinates
+#' @param kmin the minimum number of pause sites to consider
+#' @param kmax the maximum number of pause sites to consider
+#' @param stericHindrance a logical value to determine whether to infer
+#' landing-pad occupancy or not
+#' @param omegaScale a numeric value for scaling omega
+#' @param zeta a numeric value for the elongation rate
+#' @return A \code{DataFrame} with the following columns:
+#' \item{geneId}{a character vector of gene IDs}
+#' \item{s}{a numeric vector of gene body read counts}
+#' \item{N}{a numeric vector of gene body lengths}
+#' \item{chi}{a numeric vector of RNAP density along gene body}
+#' \item{Xk}{a list of numeric vectors of read counts for each pause region}
+#' \item{XkSum}{a numeric vector of the sum of read counts for each pause region}
+#' \item{betaInt}{a numeric vector of the initial pause-release rates}
+#' \item{omegaZeta}{a numeric vector of the effective elongation rates}
+#' \item{omega}{a numeric vector of the effective initiation rates}
 #' @keywords internal
 prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax, 
                             stericHindrance, omegaScale, zeta) {
@@ -306,6 +369,28 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
     return(emRate)
 }
 
+#' @param emRate a \code{DataFrame} with the following columns:
+#' \item{geneId}{a character vector of gene IDs}
+#' \item{s}{a numeric vector of gene body read counts}
+#' \item{N}{a numeric vector of gene body lengths}
+#' \item{chi}{a numeric vector of RNAP density along gene body}
+#' \item{Xk}{a list of numeric vectors of read counts for each pause region}
+#' \item{XkSum}{a numeric vector of the sum of read counts for each pause region}   
+#' \item{betaInt}{a numeric vector of the initial pause-release rates}
+#' \item{omegaZeta}{a numeric vector of the effective elongation rates}
+#' \item{omega}{a numeric vector of the effective initiation rates}
+#' @param kmin the minimum number of pause sites to consider
+#' @param kmax the maximum number of pause sites to consider
+#' @param fkInt a numeric vector with fraction of pause sites for each pause 
+#' site to handle variable pause site density
+#' @param stericHindrance a logical value to determine whether to infer
+#' landing-pad occupancy or not
+#' @param zeta a numeric value for the elongation rate
+#' @param lambda a numeric value for the sequencing depth
+#' @return A list of estimated values such as beta [pause-release rate], Yk 
+#' [RNAP density for pause regions], fk [pause site positions], 
+#' fkMean [mean position of pause sites], fkVar [variance of pause site 
+#' positions], phi [landing-pad occupancy], and likelihoods [likelihood values]
 #' @keywords internal
 experimentRunEmAlgorithm <- function(emRate, kmin, kmax, fkInt,       
                                         stericHindrance, zeta, lambda = NULL) {
@@ -409,6 +494,16 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #' @param omegaScale a numeric value for scaling omega. Defaults to NULL.
 #'
 #' @return an \code{\link{experimentTranscriptionRates-class}} object
+#' 
+#' @examples
+#' # Create an experimentTranscriptionRates object
+#' expRates <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",    
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
 #'
 #' @export
 estimateExperimentTranscriptionRates <- function(bigwigPlus, bigwigMinus,
@@ -471,7 +566,7 @@ omegaScale=NULL) {
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "geneId"
+#'     geneNameColumn = "gene_id"
 #' )
 #'
 #' # Show the object
@@ -494,6 +589,19 @@ methods::setMethod("show",
 #' @param object An experimentTranscriptionRates object
 #' @param file Path to output CSV file. Defaults to "experiment_rates.csv"
 #' @return Outputs a CSV file with the rates
+#' 
+#' @examples
+#' # Create an experimentTranscriptionRates object
+#' expRates <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
+#'
+#' # Export rates to CSV
+#' exportRatesToCSV(expRates, file = "experiment_rates.csv")
 #' @export
 setGeneric("exportRatesToCSV", function(object, file="experiment_rates.csv") {
     standardGeneric("exportRatesToCSV")
@@ -563,6 +671,20 @@ applyCommonTheme <- function() {
 #' @param dpi Resolution of the saved plot. Default is 300.
 #' @param ... Additional arguments passed to the plotting function
 #' @return A ggplot object
+#' 
+#' @examples
+#' # Create an experimentTranscriptionRates object
+#' expRates <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
+#'
+#' # Plot rates as a histogram
+#' plotRates(expRates, type = "histogram")
+
 #' @export
 setGeneric("plotRates", function(
     object, type = "scatter", rateType = "betaAdp", file = NULL, width = 8,
@@ -603,38 +725,101 @@ setMethod("plotRates", "experimentTranscriptionRates", function(
 ## Accessors
 
 #' @rdname experimentTranscriptionRates-class
+#' @param object an \code{experimentTranscriptionRates} object
+#' @return a \code{DataFrame} with the following columns:
+#' \item{geneId}{a character vector of gene IDs}
+#' \item{chi}{a numeric vector of RNAP density along gene body}
+#' \item{betaOrg}{a numeric vector }
+#' \item{betaAdp}{a numeric vector }
+#' \item{fkMean}{a numeric vector of the mean position of pause sites}
+#' \item{fkVar}{a numeric vector of the variance of pause site positions}
+#' \item{phi}{a numeric vector of the landing-pad occupancy}
+#' \item{betaZeta}{a numeric vector of the pause-escape rate}
+#' \item{alphaZeta}{a numeric vector of the potential initiation rate}
+#' \item{omega}{a numeric vector of the effective initiation rate}
+#' \item{omegaZeta}{a numeric vector of the effective initiation rate}
 #' @export
 setGeneric("rates", function(object) standardGeneric("rates"))
 #' @rdname experimentTranscriptionRates-class
+#' #' @examples
+#' # Create an experimentTranscriptionRates object
+#' expRates <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )    
+#' rates(expRates)
 #' @export
 setMethod("rates", "experimentTranscriptionRates", function(object) {
     slot(object, "rates")
 })
 
 #' @rdname experimentTranscriptionRates-class
+#' @param object an \code{experimentTranscriptionRates} object
+#' @return a \code{DataFrame} with the following columns:
+#' \item{geneId}{a character vector of gene IDs}
+#' \item{summarizedGbCounts}{a numeric vector of the sum of gene body read counts}
+#' \item{gbLength}{a numeric vector of the gene body length}
+#' \item{summarizedPauseCounts}{a numeric vector of the sum of pause region read counts}
 #' @export
 setGeneric("counts", function(object) standardGeneric("counts"))
 #' @rdname experimentTranscriptionRates-class
+#' @examples
+#' # Create an experimentTranscriptionRates object
+#' expRates <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )    
+#' counts(expRates)
 #' @export
 setMethod("counts", "experimentTranscriptionRates", function(object) {
     slot(object, "counts")
 })
 
 #' @rdname experimentTranscriptionRates-class
+#' @param object an \code{experimentTranscriptionRates} object
+#' @return a \link[GenomicRanges]{GRanges-class} object with the pause regions
 #' @export
 setGeneric("pauseRegions", function(object) standardGeneric("pauseRegions"))
 #' @rdname experimentTranscriptionRates-class
+#' @examples
+#' # Create an experimentTranscriptionRates object
+#' expRates <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )    
+#' pauseRegions(expRates)
 #' @export
 setMethod("pauseRegions", "experimentTranscriptionRates", function(object) {
     slot(object, "pauseRegions")
 })
 
 #' @rdname experimentTranscriptionRates-class
+#' @param object an \code{experimentTranscriptionRates} object
+#' @return a \link[GenomicRanges]{GRanges-class} object with the gene body regions
 #' @export
 setGeneric("geneBodyRegions", function(object) {
     standardGeneric("geneBodyRegions")
 })
 #' @rdname experimentTranscriptionRates-class
+#' @examples
+#' # Create an experimentTranscriptionRates object
+#' expRates <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )    
+#' geneBodyRegions(expRates)
 #' @export
 setMethod(
     "geneBodyRegions", "experimentTranscriptionRates",
@@ -644,11 +829,24 @@ setMethod(
 )
 
 #' @rdname experimentTranscriptionRates-class
+#' @param object an \code{experimentTranscriptionRates} object
+#' @return a string that indicates which column in the GRanges represents gene
+#' names information
 #' @export
 setGeneric("geneNameColumn", function(object) {
     standardGeneric("geneNameColumn")
 })
 #' @rdname experimentTranscriptionRates-class
+#' @examples
+#' # Create an experimentTranscriptionRates object
+#' expRates <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )    
+#' geneNameColumn(expRates)
 #' @export
 setMethod(
     "geneNameColumn", "experimentTranscriptionRates",
@@ -658,16 +856,39 @@ setMethod(
 )
 
 #' @rdname experimentTranscriptionRates-class
+#' @param object an \code{experimentTranscriptionRates} object
+#' @return a numeric value for the scaling factor for omega
 #' @export
 setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
-
 #' @rdname experimentTranscriptionRates-class
+#' @examples
+#' # Create an experimentTranscriptionRates object
+#' expRates <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )    
+#' omegaScale(expRates)
 #' @export
 setMethod("omegaScale", "experimentTranscriptionRates", function(object) {
     slot(object, "omegaScale")
 })
 
 #' @rdname experimentTranscriptionRates-class
+#' @param object an \code{experimentTranscriptionRates} object
+#' @return a logical value to determine whether to infer landing-pad occupancy or not
+#' @examples
+#' # Create an experimentTranscriptionRates object
+#' expRates <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )    
+#' stericHindrance(expRates)
 #' @export
 setMethod("stericHindrance", "experimentTranscriptionRates", function(object) {
     slot(object, "stericHindrance")

@@ -20,7 +20,7 @@
 #' resolution
 #'
 #' @rdname process_bw
-#' @export
+#' @keywords internal
 processBw <- function(bw, strand) {
     strand(bw) <- strand
     bw$score <- abs(bw$score)
