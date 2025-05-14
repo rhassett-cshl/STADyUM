@@ -7,7 +7,7 @@
 plotTransitionProbabilities(object, file = NULL, width = 8, height = 6)
 }
 \arguments{
-\item{object}{A simulatePolymerase object}
+\item{object}{A SimulatePolymerase object}
 
 \item{file}{Optional file path to save the plot}
 
@@ -22,8 +22,8 @@ A ggplot object showing the transition probabilities across the gene
 Plot transition probabilities
 }
 \examples{
-# Create a simulatePolymerase object
-sim <- simulatePolymerase(
+# Create a SimulatePolymerase object
+sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 

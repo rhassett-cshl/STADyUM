@@ -92,9 +92,9 @@ validateRates <- function(object) {
     return(errors)
 }
 
-#' Class experimentTranscriptionRates
+#' Class ExperimentTranscriptionRates
 #'
-#' Class \code{experimentTranscriptionRates} has read counts, pause and gene
+#' Class \code{ExperimentTranscriptionRates} has read counts, pause and gene
 #' body genomic region coordinates, steric hindrance and omega scale factor
 #' parameters used to estimate the transcription rates
 #'
@@ -118,12 +118,12 @@ validateRates <- function(object) {
 #' betaZeta for the pause-escape rate, alphaZeta for the potential initiation
 #' rate, and likelihoods
 #'
-#' @name experimentTranscriptionRates-class
-#' @rdname experimentTranscriptionRates-class
+#' @name ExperimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates-class
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom tibble tbl_df
-#' @exportClass experimentTranscriptionRates
-methods::setClass("experimentTranscriptionRates",
+#' @exportClass ExperimentTranscriptionRates
+methods::setClass("ExperimentTranscriptionRates",
     slots = c(
         counts = "data.frame",
         bigwigPlus = "character",
@@ -385,10 +385,10 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #' landing-pad occupancy or not. Defaults to FALSE.
 #' @param omegaScale a numeric value for scaling omega. Defaults to NULL.
 #'
-#' @return an \code{\link{experimentTranscriptionRates-class}} object
+#' @return an \code{\link{ExperimentTranscriptionRates-class}} object
 #' 
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",    
@@ -438,7 +438,7 @@ omegaScale=NULL) {
     emRate <- prepareRateTable(emRate, analyticalRateTbl, stericHindrance)
 
     return(methods::new(
-        Class = "experimentTranscriptionRates",
+        Class = "ExperimentTranscriptionRates",
         counts = as.data.frame(rc1), bigwigPlus = bigwigPlus,
         bigwigMinus = bigwigMinus, pauseRegions = pauseRegions,
         geneBodyRegions = geneBodyRegions, geneNameColumn =
@@ -447,12 +447,12 @@ omegaScale=NULL) {
     ))
 }
 
-#' Show method for experimentTranscriptionRates objects
-#' @param object An experimentTranscriptionRates object
+#' Show method for ExperimentTranscriptionRates objects
+#' @param object An ExperimentTranscriptionRates object
 #' @return NULL (invisibly)
 #' @export
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
@@ -464,9 +464,9 @@ omegaScale=NULL) {
 #' # Show the object
 #' show(expRates)
 methods::setMethod("show",
-    signature = "experimentTranscriptionRates",
+    signature = "ExperimentTranscriptionRates",
     function(object) {
-        cat("An experimentTranscriptionRates object with:\n")
+        cat("An ExperimentTranscriptionRates object with:\n")
         cat("  -", length(unique(counts(object)$geneId)), "genes\n")
         cat("  -", nrow(rates(object)), "rate estimates\n")
         cat("  - Steric hindrance:", stericHindrance(object), "\n")
@@ -478,12 +478,12 @@ methods::setMethod("show",
 
 #' Export rates to CSV
 #'
-#' @param object An experimentTranscriptionRates object
+#' @param object An ExperimentTranscriptionRates object
 #' @param file Path to output CSV file. Defaults to "experiment_rates.csv"
 #' @return Outputs a CSV file with the rates
 #' 
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
@@ -499,7 +499,7 @@ setGeneric("exportRatesToCSV", function(object, file="experiment_rates.csv") {
     standardGeneric("exportRatesToCSV")
 })
 setMethod(
-    "exportRatesToCSV", "experimentTranscriptionRates",
+    "exportRatesToCSV", "ExperimentTranscriptionRates",
     function(object, file) {
         write.csv(rates(object), file = file, row.names = FALSE)
     }
@@ -547,7 +547,7 @@ applyCommonTheme <- function() {
 
 #' Plot transcription rates
 #'
-#' @param object An experimentTranscriptionRates object
+#' @param object An ExperimentTranscriptionRates object
 #' @param type Type of plot to create ("scatter", "histogram", or "density").
 #' Defaults to "scatter"
 #' @param rateType Which rate to plot ("betaOrg", "betaAdp", "chi", etc.).
@@ -561,7 +561,7 @@ applyCommonTheme <- function() {
 #' @return A ggplot object
 #' 
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
@@ -580,9 +580,9 @@ setGeneric("plotRates", function(
     standardGeneric("plotRates")
 })
 
-#' @rdname experimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates-class
 #' @export
-setMethod("plotRates", "experimentTranscriptionRates", function(
+setMethod("plotRates", "ExperimentTranscriptionRates", function(
     object, type = "scatter", rateType = "betaAdp", file = NULL, width = 8,
     height = 6, dpi = 300, ...) {
     if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -612,8 +612,8 @@ setMethod("plotRates", "experimentTranscriptionRates", function(
 
 ## Accessors
 
-#' @rdname experimentTranscriptionRates-class
-#' @param object an \code{experimentTranscriptionRates} object
+#' @rdname ExperimentTranscriptionRates-class
+#' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \code{DataFrame} with the following columns:
 #' \item{geneId}{a character vector of gene IDs}
 #' \item{chi}{a numeric vector of RNAP density along gene body}
@@ -628,7 +628,7 @@ setMethod("plotRates", "experimentTranscriptionRates", function(
 #' \item{omegaZeta}{a numeric vector of the effective initiation rate}
 #' @export
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
@@ -641,14 +641,14 @@ setMethod("plotRates", "experimentTranscriptionRates", function(
 #' rates(expRates)
 setGeneric("rates", function(object) standardGeneric("rates"))
 
-#' @rdname experimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates-class
 #' @export
-setMethod("rates", "experimentTranscriptionRates", function(object) {
+setMethod("rates", "ExperimentTranscriptionRates", function(object) {
     slot(object, "rates")
 })
 
-#' @rdname experimentTranscriptionRates-class
-#' @param object an \code{experimentTranscriptionRates} object
+#' @rdname ExperimentTranscriptionRates-class
+#' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \code{DataFrame} with the following columns:
 #' \item{geneId}{a character vector of gene IDs}
 #' \item{summarizedGbCounts}{a numeric vector of the sum of gene body read
@@ -658,9 +658,9 @@ setMethod("rates", "experimentTranscriptionRates", function(object) {
 #' read counts}
 #' @export
 setGeneric("counts", function(object) standardGeneric("counts"))
-#' @rdname experimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates-class
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
@@ -670,18 +670,18 @@ setGeneric("counts", function(object) standardGeneric("counts"))
 #' )    
 #' counts(expRates)
 #' @export
-setMethod("counts", "experimentTranscriptionRates", function(object) {
+setMethod("counts", "ExperimentTranscriptionRates", function(object) {
     slot(object, "counts")
 })
 
-#' @rdname experimentTranscriptionRates-class
-#' @param object an \code{experimentTranscriptionRates} object
+#' @rdname ExperimentTranscriptionRates-class
+#' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \link[GenomicRanges]{GRanges-class} object with the pause regions
 #' @export
 setGeneric("pauseRegions", function(object) standardGeneric("pauseRegions"))
-#' @rdname experimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates-class
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
@@ -691,21 +691,21 @@ setGeneric("pauseRegions", function(object) standardGeneric("pauseRegions"))
 #' )    
 #' pauseRegions(expRates)
 #' @export
-setMethod("pauseRegions", "experimentTranscriptionRates", function(object) {
+setMethod("pauseRegions", "ExperimentTranscriptionRates", function(object) {
     slot(object, "pauseRegions")
 })
 
-#' @rdname experimentTranscriptionRates-class
-#' @param object an \code{experimentTranscriptionRates} object
+#' @rdname ExperimentTranscriptionRates-class
+#' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \link[GenomicRanges]{GRanges-class} object with the gene body
 #' regions
 #' @export
 setGeneric("geneBodyRegions", function(object) {
     standardGeneric("geneBodyRegions")
 })
-#' @rdname experimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates-class
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
@@ -716,23 +716,23 @@ setGeneric("geneBodyRegions", function(object) {
 #' geneBodyRegions(expRates)
 #' @export
 setMethod(
-    "geneBodyRegions", "experimentTranscriptionRates",
+    "geneBodyRegions", "ExperimentTranscriptionRates",
     function(object) {
         slot(object, "geneBodyRegions")
     }
 )
 
-#' @rdname experimentTranscriptionRates-class
-#' @param object an \code{experimentTranscriptionRates} object
+#' @rdname ExperimentTranscriptionRates-class
+#' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a string that indicates which column in the GRanges represents gene
 #' names information
 #' @export
 setGeneric("geneNameColumn", function(object) {
     standardGeneric("geneNameColumn")
 })
-#' @rdname experimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates-class
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
@@ -743,20 +743,20 @@ setGeneric("geneNameColumn", function(object) {
 #' geneNameColumn(expRates)
 #' @export
 setMethod(
-    "geneNameColumn", "experimentTranscriptionRates",
+    "geneNameColumn", "ExperimentTranscriptionRates",
     function(object) {
         slot(object, "geneNameColumn")
     }
 )
 
-#' @rdname experimentTranscriptionRates-class
-#' @param object an \code{experimentTranscriptionRates} object
+#' @rdname ExperimentTranscriptionRates-class
+#' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a numeric value for the scaling factor for omega
 #' @export
 setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
-#' @rdname experimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates-class
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
@@ -766,16 +766,16 @@ setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
 #' )    
 #' omegaScale(expRates)
 #' @export
-setMethod("omegaScale", "experimentTranscriptionRates", function(object) {
+setMethod("omegaScale", "ExperimentTranscriptionRates", function(object) {
     slot(object, "omegaScale")
 })
 
-#' @rdname experimentTranscriptionRates-class
-#' @param object an \code{experimentTranscriptionRates} object
+#' @rdname ExperimentTranscriptionRates-class
+#' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a logical value to determine whether to infer landing-pad occupancy
 #' or not
 #' @examples
-#' # Create an experimentTranscriptionRates object
+#' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
@@ -785,7 +785,7 @@ setMethod("omegaScale", "experimentTranscriptionRates", function(object) {
 #' )    
 #' stericHindrance(expRates)
 #' @export
-setMethod("stericHindrance", "experimentTranscriptionRates", function(object) {
+setMethod("stericHindrance", "ExperimentTranscriptionRates", function(object) {
     slot(object, "stericHindrance")
 })
 

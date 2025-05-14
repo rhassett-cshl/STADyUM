@@ -7,7 +7,7 @@
 plotPauseSiteDistribution(object, file = NULL, width = 8, height = 6)
 }
 \arguments{
-\item{object}{A simulationTranscriptionRates object}
+\item{object}{A SimulationTranscriptionRates object}
 
 \item{file}{Optional file path to save the plot}
 
@@ -22,7 +22,7 @@ A ggplot object showing the pause site distribution
 Plot pause site distribution
 }
 \examples{
-# Create a simulatePolymerase object
+# Create a SimulatePolymerase object
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,

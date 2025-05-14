@@ -2,15 +2,15 @@
 % Please edit documentation in R/simulate_polymerase-class.R
 \name{parameters}
 \alias{parameters}
-\alias{parameters,simulatePolymerase-method}
+\alias{parameters,SimulatePolymerase-method}
 \title{Get all simulation parameters}
 \usage{
 parameters(object)
 
-\S4method{parameters}{simulatePolymerase}(object)
+\S4method{parameters}{SimulatePolymerase}(object)
 }
 \arguments{
-\item{object}{A simulatePolymerase object}
+\item{object}{A SimulatePolymerase object}
 }
 \value{
 A list containing all simulation parameters including k, ksd, kMin,
@@ -21,8 +21,8 @@ polSize, addSpace, time, and stepsToRecord
 Get all simulation parameters
 }
 \examples{
-# Create a simulatePolymerase object
-sim <- simulatePolymerase(
+# Create a SimulatePolymerase object
+sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 

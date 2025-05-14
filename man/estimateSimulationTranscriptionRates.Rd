@@ -14,7 +14,7 @@ landing-pad occupancy or not.
 Defaults to FALSE.}
 }
 \value{
-an \code{\link{simulationTranscriptionRates-class}} object
+an \code{\link{SimulationTranscriptionRates-class}} object
 }
 \description{
 Estimates the transcription rates, such as initiation, pause-release rates
@@ -23,7 +23,7 @@ sequencing read counts and genomic coordinates, and contructs an object
 that holds these rates
 }
 \examples{
-# Create a simulatePolymerase object
+# Create a SimulatePolymerase object
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,

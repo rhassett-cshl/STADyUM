@@ -36,7 +36,7 @@ landing-pad occupancy or not. Defaults to FALSE.}
 \item{omegaScale}{a numeric value for scaling omega. Defaults to NULL.}
 }
 \value{
-an \code{\link{experimentTranscriptionRates-class}} object
+an \code{\link{ExperimentTranscriptionRates-class}} object
 }
 \description{
 Estimates the transcription rates, such as initiation, pause-release rates
@@ -45,7 +45,7 @@ sequencing read counts and genomic coordinates, and contructs an object
 that holds these rates
 }
 \examples{
-# Create an experimentTranscriptionRates object
+# Create an ExperimentTranscriptionRates object
 expRates <- estimateExperimentTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",    

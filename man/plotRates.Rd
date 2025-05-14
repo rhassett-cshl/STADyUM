@@ -16,7 +16,7 @@ plotRates(
 )
 }
 \arguments{
-\item{object}{An experimentTranscriptionRates object}
+\item{object}{An ExperimentTranscriptionRates object}
 
 \item{type}{Type of plot to create ("scatter", "histogram", or "density").
 Defaults to "scatter"}
@@ -42,7 +42,7 @@ A ggplot object
 Plot transcription rates
 }
 \examples{
-# Create an experimentTranscriptionRates object
+# Create an ExperimentTranscriptionRates object
 expRates <- estimateExperimentTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",

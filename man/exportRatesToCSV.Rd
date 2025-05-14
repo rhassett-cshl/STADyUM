@@ -7,7 +7,7 @@
 exportRatesToCSV(object, file = "experiment_rates.csv")
 }
 \arguments{
-\item{object}{An experimentTranscriptionRates object}
+\item{object}{An ExperimentTranscriptionRates object}
 
 \item{file}{Path to output CSV file. Defaults to "experiment_rates.csv"}
 }
@@ -18,7 +18,7 @@ Outputs a CSV file with the rates
 Export rates to CSV
 }
 \examples{
-# Create an experimentTranscriptionRates object
+# Create an ExperimentTranscriptionRates object
 expRates <- estimateExperimentTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",

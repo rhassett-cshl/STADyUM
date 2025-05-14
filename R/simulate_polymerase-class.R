@@ -98,9 +98,9 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
     return(zeta_vec)
 }
 
-#' Class simulatePolymerase
+#' Class SimulatePolymerase
 #'
-#' Class \code{simulatePolymerase} tracks movement of RNAPs along the DNA
+#' Class \code{SimulatePolymerase} tracks movement of RNAPs along the DNA
 #' templates of a large number of cells. It accepts several key user-specified
 #' parameters, including the initiation rate, pause-escape rate, a constant or
 #' variable elongation rate, the mean and variance of pause sites across cells,
@@ -140,14 +140,14 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
 #' @slot positionMatrix a matrix of position of polymerase
 #' @slot readCounts a numeric vector for read counts
 
-#' @name simulatePolymerase-class
-#' @rdname simulatePolymerase-class
+#' @name SimulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom tibble tbl_df
 #' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
 #' @importFrom reshape2 melt
-#' @exportClass simulatePolymerase
-methods::setClass("simulatePolymerase",
+#' @exportClass SimulatePolymerase
+methods::setClass("SimulatePolymerase",
     slots = c(
         k = "integer", ksd = "numeric", kMin = "integer", kMax = "integer",
         geneLen = "integer", alpha = "numeric", beta = "numeric",
@@ -163,8 +163,8 @@ methods::setClass("simulatePolymerase",
 )
 
 
-#' @name simulatePolymerase
-#' @rdname simulatePolymerase-class
+#' @name SimulatePolymerase
+#' @rdname SimulatePolymerase-class
 #' @param k an integer value for the mean of pause sites across cells.
 #' @param ksd a numeric value for the standard deviation of pause sites across
 #' cells.
@@ -186,10 +186,10 @@ methods::setClass("simulatePolymerase",
 #' @param time a numeric value for the time to simulate.
 #' @param stepsToRecord an integer value for the number of steps to record in
 #' position matrix.
-#' @return a \code{simulatePolymerase} object
+#' @return a \code{SimulatePolymerase} object
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -216,8 +216,8 @@ simulatePolymerase <- function(
         zeta_vec, PACKAGE = "STADyUM"
     )
     
-    # Create and return a simulatePolymerase object
-    obj <- new("simulatePolymerase",
+    # Create and return a SimulatePolymerase object
+    obj <- new("SimulatePolymerase",
         probabilityVector = result$probabilityVector,
         pauseSites = result$pauseSites,
         combinedCellsData = result$combinedCellsData,
@@ -237,7 +237,7 @@ simulatePolymerase <- function(
     return(obj)
 }
 
-#' Sample read counts from a simulatePolymerase object. To match our simulated
+#' Sample read counts from a SimulatePolymerase object. To match our simulated
 #' read counts to reality, we need to compute a scaling factor lambda. One way
 #' of doing it is computing the read density based on real experiments. For
 #' example, we have computed the read density within gene body in 
@@ -245,13 +245,13 @@ simulatePolymerase <- function(
 #' If we assume the read counts following a Poisson distribution, we can then
 #' sample the read counts with mean equals to the RNAP frequency multiplied by
 #' lambda.
-#' @param object A simulatePolymerase object
+#' @param object A SimulatePolymerase object
 #' @param readDensity A numeric value for the read density within gene body in
 #' _Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
 #' @return The read count per nucleotide value
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -266,7 +266,7 @@ setGeneric("sampleReadCountsPerNucleotide", function(
     readDensity = 0.0489) {
     standardGeneric("sampleReadCountsPerNucleotide")
 })
-setMethod("sampleReadCountsPerNucleotide", "simulatePolymerase", function(
+setMethod("sampleReadCountsPerNucleotide", "SimulatePolymerase", function(
     object, readDensity = 0.0489) {
     cellNum <- slot(object, "cellNum")
     kMax <- slot(object, "kMax")
@@ -290,14 +290,14 @@ setMethod("sampleReadCountsPerNucleotide", "simulatePolymerase", function(
     return(rcPerNt)
 })
 
-#' Sample read counts from a simulatePolymerase object
-#' @param object A simulatePolymerase object
+#' Sample read counts from a SimulatePolymerase object
+#' @param object A SimulatePolymerase object
 #' @param readDensity A numeric value for the read density within gene body in
 #' _Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
 #' @return The average read density within gene body
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -313,7 +313,7 @@ setGeneric("sampleGeneBodyAvgReadDensity", function(
     standardGeneric("sampleGeneBodyAvgReadDensity")
 })
 setMethod(
-    "sampleGeneBodyAvgReadDensity", "simulatePolymerase",
+    "sampleGeneBodyAvgReadDensity", "SimulatePolymerase",
     function(object, readDensity = 0.0489) {
         cellNum <- slot(object, "cellNum")
         kMax <- slot(object, "kMax")
@@ -331,17 +331,17 @@ setMethod(
 )
 
 
-#' @rdname simulatePolymerase-class
-#' @param object a \code{simulatePolymerase} object
-#' @return a \code{simulatePolymerase} object
+#' @rdname SimulatePolymerase-class
+#' @param object a \code{SimulatePolymerase} object
+#' @return a \code{SimulatePolymerase} object
 #' @export
 setGeneric("simulateReadCounts", function(object) {
     standardGeneric("simulateReadCounts")
 })
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -351,7 +351,7 @@ setGeneric("simulateReadCounts", function(object) {
 #' # Print the read counts
 #' print(sim)
 #' @export
-setMethod("simulateReadCounts", "simulatePolymerase", function(object) {
+setMethod("simulateReadCounts", "SimulatePolymerase", function(object) {
     cellNum <- slot(object, "cellNum")
     kMax <- slot(object, "kMax")
     totalRnap <- slot(object, "combinedCellsData")
@@ -365,15 +365,15 @@ setMethod("simulateReadCounts", "simulatePolymerase", function(object) {
     return(object)
 })
 
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @export
 setGeneric("simulateAvgReadDensity", function(object) {
     standardGeneric("simulateAvgReadDensity")
 })
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -383,7 +383,7 @@ setGeneric("simulateAvgReadDensity", function(object) {
 #' # Print the average read density
 #' print(sim)
 #' @export
-setMethod("simulateAvgReadDensity", "simulatePolymerase", function(object) {
+setMethod("simulateAvgReadDensity", "SimulatePolymerase", function(object) {
     cellNum <- slot(object, "cellNum")
     kMax <- slot(object, "kMax")
     totalRnap <- slot(object, "combinedCellsData")
@@ -397,10 +397,10 @@ setMethod("simulateAvgReadDensity", "simulatePolymerase", function(object) {
     return(object)
 })
 
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -408,8 +408,8 @@ setMethod("simulateAvgReadDensity", "simulatePolymerase", function(object) {
 #' # Show the object
 #' show(sim)
 #' @export
-setMethod("show", "simulatePolymerase", function(object) {
-    cat("A simulatePolymerase object with:\n")
+setMethod("show", "SimulatePolymerase", function(object) {
+    cat("A SimulatePolymerase object with:\n")
     cat("  - k =", slot(object, "k"), "\n")
     cat("  - ksd =", slot(object, "ksd"), "\n")
     cat("  - kMin =", slot(object, "kMin"), "\n")
@@ -430,15 +430,15 @@ setMethod("show", "simulatePolymerase", function(object) {
 
 # Plotting methods
 #' Plot polymerase distribution
-#' @param object A simulatePolymerase object
+#' @param object A SimulatePolymerase object
 #' @param file Optional file path to save the plot
 #' @param width Plot width in inches
 #' @param height Plot height in inches
 #' @return A ggplot object showing the distribution of polymerases across the
 #' gene
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -452,7 +452,7 @@ setGeneric("plotPolymeraseDistribution", function(
     standardGeneric("plotPolymeraseDistribution")
 })
 setMethod(
-    "plotPolymeraseDistribution", "simulatePolymerase",
+    "plotPolymeraseDistribution", "SimulatePolymerase",
     function(object, file = NULL, width = 8, height = 6) {
         df <- data.frame(
             position = 0:slot(object, "geneLen"),
@@ -477,14 +477,14 @@ setMethod(
 )
 
 #' Plot pause site distribution
-#' @param object A simulatePolymerase object
+#' @param object A SimulatePolymerase object
 #' @param file Optional file path to save the plot
 #' @param width Plot width in inches
 #' @param height Plot height in inches
 #' @return A ggplot object showing the distribution of pause sites
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -497,7 +497,7 @@ setGeneric("plotPauseSites", function(
     height = 6) {
     standardGeneric("plotPauseSites")
 })
-setMethod("plotPauseSites", "simulatePolymerase", function(
+setMethod("plotPauseSites", "SimulatePolymerase", function(
     object,
     file = NULL, width = 8, height = 6) {
     df <- data.frame(
@@ -522,14 +522,14 @@ setMethod("plotPauseSites", "simulatePolymerase", function(
 })
 
 #' Plot transition probabilities
-#' @param object A simulatePolymerase object
+#' @param object A SimulatePolymerase object
 #' @param file Optional file path to save the plot
 #' @param width Plot width in inches
 #' @param height Plot height in inches
 #' @return A ggplot object showing the transition probabilities across the gene
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -543,7 +543,7 @@ setGeneric("plotTransitionProbabilities", function(
     standardGeneric("plotTransitionProbabilities")
 })
 setMethod(
-    "plotTransitionProbabilities", "simulatePolymerase",
+    "plotTransitionProbabilities", "SimulatePolymerase",
     function(object, file = NULL, width = 8, height = 6) {
         df <- data.frame(
             position = 0:slot(object, "geneLen"),
@@ -568,14 +568,14 @@ setMethod(
 )
 
 #' Plot position matrix heatmap
-#' @param object A simulatePolymerase object
+#' @param object A SimulatePolymerase object
 #' @param file Optional file path to save the plot
 #' @param width Plot width in inches
 #' @param height Plot height in inches
 #' @return A ggplot object showing the position matrix as a heatmap
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -589,7 +589,7 @@ setGeneric("plotPositionMatrix", function(
     height = 6) {
     standardGeneric("plotPositionMatrix")
 })
-setMethod("plotPositionMatrix", "simulatePolymerase", function(
+setMethod("plotPositionMatrix", "SimulatePolymerase", function(
     object,
     file = NULL, width = 8, height = 6) {
     df <- reshape2::melt(slot(object, "positionMatrix"))
@@ -614,12 +614,12 @@ setMethod("plotPositionMatrix", "simulatePolymerase", function(
 )
 
 #' Save all data frames to CSV files
-#' @param object A simulatePolymerase object
+#' @param object A SimulatePolymerase object
 #' @param dir Directory to save the files (default: "results")
 #' @return Outputs a CSV file with the data frames
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -630,7 +630,7 @@ setMethod("plotPositionMatrix", "simulatePolymerase", function(
 setGeneric("saveDataFrames", function(object, dir = "results") {
     standardGeneric("saveDataFrames")
 })
-setMethod("saveDataFrames", "simulatePolymerase", function(
+setMethod("saveDataFrames", "SimulatePolymerase", function(
     object,
     dir = "results") {
     # Create directory if it doesn't exist
@@ -663,14 +663,14 @@ setMethod("saveDataFrames", "simulatePolymerase", function(
 })
 
 #' Save all plots to files
-#' @param object A simulatePolymerase object
+#' @param object A SimulatePolymerase object
 #' @param dir Directory to save the plots (default: "results")
 #' @param width Plot width in inches
 #' @param height Plot height in inches
 #' @return Outputs directory where plots were saved to pdf files
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -683,7 +683,7 @@ setGeneric("savePlots", function(
     height = 6) {
     standardGeneric("savePlots")
 })
-setMethod("savePlots", "simulatePolymerase", function(
+setMethod("savePlots", "SimulatePolymerase", function(
     object,
     dir = "results", width = 8, height = 6) {
     # Create directory if it doesn't exist
@@ -710,15 +710,15 @@ setMethod("savePlots", "simulatePolymerase", function(
     )
 })
 
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @export
 setGeneric("plotAvgReadDensity", function(object) {
     standardGeneric("plotAvgReadDensity")
 })
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -726,7 +726,7 @@ setGeneric("plotAvgReadDensity", function(object) {
 #' # Plot average read density
 #' plotAvgReadDensity(sim)
 #' @export
-setMethod("plotAvgReadDensity", "simulatePolymerase", function(object) {
+setMethod("plotAvgReadDensity", "SimulatePolymerase", function(object) {
     df <- data.frame(
         position = 0:geneLen(object),
         density = avgReadDensity(object)
@@ -742,10 +742,10 @@ setMethod("plotAvgReadDensity", "simulatePolymerase", function(object) {
 })
 
 # Accessor methods
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -756,14 +756,14 @@ setMethod("plotAvgReadDensity", "simulatePolymerase", function(object) {
 #' print(pauseSites)
 #' @export
 setGeneric("pauseSites", function(object) standardGeneric("pauseSites"))
-setMethod("pauseSites", "simulatePolymerase", function(object) {
+setMethod("pauseSites", "SimulatePolymerase", function(object) {
     slot(object, "pauseSites")
 })
 
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -776,14 +776,14 @@ setMethod("pauseSites", "simulatePolymerase", function(object) {
 setGeneric("probabilityVector", function(object) {
     standardGeneric("probabilityVector")
 })
-setMethod("probabilityVector", "simulatePolymerase", function(object) {
+setMethod("probabilityVector", "SimulatePolymerase", function(object) {
     slot(object, "probabilityVector")
 })
 
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -796,14 +796,14 @@ setMethod("probabilityVector", "simulatePolymerase", function(object) {
 setGeneric("combinedCellsData", function(object) {
     standardGeneric("combinedCellsData")
 })
-setMethod("combinedCellsData", "simulatePolymerase", function(object) {
+setMethod("combinedCellsData", "SimulatePolymerase", function(object) {
     slot(object, "combinedCellsData")
 })
 
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -816,18 +816,18 @@ setMethod("combinedCellsData", "simulatePolymerase", function(object) {
 setGeneric("positionMatrix", function(object) {
     standardGeneric("positionMatrix")
 })
-setMethod("positionMatrix", "simulatePolymerase", function(object) {
+setMethod("positionMatrix", "SimulatePolymerase", function(object) {
     slot(object, "positionMatrix")
 })
 
 #' Get all simulation parameters
-#' @param object A simulatePolymerase object
+#' @param object A SimulatePolymerase object
 #' @return A list containing all simulation parameters including k, ksd, kMin,
 #' kMax, geneLen, alpha, beta, zeta, zetaSd, zetaMin, zetaMax, zetaVec, cellNum,
 #' polSize, addSpace, time, and stepsToRecord
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -841,7 +841,7 @@ setGeneric("parameters", function(object) standardGeneric("parameters"))
 
 #' @rdname parameters
 #' @export
-setMethod("parameters", "simulatePolymerase", function(object) {
+setMethod("parameters", "SimulatePolymerase", function(object) {
     list(
         k = slot(object, "k"),
         ksd = slot(object, "ksd"),
@@ -863,10 +863,10 @@ setMethod("parameters", "simulatePolymerase", function(object) {
     )
 })
 
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -877,14 +877,14 @@ setMethod("parameters", "simulatePolymerase", function(object) {
 #' print(readCounts)
 #' @export
 setGeneric("readCounts", function(object) standardGeneric("readCounts"))
-setMethod("readCounts", "simulatePolymerase", function(object) {
+setMethod("readCounts", "SimulatePolymerase", function(object) {
     slot(object, "readCounts")
 })
 
-#' @rdname simulatePolymerase-class
+#' @rdname SimulatePolymerase-class
 #' @examples
-#' # Create a simulatePolymerase object
-#' sim <- simulatePolymerase(
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
@@ -897,6 +897,6 @@ setMethod("readCounts", "simulatePolymerase", function(object) {
 setGeneric("avgReadDensity", function(object) {
     standardGeneric("avgReadDensity")
 })
-setMethod("avgReadDensity", "simulatePolymerase", function(object) {
+setMethod("avgReadDensity", "SimulatePolymerase", function(object) {
     slot(object, "avgReadDensity")
 })
