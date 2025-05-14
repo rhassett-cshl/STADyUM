@@ -1,26 +1,3 @@
-#' @importFrom plyranges find_overlaps_directed group_by summarise
-#' @importFrom stats dnorm
-#' @importFrom GenomeInfoDb keepStandardChromosomes
-#' @title Process bigwigs
-#'
-#' @description
-#' Creates GRanges object with strand information and counts set to single
-#' basepair resolution and
-#' absolute value. Keeps only standard chromosome information and excludes
-#' count regions set to 0.
-#'
-#' @param bw \code{\link[GenomicRanges]{GRanges-class}} object representing
-#' pro-seq counts
-#' @param strand a string representing if counts are on the plus strand with
-#' +' or the minus
-#' strand with '-'
-#'
-#' @return A \code{\link[GenomicRanges]{GenomicRanges-class}} object with
-#' single basepair
-#' resolution
-#'
-#' @rdname process_bw
-#' @keywords internal
 processBw <- function(bw, strand) {
     strand(bw) <- strand
     bw$score <- abs(bw$score)
@@ -42,21 +19,6 @@ processBw <- function(bw, strand) {
     return(bw)
 }
 
-#' @title Summarize Bigwigs
-#'
-#' @description
-#' Creates GRanges object with column of read counts summarized over regions of
-#' genes
-#'
-#' @param bw \code{\link[GenomicRanges]{GRanges-class}} object of read counts
-#' @param grng \code{\link[GenomicRanges]{GRanges-class}} object of regions to
-#' summarize read count
-#' @param colName string for the column name for the summarized read counts
-#'
-#' @return A \code{\link[GenomicRanges]{GenomicRanges-class}} object
-#'
-#' @rdname summariseBw
-#' @keywords internal
 summariseBw <-
     function(bw, grng, colName) {
         rc <- bw %>%
@@ -67,13 +29,11 @@ summariseBw <-
         return(rc)
     }
 
-#' @keywords internal
 getExpectation <- function(fk, Xk, beta) {
     Yk <- Xk / (1 - beta + beta / fk)
     return(Yk)
 }
 
-#' @keywords internal
 getLikelihood <- function(beta, chi, Xk, Yk, fk) {
     ## part of the original likelihood function associated with beta, Xk and Yk
     ## used as criteria to terminate EM
@@ -91,7 +51,6 @@ getLikelihood <- function(beta, chi, Xk, Yk, fk) {
 # model allows pause sites to vary across cells
 # EM doesn't include phi estimates
 # functions for EM based on Gaussian distributed k
-#' @keywords internal
 pauseEscapeMaximization <- function(chiHat, Xk, Yk, fk, kmin, kmax) {
     t <- sum(Yk)
     u <- sum(Yk * seq(kmin, kmax))
@@ -120,28 +79,6 @@ pauseEscapeMaximization <- function(chiHat, Xk, Yk, fk, kmin, kmax) {
     ))
 }
 
-#' @title Pause Escape Expectation Maximization
-#'
-#' @description
-#' Estimate transcription rates with varying pause sites.
-#'
-#' @param fkInt a list of the initial pause site values
-#' @param Xk a numeric vector of read counts on each position within the
-#' pause peak
-#' @param kmin an integer for lower bound of pause sites
-#' @param kmax an integer for upper bound of pause sites
-#' @param betaInt a list of initialized beta estimates
-#' @param chiHat a numeric for read count chi estimate
-#' @param maxItr an integer for the maximum iterations. Default is 100.
-#' @param tor Tolerance value to determine when to stop iterating.
-#' Default is 1e-3
-#'
-#' @return A list of transcription rates including beta, Yk, fk, fk_mean,
-#' fk_var, betas,
-#' likelihoods and phi
-#'
-#' @rdname pauseEscapeEM
-#' @keywords internal
 pauseEscapeEM <- function(
     fkInt, Xk, kmin, kmax, betaInt, chiHat, maxItr = 100, tor = 1e-3) {
     betas <- list(); likelihoods <- list(); flag <- "normal"
@@ -196,7 +133,6 @@ pauseEscapeEM <- function(
 # model allows both varied pause sites and steric hindrance, EM contains phi
 # estimations
 # functions for EM based on Gaussian distributed k
-#' @keywords internal
 mult.RNAP.phi <-
     function(alpha, beta, f1, f2) {
         return(
@@ -207,7 +143,6 @@ mult.RNAP.phi <-
         )
     }
 
-#' @keywords internal
 phi.polynom <- function(phi, beta, omega, f1, f2) {
     alpha <- omega / (1 - phi)
 
@@ -217,7 +152,6 @@ phi.polynom <- function(phi, beta, omega, f1, f2) {
 # find phi corresponding to omega and beta by solving polynomial that results
 # from substituting alpha = omega/(1-phi) into the equation that defines phi in
 # terms of alpha and beta
-#' @keywords internal
 mult.RNAP.phi.omega <- function(omega, beta, f1, f2) {
     ## set bounds for solution
     lb <- 1e-6
@@ -248,7 +182,6 @@ mult.RNAP.phi.omega <- function(omega, beta, f1, f2) {
 }
 
 # version of above that uses log parameterization of beta
-#' @keywords internal
 beta.ecll.omega.log <- function(args, omega, chi, t, f1, f2) {
     beta <- exp(args[1])
 
@@ -267,7 +200,6 @@ beta.ecll.omega.log <- function(args, omega, chi, t, f1, f2) {
     return(-retval)
 }
 
-#' @keywords internal
 beta.M.step.omega <- function(chi, t, f1, f2, oldphi, oldbeta, lambda, zeta) {
     omega <- chi * zeta / lambda 
     ret <- list("par" = NA_integer_)
@@ -284,7 +216,6 @@ beta.M.step.omega <- function(chi, t, f1, f2, oldphi, oldbeta, lambda, zeta) {
     return(list("beta" = beta, "phi" = phi))
 }
 
-#' @keywords internal
 stericHindranceMaximization <- function(
     chiHat, Xk, Yk, fk, kmin, kmax, f1,
     f2, phi, beta, lambda, zeta) {
@@ -318,7 +249,6 @@ stericHindranceMaximization <- function(
     ))
 }
 
-#' @keywords internal
 calculateF <- function(s, k) {
     x <- round(rnorm(1e7, mean = k, sd = 25))
     x <- x[x >= 17 & x <= 200]
@@ -328,35 +258,6 @@ calculateF <- function(s, k) {
     return(c("f" = f, "f1" = f1, "f2" = f2))
 }
 
-
-#' @title Steric Hindrance Expectation-Maximization
-#'
-#' @description
-#' Estimate transcription rates with EM algorithm with varying pause sites and
-#' steric hindrance.
-#' Landing pad occupancy is inferred.
-#'
-#' @param Xk a numeric vector of read counts on each position within the pause
-#' peak
-#' @param kmin an integer for lower bound of pause sites
-#' @param kmax an integer for upper bound of pause sites
-#' @param f1 a numeric
-#' @param f2 a numeric
-#' @param fkInt a list of the initial pause site values
-#' @param betaInt a list of initialized beta estimates
-#' @param phiInt a numeric
-#' @param chiHat a numeric for read count chi estimate
-#' @param lambda a numeric for zeta scaled
-#' @param zeta a numeric for elongation rate
-#' @param maxItr an integer for the maximum iterations. Default is 100.
-#' @param tor Tolerance value to determine when to stop iterating. Default is
-#' 1e-3
-#'
-#' @return A list of transcription rates including beta, Yk, fk, fk_mean,
-#' fk_var, betas, likelihoods and phi
-#'
-#' @rdname stericHindranceEM
-#' @keywords internal
 stericHindranceEM <- function(
     Xk, kmin, kmax, f1, f2, fkInt, betaInt, phiInt, chiHat, lambda, zeta,
     maxItr = 100, tor = 1e-3) {

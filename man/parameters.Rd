@@ -13,8 +13,8 @@ parameters(object)
 \item{object}{A simulatePolymerase object}
 }
 \value{
-A list containing all simulation parameters including k, ksd, kMin, kMax,
-geneLen, alpha, beta, zeta, zetaSd, zetaMin, zetaMax, zetaVec, cellNum,
+A list containing all simulation parameters including k, ksd, kMin,
+kMax, geneLen, alpha, beta, zeta, zetaSd, zetaMin, zetaMax, zetaVec, cellNum,
 polSize, addSpace, time, and stepsToRecord
 }
 \description{

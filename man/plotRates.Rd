@@ -41,3 +41,16 @@ A ggplot object
 \description{
 Plot transcription rates
 }
+\examples{
+# Create an experimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+
+# Plot rates as a histogram
+plotRates(expRates, type = "histogram")
+}

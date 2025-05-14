@@ -1,10 +1,3 @@
-#' simulationTranscriptionRatesValid
-#'
-#' Checks that a \code{simulationTranscriptionRates} object is valid
-#' @param object a \code{simulationTranscriptionRates} object
-#'
-#' @return TRUE if valid, else errors
-#' @keywords internal
 simulationTranscriptionRatesValid <- function(object) {
     errors <- character()
 
@@ -96,7 +89,6 @@ methods::setClass("simulationTranscriptionRates",
     validity = simulationTranscriptionRatesValid
 )
 
-#' @keywords internal
 summariseSimulationBw <- function(bw, grng, regionNames) {
     rc <- grng %>%
         plyranges::group_by_overlaps(bw) %>%

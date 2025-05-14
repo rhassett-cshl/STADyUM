@@ -2,7 +2,14 @@
 % Please edit documentation in R/simulate_polymerase-class.R
 \name{sampleReadCountsPerNucleotide}
 \alias{sampleReadCountsPerNucleotide}
-\title{Sample read counts from a simulatePolymerase object}
+\title{Sample read counts from a simulatePolymerase object. To match our simulated
+read counts to reality, we need to compute a scaling factor lambda. One way
+of doing it is computing the read density based on real experiments. For
+example, we have computed the read density within gene body in
+\emph{Dukler et al} (2017) for genes with median expression (i.e., 0.0489).
+If we assume the read counts following a Poisson distribution, we can then
+sample the read counts with mean equals to the RNAP frequency multiplied by
+lambda.}
 \usage{
 sampleReadCountsPerNucleotide(object, readDensity = 0.0489)
 }
@@ -10,11 +17,30 @@ sampleReadCountsPerNucleotide(object, readDensity = 0.0489)
 \item{object}{A simulatePolymerase object}
 
 \item{readDensity}{A numeric value for the read density within gene body in
-Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).}
+\emph{Dukler et al.} (2017) for genes with median expression (i.e., 0.0489).}
 }
 \value{
 The read count per nucleotide value
 }
 \description{
-Sample read counts from a simulatePolymerase object
+Sample read counts from a simulatePolymerase object. To match our simulated
+read counts to reality, we need to compute a scaling factor lambda. One way
+of doing it is computing the read density based on real experiments. For
+example, we have computed the read density within gene body in
+\emph{Dukler et al} (2017) for genes with median expression (i.e., 0.0489).
+If we assume the read counts following a Poisson distribution, we can then
+sample the read counts with mean equals to the RNAP frequency multiplied by
+lambda.
+}
+\examples{
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Sample read counts per nucleotide
+readCounts <- sampleReadCountsPerNucleotide(sim)
+# Print the read counts per nucleotide
+print(readCounts)
 }

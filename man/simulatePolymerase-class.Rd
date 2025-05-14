@@ -65,6 +65,52 @@ readCounts(object)
 
 avgReadDensity(object)
 }
+\arguments{
+\item{k}{an integer value for the mean of pause sites across cells.}
+
+\item{ksd}{a numeric value for the standard deviation of pause sites across
+cells.}
+
+\item{kMin}{an integer value for the upper bound of pause sites allowed.}
+
+\item{kMax}{an integer value for the lower bound of pause sites allowed.}
+
+\item{geneLen}{an integer value for the length of the gene.}
+
+\item{alpha}{a numeric value for the initiation rate.}
+
+\item{beta}{a numeric value for the pause release rate.}
+
+\item{zeta}{a numeric value for the mean elongation rate across sites.}
+
+\item{zetaSd}{a numeric value for the standard deviation of pause sites
+across sites.}
+
+\item{zetaMin}{a numeric value for the minimum elongation rate.}
+
+\item{zetaMax}{a numeric value for the maximum elongation rate.}
+
+\item{zetaVec}{a character value for the path to the zetaVec file.}
+
+\item{cellNum}{an integer value for the number of cells to simulate.}
+
+\item{polSize}{an integer value for the polymerase II size.}
+
+\item{addSpace}{an integer value for the additional space in addition to
+RNAP size.}
+
+\item{time}{a numeric value for the time to simulate.}
+
+\item{stepsToRecord}{an integer value for the number of steps to record in
+position matrix.}
+
+\item{object}{a \code{simulatePolymerase} object}
+}
+\value{
+a \code{simulatePolymerase} object
+
+a \code{simulatePolymerase} object
+}
 \description{
 Class \code{simulatePolymerase} tracks movement of RNAPs along the DNA
 templates of a large number of cells. It accepts several key user-specified
@@ -130,3 +176,9 @@ position matrix.}
 \item{\code{readCounts}}{a numeric vector for read counts}
 }}
 
+\examples{
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+}

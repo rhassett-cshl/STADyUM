@@ -1,8 +1,3 @@
-
-#' @rdname simulatePolymerase-class
-#' @param object an \code{simulatePolymerase} object
-#' @return a character vector of errors
-#' @keywords internal
 simulatePolymeraseValid <- function(object) {
     errors <- character()
 
@@ -25,30 +20,6 @@ simulatePolymeraseValid <- function(object) {
     if (length(errors) == 0) TRUE else errors
 }
 
-#' @rdname simulatePolymerase-class
-#' @param k an integer value for the mean of pause sites across cells.
-#' @param ksd a numeric value for the standard deviation of pause sites across
-#' cells.
-#' @param kMin an integer value for the upper bound of pause sites allowed.
-#' @param kMax an integer value for the lower bound of pause sites allowed.
-#' @param geneLen an integer value for the length of the gene.  
-#' @param alpha a numeric value for the initiation rate.
-#' @param beta a numeric value for the pause release rate.
-#' @param zeta a numeric value for the mean elongation rate across sites.
-#' @param zetaSd a numeric value for the standard deviation of pause sites
-#' across sites.
-#' @param zetaMin a numeric value for the minimum elongation rate.
-#' @param zetaMax a numeric value for the maximum elongation rate.
-#' @param zetaVec a character value for the path to the zetaVec file.
-#' @param cellNum an integer value for the number of cells to simulate.
-#' @param polSize an integer value for the polymerase II size.
-#' @param addSpace an integer value for the additional space in addition to
-#' RNAP size.
-#' @param time a numeric value for the time to simulate.
-#' @param stepsToRecord an integer value for the number of steps to record in
-#' position matrix.
-#' @return NULL
-#' @keywords internal
 validateSimulatePolymeraseParams <- function(
     k, ksd, kMin, kMax, geneLen,
     alpha, beta, zeta, zetaSd, zetaMin, zetaMax, cellNum, polSize,
@@ -98,13 +69,6 @@ validateSimulatePolymeraseParams <- function(
     }
 }
 
-
-#' @rdname simulatePolymerase-class
-#' @param zetaVec a character value for the path to the zetaVec file containing
-#' elongation rate scaling factors
-#' @param geneLen an integer value for the length of the gene.
-#' @return a numeric vector of the elongation rates
-#' @keywords internal
 validateAndLoadZetaVec <- function(zetaVec, geneLen) {
     if (is.null(zetaVec)) {
         return(NULL)

@@ -22,7 +22,7 @@ expRates <- estimateExperimentTranscriptionRates(
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "geneId"
+    geneNameColumn = "gene_id"
 )
 
 # Show the object

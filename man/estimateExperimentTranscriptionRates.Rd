@@ -44,3 +44,14 @@ and landing pad occupancy, from experimental data, such as nascent RNA
 sequencing read counts and genomic coordinates, and contructs an object
 that holds these rates
 }
+\examples{
+# Create an experimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",    
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+
+}
