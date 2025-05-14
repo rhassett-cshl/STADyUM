@@ -75,20 +75,24 @@ a \code{DataFrame} with the following columns:
 
 a \code{DataFrame} with the following columns:
 \item{geneId}{a character vector of gene IDs}
-\item{summarizedGbCounts}{a numeric vector of the sum of gene body read counts}
+\item{summarizedGbCounts}{a numeric vector of the sum of gene body read
+counts}
 \item{gbLength}{a numeric vector of the gene body length}
-\item{summarizedPauseCounts}{a numeric vector of the sum of pause region read counts}
+\item{summarizedPauseCounts}{a numeric vector of the sum of pause region
+read counts}
 
 a \link[GenomicRanges]{GRanges-class} object with the pause regions
 
-a \link[GenomicRanges]{GRanges-class} object with the gene body regions
+a \link[GenomicRanges]{GRanges-class} object with the gene body
+regions
 
 a string that indicates which column in the GRanges represents gene
 names information
 
 a numeric value for the scaling factor for omega
 
-a logical value to determine whether to infer landing-pad occupancy or not
+a logical value to determine whether to infer landing-pad occupancy
+or not
 }
 \description{
 Class \code{experimentTranscriptionRates} has read counts, pause and gene

@@ -26,7 +26,26 @@ methods::setClass("transcriptionRatesLrts",
 #' spike-in reads
 #'
 #' @return a \code{\link{likelihoodRatioTest-class}} object
-#'
+#' 
+#' @examples
+#' expData1 <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
+#' expData2 <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
+#' sc <- "path/to/scale.csv"
+#' lrts <- likelihoodRatioTest(expData1, expData2, sc)
+#' # Print the likelihood ratio test object
+#' print(lrts)
 #' @export
 likelihoodRatioTest <- function(expData1, expData2, sc) {
     helperTcIn <- "helper_function_em_two_condition.R"
@@ -383,6 +402,23 @@ likelihoodRatioTest <- function(expData1, expData2, sc) {
 }
 
 #' @rdname transcriptionRatesLrts-class
+#' @examples
+#' expData1 <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
+#' expData2 <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
+#' lrts <- likelihoodRatioTest(expData1, expData2, sc)
+#' expData1(lrts)
 #' @export
 setGeneric("expData1", function(object) standardGeneric("expData1"))
 setMethod("expData1", "transcriptionRatesLrts", function(object) {
@@ -390,6 +426,23 @@ setMethod("expData1", "transcriptionRatesLrts", function(object) {
 })
 
 #' @rdname transcriptionRatesLrts-class
+#' @examples
+#' expData1 <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
+#' expData2 <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
+#' lrts <- likelihoodRatioTest(expData1, expData2, sc)
+#' expData2(lrts)
 #' @export
 setGeneric("expData2", function(object) standardGeneric("expData2"))
 setMethod("expData2", "transcriptionRatesLrts", function(object) {
@@ -397,12 +450,23 @@ setMethod("expData2", "transcriptionRatesLrts", function(object) {
 })
 
 #' @rdname transcriptionRatesLrts-class
+#' @examples
+#' expData1 <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
+#' expData2 <- estimateExperimentTranscriptionRates(
+#'     bigwigPlus = "path/to/plus.bw",
+#'     bigwigMinus = "path/to/minus.bw",
+#'     pauseRegions = GRanges("chr1:1-1000"),
+#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     geneNameColumn = "gene_id"
+#' )
+#' lrts <- likelihoodRatioTest(expData1, expData2, sc)
+#' sc(lrts)
 #' @export
 setGeneric("sc", function(object) standardGeneric("sc"))
 setMethod("sc", "transcriptionRatesLrts", function(object) slot(object, "sc"))
-
-#' @rdname transcriptionRatesLrts-class
-#' @export
-setGeneric("likelihoodRatioTest", function(expData1, expData2, sc) {
-    standardGeneric("likelihoodRatioTest")
-})

@@ -102,7 +102,6 @@ summariseSimulationBw <- function(bw, grng, regionNames) {
     return(rc)
 }
 
-#' @keywords internal
 prepareSimulationParameters <- function(simpol) {
     sampleCell <- 5000
     sampleN <- 50
@@ -139,7 +138,6 @@ prepareSimulationParameters <- function(simpol) {
     ))
 }
 
-#' @keywords internal
 createGenomicRegions <- function(params) {
     gnRng <- GRanges(seqnames = rep("chr1", 3),
         IRanges(start = c(1, params$kmax + 1, 1), 
@@ -161,7 +159,6 @@ createGenomicRegions <- function(params) {
     ))
 }
 
-#' @keywords internal
 generateRnapPositions <- function(params, regions) {
     seeds <- seq(from = 2013, by = 1, length.out = params$sampleN)
     rnapGrng <- list()
@@ -201,7 +198,6 @@ generateRnapPositions <- function(params, regions) {
     return(list(rnapGrng = rnapGrng, rnapNls = rnapNls))
 }
 
-#' @keywords internal
 calculateReadCounts <- function(rnapData, regions, params) {
     bwDfs <- tibble(trial = seq_len(params$sampleN))
     bwDfs$rcRegion <- map(rnapData$rnapGrng, 
@@ -220,7 +216,6 @@ calculateReadCounts <- function(rnapData, regions, params) {
     return(bwDfs)
 }
 
-#' @keywords internal
 adjustReadCoverage <- function(rnapData, regions, params, bwDfs) {
     if (!is.null(params$lambda)) {
         rnapGrng <- map(rnapData$rnapGrng, function(grng) {
@@ -246,7 +241,6 @@ adjustReadCoverage <- function(rnapData, regions, params, bwDfs) {
     return(list(bwDfs = bwDfs, rnapGrng = rnapGrng))
 }
 
-#' @keywords internal
 calculateInitialRates <- function(bwDfs, regions, params, simpol, rnapGrng) {
     bwDfs$Xk <- map(
         rnapGrng,
@@ -280,7 +274,6 @@ calculateInitialRates <- function(bwDfs, regions, params, simpol, rnapGrng) {
     return(bwDfs)
 }
 
-#' @keywords internal
 runEmAlgorithm <- function(bwDfs, params, stericHindrance) {
     fkInt <- dnorm(params$kmin:params$kmax, mean = 50, sd = 100)
     fkInt <- fkInt / sum(fkInt)
@@ -330,7 +323,6 @@ runEmAlgorithm <- function(bwDfs, params, stericHindrance) {
     return(emLs)
 }
 
-#' @keywords internal
 processEmResults <- function(bwDfs, emLs, stericHindrance) {
     bwDfs$betaAdp <- map_dbl(emLs, "beta", .default = NA)
     bwDfs$Yk <- map(emLs, "Yk", .default = NA)
@@ -353,7 +345,6 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
     return(bwDfs)
 }
 
-#' @keywords internal
 calculateFinalRates <- function(bwDfs, stericHindrance) {
     initRateMean <- mean(bwDfs$initRate)
     initRateVar <- var(bwDfs$initRate)
@@ -391,6 +382,17 @@ calculateFinalRates <- function(bwDfs, stericHindrance) {
 #' @importFrom IRanges IRanges
 #' @import GenomicRanges
 #' @return an \code{\link{simulationTranscriptionRates-class}} object
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Print the estimated rates
+#' print(estRates)
 #'
 #' @export
 estimateSimulationTranscriptionRates <- function(simpol, stericHindrance=FALSE)
@@ -441,6 +443,17 @@ estimateSimulationTranscriptionRates <- function(simpol, stericHindrance=FALSE)
 }
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Show the object
+#' show(estRates)
 #' @export
 setMethod("show", "simulationTranscriptionRates", function(object) {
     # Create a data frame for display
@@ -470,6 +483,17 @@ setMethod("show", "simulationTranscriptionRates", function(object) {
 #' @param width Plot width in inches
 #' @param height Plot height in inches
 #' @return A ggplot object showing the transcription rates
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Plot transcription rates
+#' plotTranscriptionRates(estRates)
 #' @export
 setGeneric("plotTranscriptionRates", function(
     object, file = NULL,
@@ -518,6 +542,17 @@ setMethod(
 #' @param width Plot width in inches
 #' @param height Plot height in inches
 #' @return A ggplot object showing the pause site distribution
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Plot pause site distribution
+#' plotPauseSiteDistribution(estRates)
 #' @export
 setGeneric("plotPauseSiteDistribution", function(
     object, file = NULL,
@@ -558,6 +593,17 @@ setMethod(
 #' @param width Plot width in inches
 #' @param height Plot height in inches
 #' @return A ggplot object showing the RNAP counts
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Plot RNAP counts
+#' plotRnapCounts(estRates)
 #' @export
 setGeneric("plotRnapCounts", function(
     object, file = NULL, width = 8,
@@ -598,6 +644,19 @@ setMethod(
 
 # Accessor methods
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get simpol
+#' simpol <- simpol(estRates)
+#' # Print the simpol
+#' print(simpol)
 #' @export
 setGeneric("simpol", function(object) standardGeneric("simpol"))
 setMethod(
@@ -606,12 +665,38 @@ setMethod(
 )
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get steric hindrance
+#' stericHindrance <- stericHindrance(estRates)
+#' # Print the steric hindrance
+#' print(stericHindrance)
 #' @export
 setMethod("stericHindrance", "simulationTranscriptionRates", function(object) {
     slot(object, "stericHindrance")
 })
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get trial
+#' trial <- trial(estRates)
+#' # Print the trial
+#' print(trial)
 #' @export
 setGeneric("trial", function(object) standardGeneric("trial"))
 setMethod(
@@ -620,6 +705,19 @@ setMethod(
 )
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get chi
+#' chi <- chi(estRates)
+#' # Print the chi
+#' print(chi)
 #' @export
 setGeneric("chi", function(object) standardGeneric("chi"))
 setMethod(
@@ -628,6 +726,19 @@ setMethod(
 )
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get betaOrg
+#' betaOrg <- betaOrg(estRates)
+#' # Print the betaOrg
+#' print(betaOrg)
 #' @export
 setGeneric("betaOrg", function(object) standardGeneric("betaOrg"))
 setMethod(
@@ -636,6 +747,19 @@ setMethod(
 )
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get betaAdp
+#' betaAdp <- betaAdp(estRates)
+#' # Print the betaAdp
+#' print(betaAdp)
 #' @export
 setGeneric("betaAdp", function(object) standardGeneric("betaAdp"))
 setMethod(
@@ -644,6 +768,19 @@ setMethod(
 )
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get phi
+#' phi <- phi(estRates)
+#' # Print the phi
+#' print(phi)
 #' @export
 setGeneric("phi", function(object) standardGeneric("phi"))
 setMethod(
@@ -652,6 +789,19 @@ setMethod(
 )
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get fk
+#' fk <- fk(estRates)
+#' # Print the fk
+#' print(fk)
 #' @export
 setGeneric("fk", function(object) standardGeneric("fk"))
 setMethod(
@@ -660,6 +810,19 @@ setMethod(
 )
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get fkMean
+#' fkMean <- fkMean(estRates)
+#' # Print the fkMean
+#' print(fkMean)
 #' @export
 setGeneric("fkMean", function(object) standardGeneric("fkMean"))
 setMethod(
@@ -668,6 +831,19 @@ setMethod(
 )
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get fkVar
+#' fkVar <- fkVar(estRates)
+#' # Print the fkVar
+#' print(fkVar)
 #' @export
 setGeneric("fkVar", function(object) standardGeneric("fkVar"))
 setMethod(
@@ -676,6 +852,19 @@ setMethod(
 )
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get flag
+#' flag <- flag(estRates)
+#' # Print the flag
+#' print(flag)
 #' @export
 setGeneric("flag", function(object) standardGeneric("flag"))
 setMethod(
@@ -684,6 +873,19 @@ setMethod(
 )
 
 #' @rdname simulationTranscriptionRates-class
+#' @examples
+#' # Create a simulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     stepsToRecord=1)
+#' # Estimate transcription rates
+#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' # Get rnapN
+#' rnapN <- rnapN(estRates)
+#' # Print the rnapN
+#' print(rnapN)
 #' @export
 setGeneric("rnapN", function(object) standardGeneric("rnapN"))
 setMethod(

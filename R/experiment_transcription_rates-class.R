@@ -651,9 +651,11 @@ setMethod("rates", "experimentTranscriptionRates", function(object) {
 #' @param object an \code{experimentTranscriptionRates} object
 #' @return a \code{DataFrame} with the following columns:
 #' \item{geneId}{a character vector of gene IDs}
-#' \item{summarizedGbCounts}{a numeric vector of the sum of gene body read counts}
+#' \item{summarizedGbCounts}{a numeric vector of the sum of gene body read
+#' counts}
 #' \item{gbLength}{a numeric vector of the gene body length}
-#' \item{summarizedPauseCounts}{a numeric vector of the sum of pause region read counts}
+#' \item{summarizedPauseCounts}{a numeric vector of the sum of pause region
+#' read counts}
 #' @export
 setGeneric("counts", function(object) standardGeneric("counts"))
 #' @rdname experimentTranscriptionRates-class
@@ -695,7 +697,8 @@ setMethod("pauseRegions", "experimentTranscriptionRates", function(object) {
 
 #' @rdname experimentTranscriptionRates-class
 #' @param object an \code{experimentTranscriptionRates} object
-#' @return a \link[GenomicRanges]{GRanges-class} object with the gene body regions
+#' @return a \link[GenomicRanges]{GRanges-class} object with the gene body
+#' regions
 #' @export
 setGeneric("geneBodyRegions", function(object) {
     standardGeneric("geneBodyRegions")
@@ -769,7 +772,8 @@ setMethod("omegaScale", "experimentTranscriptionRates", function(object) {
 
 #' @rdname experimentTranscriptionRates-class
 #' @param object an \code{experimentTranscriptionRates} object
-#' @return a logical value to determine whether to infer landing-pad occupancy or not
+#' @return a logical value to determine whether to infer landing-pad occupancy
+#' or not
 #' @examples
 #' # Create an experimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(

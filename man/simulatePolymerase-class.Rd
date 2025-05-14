@@ -181,4 +181,104 @@ position matrix.}
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Print the object
+print(sim)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Simulate read counts
+sim <- simulateReadCounts(sim)
+# Print the read counts
+print(sim)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Simulate average read density
+sim <- simulateAvgReadDensity(sim)
+# Print the average read density
+print(sim)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Show the object
+show(sim)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Plot average read density
+plotAvgReadDensity(sim)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Get pause sites
+pauseSites <- pauseSites(sim)
+# Print the pause sites
+print(pauseSites)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Get probability vector
+probabilityVector <- probabilityVector(sim)
+# Print the probability vector
+print(probabilityVector)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Get combined cells data
+combinedCellsData <- combinedCellsData(sim)
+# Print the combined cells data
+print(combinedCellsData)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Get position matrix
+positionMatrix <- positionMatrix(sim)
+# Print the position matrix
+print(positionMatrix)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Get read counts    
+readCounts <- readCounts(sim)
+# Print the read counts
+print(readCounts)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Get average read density
+avgReadDensity <- avgReadDensity(sim)
+# Print the average read density
+print(avgReadDensity)
 }

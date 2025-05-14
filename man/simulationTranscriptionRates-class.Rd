@@ -51,3 +51,159 @@ from simulated data, such as nascent RNA sequencing read counts and genomic
 coordinates simulated from polymerase movement over a specified time period
 calculated by simulator, and contructs an object that holds these rates.
 }
+\examples{
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Show the object
+show(estRates)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get simpol
+simpol <- simpol(estRates)
+# Print the simpol
+print(simpol)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get steric hindrance
+stericHindrance <- stericHindrance(estRates)
+# Print the steric hindrance
+print(stericHindrance)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get trial
+trial <- trial(estRates)
+# Print the trial
+print(trial)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get chi
+chi <- chi(estRates)
+# Print the chi
+print(chi)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get betaOrg
+betaOrg <- betaOrg(estRates)
+# Print the betaOrg
+print(betaOrg)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get betaAdp
+betaAdp <- betaAdp(estRates)
+# Print the betaAdp
+print(betaAdp)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get phi
+phi <- phi(estRates)
+# Print the phi
+print(phi)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get fk
+fk <- fk(estRates)
+# Print the fk
+print(fk)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get fkMean
+fkMean <- fkMean(estRates)
+# Print the fkMean
+print(fkMean)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get fkVar
+fkVar <- fkVar(estRates)
+# Print the fkVar
+print(fkVar)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get flag
+flag <- flag(estRates)
+# Print the flag
+print(flag)
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Get rnapN
+rnapN <- rnapN(estRates)
+# Print the rnapN
+print(rnapN)
+}

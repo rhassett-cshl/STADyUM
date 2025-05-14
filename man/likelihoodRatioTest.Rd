@@ -20,3 +20,23 @@ a \code{\link{likelihoodRatioTest-class}} object
 \description{
 DESCRIPTION
 }
+\examples{
+expData1 <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+expData2 <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+sc <- "path/to/scale.csv"
+lrts <- likelihoodRatioTest(expData1, expData2, sc)
+# Print the likelihood ratio test object
+print(lrts)
+}

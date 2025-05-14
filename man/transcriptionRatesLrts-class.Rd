@@ -6,7 +6,6 @@
 \alias{expData1}
 \alias{expData2}
 \alias{sc}
-\alias{likelihoodRatioTest}
 \title{Class transcriptionRatesLrts for comparing aspects of transcriptional
 dynamics of the same TU under different conditions using Likelihood Ratio
 Test Statistics}
@@ -16,9 +15,57 @@ expData1(object)
 expData2(object)
 
 sc(object)
-
-likelihoodRatioTest(expData1, expData2, sc)
 }
 \description{
 Class \code{transcriptionRatesLrts}
+}
+\examples{
+expData1 <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+expData2 <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+lrts <- likelihoodRatioTest(expData1, expData2, sc)
+expData1(lrts)
+expData1 <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+expData2 <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+lrts <- likelihoodRatioTest(expData1, expData2, sc)
+expData2(lrts)
+expData1 <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+expData2 <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+lrts <- likelihoodRatioTest(expData1, expData2, sc)
+sc(lrts)
 }

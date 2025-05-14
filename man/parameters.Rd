@@ -20,3 +20,15 @@ polSize, addSpace, time, and stepsToRecord
 \description{
 Get all simulation parameters
 }
+\examples{
+# Create a simulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Get parameters
+parameters <- parameters(sim)
+# Print the parameters
+print(parameters)
+}
