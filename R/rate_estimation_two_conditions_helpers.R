@@ -90,7 +90,7 @@ mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
 #### Functions for LRTs ####
 # formulas are based on the unified model preprint v5
 # formula (27), calculate t stats for omega
-omegaLrt <- function(s1, s2, tao1, tao2) {
+omegaLRT <- function(s1, s2, tao1, tao2) {
     ## compute T statistic and p values
     tStats <- s1 * log(s1 / (tao1 * (s1 + s2))) + s2 * log(s2 / (tao2 * (s1 +
     s2)))
