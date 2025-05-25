@@ -58,6 +58,7 @@ simulationTranscriptionRatesValid <- function(object) {
 #' @importClassesFrom GenomicRanges CompressedGRangesList
 #' @importClassesFrom data.table data.table
 #' @importFrom purrr map map_chr map_dbl
+#' @importFrom dplyr mutate
 #' @exportClass SimulationTranscriptionRates
 methods::setClass("SimulationTranscriptionRates",
     slots = c(

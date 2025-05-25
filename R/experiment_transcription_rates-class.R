@@ -1,3 +1,5 @@
+#' @importFrom dplyr mutate select left_join
+
 experimentTranscriptionRatesValid <- function(object) {
     errors <- c(
         validateCounts(object),
@@ -425,7 +427,7 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #'     geneNameColumn = "gene_id"
 #' )
 #'
-#' @rdname ExperimentTranscriptionRates
+#' @rdname ExperimentTranscriptionRates-class
 #' @export
 estimateExperimentTranscriptionRates <- function(bigwigPlus, bigwigMinus,
 pauseRegions, geneBodyRegions, geneNameColumn="gene_id", stericHindrance=FALSE,
@@ -483,7 +485,7 @@ omegaScale=NULL) {
 #' 
 #' @param object An ExperimentTranscriptionRates object
 #' @return NULL (invisibly)
-#' @rdname ExperimentTranscriptionRates
+#' @rdname ExperimentTranscriptionRates-class
 #' @export
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
@@ -567,7 +569,7 @@ applyCommonTheme <- function() {
 #' @param dpi Resolution of the saved plot. Default is 300.
 #' @param ... Additional arguments passed to the plotting function
 #' @return A ggplot object
-#' @rdname ExperimentTranscriptionRates
+#' @rdname ExperimentTranscriptionRates-class
 #' 
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
@@ -621,12 +623,12 @@ setMethod("plotRates", "ExperimentTranscriptionRates", function(
 
 ## Accessors
 
-#' @rdname ExperimentTranscriptionRates
+#' @rdname ExperimentTranscriptionRates-class
+#' 
 #' @title Accessor for Estimated Rates
 #'
 #' @description
-#' Accessor for the estimated rates from an \code{\lin
-#' {ExperimentTranscriptionRates-class}} object
+#' Accessor for the estimated rates
 #'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \code{DataFrame} with the following columns:
@@ -659,11 +661,10 @@ setMethod("rates", "ExperimentTranscriptionRates", function(object) {
     slot(object, "rates")
 })
 
-#' @rdname ExperimentTranscriptionRates
+#' @rdname ExperimentTranscriptionRates-class
 #' @title Accessor for Read Counts
 #' @description
-#' Accessor for the read counts from an \code{\lin
-#' {ExperimentTranscriptionRates-class}} object
+#' Accessor for the read counts
 #'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \code{DataFrame} with the following columns:
@@ -679,12 +680,10 @@ setMethod("counts", "ExperimentTranscriptionRates", function(object) {
     slot(object, "counts")
 })
 
-#' @rdname ExperimentTranscriptionRates
+#' @rdname ExperimentTranscriptionRates-class
 #' @title Accessor for Pause Regions Coordinates
 #' @description
-#' Accessor for the pause regions from an \code{\lin
-#' {ExperimentTranscriptionRates-class}} object in the form of a \lin
-#' [GenomicRanges]{GRanges-class} object
+#' Accessor for the pause region coords \link[GenomicRanges]{GRanges-class}
 #'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \link[GenomicRanges]{GRanges-class} object with the pause regions
@@ -704,12 +703,10 @@ setMethod("pauseRegions", "ExperimentTranscriptionRates", function(object) {
     slot(object, "pauseRegions")
 })
 
-#' @rdname ExperimentTranscriptionRates
+#' @rdname ExperimentTranscriptionRates-class
 #' @title Accessor for Gene Body Regions Coordinates
 #' @description
-#' Accessor for the gene body regions from an \code{\lin
-#' {ExperimentTranscriptionRates-class}} object in the form of a \lin
-#' [GenomicRanges]{GRanges-class} object
+#' Accessor for the gene body regions coords \link[GenomicRanges]{GRanges-class}
 #'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \link[GenomicRanges]{GRanges-class} object with the gene body
@@ -735,12 +732,11 @@ setMethod(
     }
 )
 
-#' @rdname ExperimentTranscriptionRates
+#' @rdname ExperimentTranscriptionRates-class
 #' @title Accessor for Gene Name Column
 #' @description
-#' Accessor for the gene name column from an \code{\lin
-#' {ExperimentTranscriptionRates-class}} object in the form of a string that
-#' represents the column name in the GRanges object that contains gene names
+#' Accessor for the gene name column in the GRanges object that contains gene
+#' names
 #'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a string that indicates which column in the GRanges represents gene
@@ -766,12 +762,11 @@ setMethod(
     }
 )
 
-#' @rdname ExperimentTranscriptionRates
+#' @rdname ExperimentTranscriptionRates-class
 #' @title Accessor for Omega Scale
 #' @description
-#' Accessor for the omega scale from an \code{\lin
-#' {ExperimentTranscriptionRates-class}} object used to scale the omega value
-#' based on prior studies.
+#' Accessor for the omega scale used to scale the omega value based on prior
+#' studies.
 #'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a numeric value for the scaling factor for omega
@@ -791,11 +786,10 @@ setMethod("omegaScale", "ExperimentTranscriptionRates", function(object) {
     slot(object, "omegaScale")
 })
 
-#' @rdname ExperimentTranscriptionRates
+#' @rdname ExperimentTranscriptionRates-class
 #' @title Accessor for Steric Hindrance
 #' @description
-#' Accessor for the steric hindrance flag from an \code{\lin
-#' {ExperimentTranscriptionRates-class}} object. If TRUE, the landing-pad
+#' Accessor for the steric hindrance flag. If TRUE, the landing-pad
 #' occupancy is inferred in the rates held in this object.
 #'
 #' @param object an \code{ExperimentTranscriptionRates} object

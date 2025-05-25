@@ -3,9 +3,42 @@
 \docType{class}
 \name{ExperimentTranscriptionRates-class}
 \alias{ExperimentTranscriptionRates-class}
+\alias{estimateExperimentTranscriptionRates}
+\alias{show,ExperimentTranscriptionRates-method}
+\alias{plotRates}
 \alias{plotRates,ExperimentTranscriptionRates-method}
+\alias{rates}
+\alias{counts}
+\alias{pauseRegions}
+\alias{geneBodyRegions}
+\alias{geneNameColumn}
+\alias{omegaScale}
+\alias{stericHindrance,ExperimentTranscriptionRates-method}
 \title{Constructor for ExperimentTranscriptionRates object}
 \usage{
+estimateExperimentTranscriptionRates(
+  bigwigPlus,
+  bigwigMinus,
+  pauseRegions,
+  geneBodyRegions,
+  geneNameColumn = "gene_id",
+  stericHindrance = FALSE,
+  omegaScale = NULL
+)
+
+\S4method{show}{ExperimentTranscriptionRates}(object)
+
+plotRates(
+  object,
+  type = "scatter",
+  rateType = "betaAdp",
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  ...
+)
+
 \S4method{plotRates}{ExperimentTranscriptionRates}(
   object,
   type = "scatter",
@@ -16,12 +49,140 @@
   dpi = 300,
   ...
 )
+
+rates(object)
+
+counts(object)
+
+pauseRegions(object)
+
+geneBodyRegions(object)
+
+geneNameColumn(object)
+
+omegaScale(object)
+
+\S4method{stericHindrance}{ExperimentTranscriptionRates}(object)
+}
+\arguments{
+\item{bigwigPlus}{the path to a bigwig file from the plus strand recording
+PRO-seq read counts}
+
+\item{bigwigMinus}{the path to a bigwig file from the minus strand recording
+PRO-seq read counts}
+
+\item{pauseRegions}{a \link[GenomicRanges]{GRanges-class} object that must
+contain a geneId}
+
+\item{geneBodyRegions}{a \link[GenomicRanges]{GRanges-class} object that
+must contain a geneId}
+
+\item{geneNameColumn}{a string that indicates which column in the GRanges
+represents gene names information. Defaults to "gene_id"}
+
+\item{stericHindrance}{a logical value to determine whether to infer
+landing-pad occupancy or not. Defaults to FALSE.}
+
+\item{omegaScale}{a numeric value for scaling omega. Defaults to NULL.}
+
+\item{object}{an \code{ExperimentTranscriptionRates} object}
+
+\item{type}{Type of plot to create ("scatter", "histogram", or "density").
+Defaults to "scatter"}
+
+\item{rateType}{Which rate to plot ("betaOrg", "betaAdp", "chi", etc.).
+Defaults to "betaAdp"}
+
+\item{file}{Optional path to save the plot. If provided, the plot will be
+saved to this location.}
+
+\item{width}{Width of the saved plot in inches. Default is 8.}
+
+\item{height}{Height of the saved plot in inches. Default is 6.}
+
+\item{dpi}{Resolution of the saved plot. Default is 300.}
+
+\item{...}{Additional arguments passed to the plotting function}
+}
+\value{
+an \code{\link{ExperimentTranscriptionRates-class}} object
+
+NULL (invisibly)
+
+A ggplot object
+
+a \code{DataFrame} with the following columns:
+\item{geneId}{a character vector of gene IDs}
+\item{chi}{a numeric vector of RNAP density along gene body}
+\item{betaOrg}{a numeric vector }
+\item{betaAdp}{a numeric vector }
+\item{fkMean}{a numeric vector of the mean position of pause sites}
+\item{fkVar}{a numeric vector of the variance of pause site positions}
+\item{phi}{a numeric vector of the landing-pad occupancy}
+\item{betaZeta}{a numeric vector of the pause-escape rate}
+\item{alphaZeta}{a numeric vector of the potential initiation rate}
+\item{omega}{a numeric vector of the effective initiation rate}
+\item{omegaZeta}{a numeric vector of the effective initiation rate}
+
+a \code{DataFrame} with the following columns:
+\item{geneId}{a character vector of gene IDs}
+\item{summarizedGbCounts}{a numeric vector of the sum of gene body read
+counts}
+\item{gbLength}{a numeric vector of the gene body length}
+\item{summarizedPauseCounts}{a numeric vector of the sum of pause region
+read counts}
+
+a \link[GenomicRanges]{GRanges-class} object with the pause regions
+
+a \link[GenomicRanges]{GRanges-class} object with the gene body
+regions
+
+a string that indicates which column in the GRanges represents gene
+names information
+
+a numeric value for the scaling factor for omega
+
+a logical value to determine whether to infer landing-pad occupancy
+or not
 }
 \description{
 Class \code{ExperimentTranscriptionRates} has read counts, pause and gene
 body genomic region coordinates, steric hindrance and omega scale factor
 parameters used to estimate the transcription rates as well as the estimated
 rates
+
+Estimates the transcription rates using Expectation Maximization likelihood
+formula. Estimates initiation, pause-release rates, average read depth along
+gene body and pause regions. If steric hindrance is enabled, also estimates
+the landing pad occupancy. Estimated from experimental data, such as nascent
+RNA sequencing read counts and genomic coordinates, and contructs an object
+that holds these rates. Considers models where pause sites are fixed or
+varied. Considers models where steric hindrance is enabled or disabled.
+
+Custom display of \code{\link{ExperimentTranscriptionRates-class}} objects
+showing summary statistics
+
+Plots the transcription rates using ggplot2.
+
+Accessor for the estimated rates
+
+Accessor for the read counts
+
+Accessor for the pause region coords \link[GenomicRanges]{GRanges-class}
+
+Accessor for the gene body regions coords \link[GenomicRanges]{GRanges-class}
+
+Accessor for the gene name column in the GRanges object that contains gene
+names
+
+Accessor for the omega scale used to scale the omega value based on prior
+studies.
+
+Accessor for the steric hindrance flag. If TRUE, the landing-pad
+occupancy is inferred in the rates held in this object.
+}
+\details{
+estimateExperimentTranscriptionRates
 }
 \section{Slots}{
 
@@ -76,3 +237,92 @@ steric hindrance}
 }}
 }}
 
+\examples{
+# Create an ExperimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",    
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+
+# Create an ExperimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+
+# Show the object
+show(expRates)
+# Create an ExperimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+
+# Plot rates as a histogram
+plotRates(expRates, type = "histogram")
+# Create an ExperimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)
+
+# Get the rates from the object
+rates(expRates)
+# Create an ExperimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)    
+pauseRegions(expRates)
+# Create an ExperimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)    
+geneBodyRegions(expRates)
+# Create an ExperimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)    
+geneNameColumn(expRates)
+# Create an ExperimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)    
+omegaScale(expRates)
+# Create an ExperimentTranscriptionRates object
+expRates <- estimateExperimentTranscriptionRates(
+    bigwigPlus = "path/to/plus.bw",
+    bigwigMinus = "path/to/minus.bw",
+    pauseRegions = GRanges("chr1:1-1000"),
+    geneBodyRegions = GRanges("chr1:1-2000"),
+    geneNameColumn = "gene_id"
+)    
+stericHindrance(expRates)
+}

@@ -1,11 +1,13 @@
+#' @importFrom dplyr mutate bind_rows
+#' @importFrom tibble tibble
 #' @title Constructor for TranscriptionRatesLRT object
 #' 
 #' @description 
 #' Constructs results of likelihood ratio test comparing transcription data
 #' estimated from two different sets of experimental read counts.
 #'
-#' @name TranscriptionRatesLRT
-#' @rdname TranscriptionRatesLRT
+#' @name TranscriptionRatesLRT-class
+#' @rdname TranscriptionRatesLRT-class
 #' @exportClass TranscriptionRatesLRT
 methods::setClass("TranscriptionRatesLRT",
     slots = c(
@@ -76,7 +78,8 @@ runEMH0BetaLRT <- function(params, kmin, kmax, maxItr, tor) {
     
     list(
         emRes = emRes,
-        h0Likelihood = map_dbl(emRes, ~ .x$likelihoods[[length(.x$likelihoods)]])
+        h0Likelihood = map_dbl(emRes, 
+        ~ .x$likelihoods[[length(.x$likelihoods)]])
     )
 }
 
@@ -124,8 +127,10 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
     
     list(
         emHc = emHc, emHt = emHt,
-        h1Likelihood1 = map_dbl(emHc, ~ .x$likelihoods[[length(.x$likelihoods)]]),
-        h1Likelihood2 = map_dbl(emHt, ~ .x$likelihoods[[length(.x$likelihoods)]])
+        h1Likelihood1 = map_dbl(emHc, 
+        ~ .x$likelihoods[[length(.x$likelihoods)]]),
+        h1Likelihood2 = map_dbl(emHt, 
+        ~ .x$likelihoods[[length(.x$likelihoods)]])
     )
 }
 
@@ -175,14 +180,14 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
     return(betaTbl)
 }
 
-#' @rdname TranscriptionRatesLRT
+#' @rdname TranscriptionRatesLRT-class
 #' @title Likelihood Ratio Test
 #'
 #' @description
 #' Likelihood ratio test comparing aspects of transcriptional
 #' dynamics of the same TU under different conditions using Likelihood Ratio
 #' Test Statistics. Uses read counts and rate estimates estimated from
-#' \code{\link{estimateExperimentTranscriptionRates}}. The method also requires
+#' estimateExperimentTranscriptionRates. The method also requires
 #' scaling factors to determine changes in χ estimates. They can be the numbers
 #' of total mapped reads or spike-in reads from the samples. Likelihood ratio
 #' test computes the log 2 fold change in χ estimates between conditions, the
@@ -252,7 +257,7 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
     ))
 }
 
-#' @rdname TranscriptionRatesLRT
+#' @rdname TranscriptionRatesLRT-class
 #' @title Accessor for ExperimentTranscriptionRates Object
 #'
 #' @description
@@ -282,7 +287,7 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
     slot(object, "expData1")
 })
 
-#' @rdname TranscriptionRatesLRT
+#' @rdname TranscriptionRatesLRT-class
 #' @title Accessor for ExperimentTranscriptionRates Object
 #'
 #' @description
@@ -312,7 +317,7 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
     slot(object, "expData2")
 })
 
-#' @rdname TranscriptionRatesLRT
+#' @rdname TranscriptionRatesLRT-class
 #' @title Accessor for Spike-In Scaling Factor
 #'
 #' @description

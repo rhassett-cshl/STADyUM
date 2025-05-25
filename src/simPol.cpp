@@ -9,37 +9,12 @@
 #include <string.h>
 #include <fstream>
 #include <sys/stat.h>
-#include <omp.h>
 #include <Rcpp.h>
+#include <Rinternals.h>  // For R_CheckUserInterrupt
 #include "simPol.h"
 
 using namespace std;
 using namespace Rcpp;
-
-template <typename T>
-void PrintPositionMatrixToCSV(vector<T> &matrix, int nrows, int ncols, string file_name)
-{
-    ofstream out(file_name);
-
-    for (int i = 0; i < nrows; i++)
-    {
-        vector<int> *sites = &matrix[i];
-        int site_idx = 0;
-        for (int j = 0; j < ncols; j++)
-        {
-            if (j == (*sites)[site_idx])
-            {
-                out << "1,";
-                site_idx++;
-            }
-            else
-            {
-                out << "0,";
-            }
-        }
-        out << '\n';
-    }
-}
 
 void ConvertSiteDataToMatrix(vector<vector<int>> &input, vector<vector<int>> &output)
 {
@@ -75,7 +50,6 @@ vector<double> NormalDistrubtionGenerator(double mean, double stddev, double min
     return random_values;
 }
 
-// [[Rcpp::plugins(openmp)]]
 // [[Rcpp::export]]
 Rcpp::List simulate_polymerase_cpp(
     int k,
@@ -156,7 +130,11 @@ Rcpp::List simulate_polymerase_cpp(
 
     for (int step = 0; step < steps; step++)
     {
-#pragma omp parallel for
+        // Check for user interruption every 1000 steps
+        if (step % 1000 == 0) {
+            R_CheckUserInterrupt();
+        }
+        
         for (int cell = 0; cell < cell_num; cell++)
         {
             std::vector<int> *sites = &pos_matrix[cell];
