@@ -90,31 +90,55 @@ validateRates <- function(object) {
     return(errors)
 }
 
-#' Class ExperimentTranscriptionRates
+#' @title Constructor for ExperimentTranscriptionRates object
 #'
+#' @description
 #' Class \code{ExperimentTranscriptionRates} has read counts, pause and gene
 #' body genomic region coordinates, steric hindrance and omega scale factor
-#' parameters used to estimate the transcription rates
+#' parameters used to estimate the transcription rates as well as the estimated
+#' rates
 #'
 #' @slot counts a \code{data.frame} with five columns gene_id,
 #' summarizedPauseCounts, pauseLength, summarizedGbCounts, gbLength
-#' @slot bigwigPlus a path to bigwig for plus strand
-#' @slot bigwigMinus a path to bigwig for minus strand
+#' @slot bigwigPlus a path to bigwig for plus strand recording PRO-seq read
+#' counts. This can be generated with the proseq2.0 pipeline.
+#' @slot bigwigMinus a path to bigwig for minus strand recording PRO-seq read
+#' counts. This can be generated with the proseq2.0 pipeline.
 #' @slot pauseRegions a \code{\link[GenomicRanges]{GRanges-class}} that holds
-#' all the pause region coordinates
+#' all the pause region coordinates for every gene to handle read counting in
+#' this region
 #' @slot geneBodyRegions a \code{\link[GenomicRanges]{GRanges-class}}
-#' that holds all the gene body region coordinates
+#' that holds all the gene body region coordinates for every gene to handle
+#' read counting in this region
 #' @slot geneNameColumn a string for the gene name column in the GRanges
 #' @slot stericHindrance a logical value representing whether landing-pad
-#' occupancy was inferred when estimating the rates
-#' @slot omegaScale a numeric for the scale factor used to calculate omega
-#' @slot rates a \code{tbl_df} containing estimated transcription rates such as
-#' chi estimates, betaOrg estimates from the initial model, betaAdp estimates
-#' from the model with varying pause sites, fkMean giving the mean position
-#' of pause sites, fkVar for variance of pause sites, phi estimates for
-#' landing-pad occupancy, omegaZeta for the effective initiation rate,
-#' betaZeta for the pause-escape rate, alphaZeta for the potential initiation
-#' rate, and likelihoods
+#' occupancy was inferred when estimating the rates. Landing pad occupancy
+#' represents the probability that the landing pad required for a new
+#' initiation event is already occupied by an RNAP If TRUE, the omegaScale
+#' slot must be set to a numeric value greater than 0.
+#' @slot omegaScale a numeric for the scale factor used to calculate omega.
+#' Omega represents the effective initiation rate, the initiation rate after a
+#' portion of initiation events are blocked by RNAPs in the pause region due to
+#' steric hindrance. Scale factors calibrate omega based on prior knowledge
+#' 
+#' @slot data A \code{tbl_df} containing the estimated transcription rates:
+#' \describe{
+#'   \item{\eqn{\chi}}{Numeric. Maximum likelihood estimate of the average read
+#' depth in the gene body region.}
+#'   \item{\eqn{\beta_{org}}}{Numeric. Maximum likelihood estimate of average
+#' read depth in pause region without varying pause sites}
+#'   \item{\eqn{\beta_{adp}}}{Numeric. Maximum likelihood estimate of average
+#' read depth in pause region with varying pause sites}
+#'   \item{fkMean}{Numeric. Mean position of pause sites}
+#'   \item{fkVar}{Numeric. Variance of pause sites}
+#'   \item{\eqn{\phi}}{Numeric. Landing-pad occupancy estimates representing
+#' probability of RNAP occupying the landing pad required for a new initiation
+#' event}
+#'   \item{\eqn{\omega_{\zeta}}}{Numeric. Effective initiation rate, considering
+#' steric hindrance}
+#'   \item{\eqn{\beta_{\zeta}}}{Numeric. Pause-escape rate}
+#'   \item{\eqn{\alpha_{\zeta}}}{Numeric. Potential initiation rate}
+#' }
 #'
 #' @name ExperimentTranscriptionRates-class
 #' @rdname ExperimentTranscriptionRates-class
@@ -363,11 +387,17 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 }
 
 #' estimateExperimentTranscriptionRates
+#' 
+#' @title Estimate transcription rates from real PRO-seq data
 #'
-#' Estimates the transcription rates, such as initiation, pause-release rates
-#' and landing pad occupancy, from experimental data, such as nascent RNA
-#' sequencing read counts and genomic coordinates, and contructs an object
-#' that holds these rates
+#' @description
+#' Estimates the transcription rates using Expectation Maximization likelihood
+#' formula. Estimates initiation, pause-release rates, average read depth along
+#' gene body and pause regions. If steric hindrance is enabled, also estimates
+#' the landing pad occupancy. Estimated from experimental data, such as nascent
+#' RNA sequencing read counts and genomic coordinates, and contructs an object
+#' that holds these rates. Considers models where pause sites are fixed or
+#' varied. Considers models where steric hindrance is enabled or disabled.
 #'
 #' @param bigwigPlus the path to a bigwig file from the plus strand recording
 #' PRO-seq read counts
@@ -395,6 +425,7 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #'     geneNameColumn = "gene_id"
 #' )
 #'
+#' @rdname ExperimentTranscriptionRates
 #' @export
 estimateExperimentTranscriptionRates <- function(bigwigPlus, bigwigMinus,
 pauseRegions, geneBodyRegions, geneNameColumn="gene_id", stericHindrance=FALSE,
@@ -445,9 +476,14 @@ omegaScale=NULL) {
     ))
 }
 
-#' Show method for ExperimentTranscriptionRates objects
+#' @title Show method for ExperimentTranscriptionRates
+#' @description
+#' Custom display of \code{\link{ExperimentTranscriptionRates-class}} objects
+#' showing summary statistics
+#' 
 #' @param object An ExperimentTranscriptionRates object
 #' @return NULL (invisibly)
+#' @rdname ExperimentTranscriptionRates
 #' @export
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
@@ -471,35 +507,6 @@ methods::setMethod("show",
         if (stericHindrance(object)) {
             cat("  - Omega scale:", omegaScale(object), "\n")
         }
-    }
-)
-
-#' Export rates to CSV
-#'
-#' @param object An ExperimentTranscriptionRates object
-#' @param file Path to output CSV file. Defaults to "experiment_rates.csv"
-#' @return Outputs a CSV file with the rates
-#' 
-#' @examples
-#' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
-#' )
-#'
-#' # Export rates to CSV
-#' exportRatesToCSV(expRates, file = "experiment_rates.csv")
-#' @export
-setGeneric("exportRatesToCSV", function(object, file="experiment_rates.csv") {
-    standardGeneric("exportRatesToCSV")
-})
-setMethod(
-    "exportRatesToCSV", "ExperimentTranscriptionRates",
-    function(object, file) {
-        write.csv(rates(object), file = file, row.names = FALSE)
     }
 )
 
@@ -543,7 +550,10 @@ applyCommonTheme <- function() {
         )
 }
 
-#' Plot transcription rates
+#' @title Plot transcription rates
+#'
+#' @description
+#' Plots the transcription rates using ggplot2.
 #'
 #' @param object An ExperimentTranscriptionRates object
 #' @param type Type of plot to create ("scatter", "histogram", or "density").
@@ -557,6 +567,7 @@ applyCommonTheme <- function() {
 #' @param dpi Resolution of the saved plot. Default is 300.
 #' @param ... Additional arguments passed to the plotting function
 #' @return A ggplot object
+#' @rdname ExperimentTranscriptionRates
 #' 
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
@@ -610,7 +621,13 @@ setMethod("plotRates", "ExperimentTranscriptionRates", function(
 
 ## Accessors
 
-#' @rdname ExperimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates
+#' @title Accessor for Estimated Rates
+#'
+#' @description
+#' Accessor for the estimated rates from an \code{\lin
+#' {ExperimentTranscriptionRates-class}} object
+#'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \code{DataFrame} with the following columns:
 #' \item{geneId}{a character vector of gene IDs}
@@ -638,14 +655,16 @@ setMethod("plotRates", "ExperimentTranscriptionRates", function(
 #' # Get the rates from the object
 #' rates(expRates)
 setGeneric("rates", function(object) standardGeneric("rates"))
-
-#' @rdname ExperimentTranscriptionRates-class
-#' @export
 setMethod("rates", "ExperimentTranscriptionRates", function(object) {
     slot(object, "rates")
 })
 
-#' @rdname ExperimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates
+#' @title Accessor for Read Counts
+#' @description
+#' Accessor for the read counts from an \code{\lin
+#' {ExperimentTranscriptionRates-class}} object
+#'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \code{DataFrame} with the following columns:
 #' \item{geneId}{a character vector of gene IDs}
@@ -656,28 +675,19 @@ setMethod("rates", "ExperimentTranscriptionRates", function(object) {
 #' read counts}
 #' @export
 setGeneric("counts", function(object) standardGeneric("counts"))
-#' @rdname ExperimentTranscriptionRates-class
-#' @examples
-#' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
-#' )    
-#' counts(expRates)
-#' @export
 setMethod("counts", "ExperimentTranscriptionRates", function(object) {
     slot(object, "counts")
 })
 
-#' @rdname ExperimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates
+#' @title Accessor for Pause Regions Coordinates
+#' @description
+#' Accessor for the pause regions from an \code{\lin
+#' {ExperimentTranscriptionRates-class}} object in the form of a \lin
+#' [GenomicRanges]{GRanges-class} object
+#'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \link[GenomicRanges]{GRanges-class} object with the pause regions
-#' @export
-setGeneric("pauseRegions", function(object) standardGeneric("pauseRegions"))
-#' @rdname ExperimentTranscriptionRates-class
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
@@ -689,19 +699,21 @@ setGeneric("pauseRegions", function(object) standardGeneric("pauseRegions"))
 #' )    
 #' pauseRegions(expRates)
 #' @export
+setGeneric("pauseRegions", function(object) standardGeneric("pauseRegions"))
 setMethod("pauseRegions", "ExperimentTranscriptionRates", function(object) {
     slot(object, "pauseRegions")
 })
 
-#' @rdname ExperimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates
+#' @title Accessor for Gene Body Regions Coordinates
+#' @description
+#' Accessor for the gene body regions from an \code{\lin
+#' {ExperimentTranscriptionRates-class}} object in the form of a \lin
+#' [GenomicRanges]{GRanges-class} object
+#'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a \link[GenomicRanges]{GRanges-class} object with the gene body
 #' regions
-#' @export
-setGeneric("geneBodyRegions", function(object) {
-    standardGeneric("geneBodyRegions")
-})
-#' @rdname ExperimentTranscriptionRates-class
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
@@ -713,6 +725,9 @@ setGeneric("geneBodyRegions", function(object) {
 #' )    
 #' geneBodyRegions(expRates)
 #' @export
+setGeneric("geneBodyRegions", function(object) {
+    standardGeneric("geneBodyRegions")
+})
 setMethod(
     "geneBodyRegions", "ExperimentTranscriptionRates",
     function(object) {
@@ -720,15 +735,16 @@ setMethod(
     }
 )
 
-#' @rdname ExperimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates
+#' @title Accessor for Gene Name Column
+#' @description
+#' Accessor for the gene name column from an \code{\lin
+#' {ExperimentTranscriptionRates-class}} object in the form of a string that
+#' represents the column name in the GRanges object that contains gene names
+#'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a string that indicates which column in the GRanges represents gene
 #' names information
-#' @export
-setGeneric("geneNameColumn", function(object) {
-    standardGeneric("geneNameColumn")
-})
-#' @rdname ExperimentTranscriptionRates-class
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
@@ -740,6 +756,9 @@ setGeneric("geneNameColumn", function(object) {
 #' )    
 #' geneNameColumn(expRates)
 #' @export
+setGeneric("geneNameColumn", function(object) {
+    standardGeneric("geneNameColumn")
+})
 setMethod(
     "geneNameColumn", "ExperimentTranscriptionRates",
     function(object) {
@@ -747,12 +766,15 @@ setMethod(
     }
 )
 
-#' @rdname ExperimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates
+#' @title Accessor for Omega Scale
+#' @description
+#' Accessor for the omega scale from an \code{\lin
+#' {ExperimentTranscriptionRates-class}} object used to scale the omega value
+#' based on prior studies.
+#'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a numeric value for the scaling factor for omega
-#' @export
-setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
-#' @rdname ExperimentTranscriptionRates-class
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateExperimentTranscriptionRates(
@@ -764,11 +786,18 @@ setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
 #' )    
 #' omegaScale(expRates)
 #' @export
+setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
 setMethod("omegaScale", "ExperimentTranscriptionRates", function(object) {
     slot(object, "omegaScale")
 })
 
-#' @rdname ExperimentTranscriptionRates-class
+#' @rdname ExperimentTranscriptionRates
+#' @title Accessor for Steric Hindrance
+#' @description
+#' Accessor for the steric hindrance flag from an \code{\lin
+#' {ExperimentTranscriptionRates-class}} object. If TRUE, the landing-pad
+#' occupancy is inferred in the rates held in this object.
+#'
 #' @param object an \code{ExperimentTranscriptionRates} object
 #' @return a logical value to determine whether to infer landing-pad occupancy
 #' or not

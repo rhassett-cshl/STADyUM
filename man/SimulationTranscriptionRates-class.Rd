@@ -3,7 +3,11 @@
 \docType{class}
 \name{SimulationTranscriptionRates-class}
 \alias{SimulationTranscriptionRates-class}
+\alias{estimateSimulationTranscriptionRates}
 \alias{show,SimulationTranscriptionRates-method}
+\alias{plotTranscriptionRates}
+\alias{plotPauseSiteDistribution}
+\alias{plotRnapCounts}
 \alias{simpol}
 \alias{stericHindrance,SimulationTranscriptionRates-method}
 \alias{trial}
@@ -16,9 +20,17 @@
 \alias{fkVar}
 \alias{flag}
 \alias{rnapN}
-\title{Class SimulationTranscriptionRates}
+\title{Constructor for SimulationTranscriptionRates object}
 \usage{
+estimateSimulationTranscriptionRates(simpol, stericHindrance = FALSE)
+
 \S4method{show}{SimulationTranscriptionRates}(object)
+
+plotTranscriptionRates(object, file = NULL, width = 8, height = 6)
+
+plotPauseSiteDistribution(object, file = NULL, width = 8, height = 6)
+
+plotRnapCounts(object, file = NULL, width = 8, height = 6)
 
 simpol(object)
 
@@ -44,12 +56,91 @@ flag(object)
 
 rnapN(object)
 }
+\arguments{
+\item{simpol}{a \code{\link{simulatePolymerase-class}} object}
+
+\item{stericHindrance}{a logical value to determine whether to infer
+landing-pad occupancy or not.
+Defaults to FALSE.}
+
+\item{object}{a \code{SimulationTranscriptionRates} object}
+
+\item{file}{Optional file path to save the plot}
+
+\item{width}{Plot width in inches}
+
+\item{height}{Plot height in inches}
+}
+\value{
+an \code{\link{SimulationTranscriptionRates-class}} object
+
+A ggplot object showing the transcription rates
+
+A ggplot object showing the pause site distribution
+
+A ggplot object showing the RNAP counts
+}
 \description{
-Class \code{SimulationTranscriptionRates} estimates the transcription
-rates, such as initiation, pause-release rates and landing pad occupancy,
-from simulated data, such as nascent RNA sequencing read counts and genomic
-coordinates simulated from polymerase movement over a specified time period
-calculated by simulator, and contructs an object that holds these rates.
+Class containing the simulated data, such as the nascent RNA sequencing reads
+sampled from the simulated polymerase movement in the
+\code{SimulatePolymerase} object. It also contains the estimated average
+read depths along the gene body and pause regions, given fixed or varied
+pause sites, as well as the landing pad occupancy estimate. These can be
+under a model with or without steric hindrance.
+
+Estimates the maximum likelihood estimates for the average read depth along
+the gene body and pause regions using an Expectation Maximization formula as
+well as the landing pad occupancy. This is estimated from simulated data,
+such as nascent RNA sequencing read counts and genomic coordinates simulated
+from polymerase movement over a specified time period calculated by the
+simulator \code{SimulatePolymerase}, and contructs a new object that holds
+these rates.
+
+Show method for SimulationTranscriptionRates object in human readable format
+including summary statistics
+
+Plot the transcription rates across trials.
+
+Plot the pause site distribution across trials.
+
+Plot the RNAP counts across trials.
+
+Accessor for the SimulatePolymerase object from a
+SimulationTranscriptionRates object.
+
+Accessor for the steric hindrance flag from a
+SimulationTranscriptionRates object.
+
+Accessor for the trial number from a
+SimulationTranscriptionRates object.
+
+Accessor for the maximum likelihood estimate of the average read depth along
+the gene body from a SimulationTranscriptionRates object.
+
+Accessor for the maximum likelihood estimate of the average read depth along
+the pause regions from a SimulationTranscriptionRates object given a fixed
+pause site.
+
+Accessor for the maximum likelihood estimate of the average read depth along
+the pause regions from a SimulationTranscriptionRates object given variable
+pause sites
+
+Accessor for the landing pad occupancy from a SimulationTranscriptionRates
+object.
+
+Accessor for the numeric vector of pause site distribution for variable pause
+sites from a SimulationTranscriptionRates object.
+
+Accessor for the mean of the numeric vector of pause site distribution for
+variable pause sites from a SimulationTranscriptionRates object.
+
+Accessor for the variance of the numeric vector of pause site distribution
+for variable pause sites from a SimulationTranscriptionRates object.
+
+Accessor for the flag indicating whether the steric hindrance model is used
+from a SimulationTranscriptionRates object.
+
+Accessor for the number of RNAPs from a SimulationTranscriptionRates object.
 }
 \examples{
 # Create a SimulatePolymerase object
@@ -60,8 +151,49 @@ sim <- simulatePolymerase(
     stepsToRecord=1)
 # Estimate transcription rates
 estRates <- estimateSimulationTranscriptionRates(sim)
+# Print the estimated rates
+print(estRates)
+
+# Create a SimulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
 # Show the object
 show(estRates)
+# Create a SimulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Plot transcription rates
+plotTranscriptionRates(estRates)
+# Create a SimulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Plot pause site distribution
+plotPauseSiteDistribution(estRates)
+# Create a SimulatePolymerase object
+sim <- simulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Estimate transcription rates
+estRates <- estimateSimulationTranscriptionRates(sim)
+# Plot RNAP counts
+plotRnapCounts(estRates)
 # Create a SimulatePolymerase object
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,

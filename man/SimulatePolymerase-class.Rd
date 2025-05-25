@@ -3,22 +3,26 @@
 \docType{class}
 \name{SimulatePolymerase-class}
 \alias{SimulatePolymerase-class}
-\alias{SimulatePolymerase}
 \alias{simulatePolymerase}
+\alias{sampleReadCountsPerNucleotide}
+\alias{sampleGeneBodyAvgReadDensity}
 \alias{simulateReadCounts}
-\alias{simulateReadCounts,SimulatePolymerase-method}
 \alias{simulateAvgReadDensity}
-\alias{simulateAvgReadDensity,SimulatePolymerase-method}
 \alias{show,SimulatePolymerase-method}
+\alias{plotPolymeraseDistribution}
+\alias{plotPauseSites}
+\alias{plotTransitionProbabilities}
+\alias{plotPositionMatrix}
+\alias{savePlots}
 \alias{plotAvgReadDensity}
-\alias{plotAvgReadDensity,SimulatePolymerase-method}
 \alias{pauseSites}
 \alias{probabilityVector}
 \alias{combinedCellsData}
 \alias{positionMatrix}
+\alias{parameters}
 \alias{readCounts}
 \alias{avgReadDensity}
-\title{Class SimulatePolymerase}
+\title{Constructor for SimulatePolymerase object}
 \usage{
 simulatePolymerase(
   k = 50,
@@ -40,19 +44,27 @@ simulatePolymerase(
   stepsToRecord = 1
 )
 
-simulateReadCounts(object)
+sampleReadCountsPerNucleotide(object, readDensity = 0.0489)
 
-\S4method{simulateReadCounts}{SimulatePolymerase}(object)
+sampleGeneBodyAvgReadDensity(object, readDensity = 0.0489)
+
+simulateReadCounts(object)
 
 simulateAvgReadDensity(object)
 
-\S4method{simulateAvgReadDensity}{SimulatePolymerase}(object)
-
 \S4method{show}{SimulatePolymerase}(object)
 
-plotAvgReadDensity(object)
+plotPolymeraseDistribution(object, file = NULL, width = 8, height = 6)
 
-\S4method{plotAvgReadDensity}{SimulatePolymerase}(object)
+plotPauseSites(object, file = NULL, width = 8, height = 6)
+
+plotTransitionProbabilities(object, file = NULL, width = 8, height = 6)
+
+plotPositionMatrix(object, file = NULL, width = 8, height = 6)
+
+savePlots(object, dir = "results", width = 8, height = 6)
+
+plotAvgReadDensity(object)
 
 pauseSites(object)
 
@@ -61,6 +73,8 @@ probabilityVector(object)
 combinedCellsData(object)
 
 positionMatrix(object)
+
+parameters(object)
 
 readCounts(object)
 
@@ -106,14 +120,51 @@ RNAP size.}
 position matrix.}
 
 \item{object}{a \code{SimulatePolymerase} object}
+
+\item{readDensity}{A numeric value for the read density within gene body in
+\emph{Dukler et al.} (2017) for genes with median expression (i.e., 0.0489).}
+
+\item{file}{Optional file path to save the plot}
+
+\item{width}{Plot width in inches}
+
+\item{height}{Plot height in inches}
+
+\item{dir}{Directory to save the plots (default: "results")}
 }
 \value{
 a \code{SimulatePolymerase} object
 
-a \code{SimulatePolymerase} object
+The read count per nucleotide value
+
+The average read density within gene body
+
+a \code{SimulatePolymerase-class} object
+
+A ggplot object showing the distribution of polymerases across the
+gene
+
+A ggplot object showing the distribution of pause sites
+
+A ggplot object showing the transition probabilities across the gene
+
+A ggplot object showing the position matrix as a heatmap
+
+Outputs directory where plots were saved to pdf files
+
+A list containing all simulation parameters including k, ksd, kMin,
+kMax, geneLen, alpha, beta, zeta, zetaSd, zetaMin, zetaMax, zetaVec, cellNum,
+polSize, addSpace, time, and stepsToRecord
 }
 \description{
-Class \code{SimulatePolymerase} tracks movement of RNAPs along the DNA
+Class \code{SimulatePolymerase} tracks the movement of RNAPs along the DNA
+templates. It contains the parameters for the simulator as well as the
+simulator results including the position of RNAPs for the last step, the
+pause sites, a probability vector containing probability RNAPs move forward
+or not, and a combined cells data vector containing the total number of
+RNAPs at each site across all cells
+
+Runs the simulator that tracks the movement of RNAPs along the DNA
 templates of a large number of cells. It accepts several key user-specified
 parameters, including the initiation rate, pause-escape rate, a constant or
 variable elongation rate, the mean and variance of pause sites across cells,
@@ -126,6 +177,56 @@ per time slice. The simulator monitors for collisions between adjacent
 RNAPs, prohibiting one RNAP to advance if it is at the boundary of the
 allowable distance from the next. After running for specified time, it
 outputs the position of RNAPs for the last specified number of steps.
+
+Sample read counts from a SimulatePolymerase object. To match our simulated
+read counts to reality, we need to compute a scaling factor lambda. One way
+of doing it is computing the read density based on real experiments. For
+example, we have computed the read density within gene body in
+\emph{Dukler et al} (2017) for genes with median expression (i.e., 0.0489).
+If we assume the read counts following a Poisson distribution, we can then
+sample the read counts with mean equals to the RNAP frequency multiplied by
+lambda.
+
+Sample the average read density within gene body from a SimulatePolymerase
+object.
+
+Simulate the read counts per nucleotide from a SimulatePolymerase object.
+
+Simulate the average read density within gene body from a SimulatePolymerase
+object.
+
+Show method for SimulatePolymerase object in human readable format
+including summary statistics
+
+Plot the distribution of polymerases across the gene.
+
+Plot the distribution of pause sites across the gene.
+
+Plot the transition probabilities across the gene.
+
+Plot the position matrix as a heatmap.
+
+Save all plots to files.
+
+Plot the average read density within gene body from a SimulatePolymerase
+object.
+
+Accessor for the pause sites numeric vector from a SimulatePolymerase object.
+
+Accessor for the probability numeric vector from a SimulatePolymerase object.
+
+Accessor for the combined cells data numeric vector from a
+SimulatePolymerase object.
+
+Accessor for the position matrix from a SimulatePolymerase object.
+
+Accessor for the simulation parameters from a SimulatePolymerase object.
+
+Accessor for the read counts numeric vector sampled from a
+SimulatePolymerase object.
+
+Accessor for the average read density numeric vector sampledfrom a
+SimulatePolymerase object.
 }
 \section{Slots}{
 
@@ -168,13 +269,15 @@ position matrix.}
 
 \item{\code{pauseSites}}{a numeric vector of pause sites}
 
-\item{\code{probabilityVector}}{a numeric vector}
+\item{\code{probabilityVector}}{a numeric vector representing the probability that
+the polymerase move forward or not at each site}
 
-\item{\code{combinedCellsData}}{an integer vector}
+\item{\code{combinedCellsData}}{an integer vector representing the total number of
+RNAPs at each site across all cells}
 
 \item{\code{positionMatrix}}{a matrix of position of polymerase}
 
-\item{\code{readCounts}}{a numeric vector for read counts}
+\item{\code{readCounts}}{a numeric vector for read counts per nucleotide}
 }}
 
 \examples{
@@ -186,6 +289,26 @@ sim <- SimulatePolymerase(
     stepsToRecord=1)
 # Print the object
 print(sim)
+# Create a SimulatePolymerase object
+sim <- SimulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Sample read counts per nucleotide
+readCounts <- sampleReadCountsPerNucleotide(sim)
+# Print the read counts per nucleotide
+print(readCounts)
+# Create a SimulatePolymerase object
+sim <- SimulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1) 
+# Sample average read density within gene body
+avgReadDensity <- sampleGeneBodyAvgReadDensity(sim)
+# Print the average read density within gene body
+print(avgReadDensity)
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
@@ -214,6 +337,47 @@ sim <- SimulatePolymerase(
     stepsToRecord=1)
 # Show the object
 show(sim)
+# Create a SimulatePolymerase object
+sim <- SimulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Plot polymerase distribution
+plotPolymeraseDistribution(sim)
+# Create a SimulatePolymerase object
+sim <- SimulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1) 
+# Plot pause site distribution
+plotPauseSites(sim)
+# Create a SimulatePolymerase object
+sim <- SimulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Plot transition probabilities
+plotTransitionProbabilities(sim)
+# Create a SimulatePolymerase object
+sim <- SimulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Plot position matrix
+plotPositionMatrix(sim)
+
+# Create a SimulatePolymerase object
+sim <- SimulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Save plots
+savePlots(sim)
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
@@ -262,6 +426,16 @@ sim <- SimulatePolymerase(
 positionMatrix <- positionMatrix(sim)
 # Print the position matrix
 print(positionMatrix)
+# Create a SimulatePolymerase object
+sim <- SimulatePolymerase(
+    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+    stepsToRecord=1)
+# Get parameters
+parameters <- parameters(sim)
+# Print the parameters
+print(parameters)
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,

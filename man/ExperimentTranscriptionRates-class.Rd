@@ -4,20 +4,7 @@
 \name{ExperimentTranscriptionRates-class}
 \alias{ExperimentTranscriptionRates-class}
 \alias{plotRates,ExperimentTranscriptionRates-method}
-\alias{rates}
-\alias{rates,ExperimentTranscriptionRates-method}
-\alias{counts}
-\alias{counts,ExperimentTranscriptionRates-method}
-\alias{pauseRegions}
-\alias{pauseRegions,ExperimentTranscriptionRates-method}
-\alias{geneBodyRegions}
-\alias{geneBodyRegions,ExperimentTranscriptionRates-method}
-\alias{geneNameColumn}
-\alias{geneNameColumn,ExperimentTranscriptionRates-method}
-\alias{omegaScale}
-\alias{omegaScale,ExperimentTranscriptionRates-method}
-\alias{stericHindrance,ExperimentTranscriptionRates-method}
-\title{Class ExperimentTranscriptionRates}
+\title{Constructor for ExperimentTranscriptionRates object}
 \usage{
 \S4method{plotRates}{ExperimentTranscriptionRates}(
   object,
@@ -29,75 +16,12 @@
   dpi = 300,
   ...
 )
-
-rates(object)
-
-\S4method{rates}{ExperimentTranscriptionRates}(object)
-
-counts(object)
-
-\S4method{counts}{ExperimentTranscriptionRates}(object)
-
-pauseRegions(object)
-
-\S4method{pauseRegions}{ExperimentTranscriptionRates}(object)
-
-geneBodyRegions(object)
-
-\S4method{geneBodyRegions}{ExperimentTranscriptionRates}(object)
-
-geneNameColumn(object)
-
-\S4method{geneNameColumn}{ExperimentTranscriptionRates}(object)
-
-omegaScale(object)
-
-\S4method{omegaScale}{ExperimentTranscriptionRates}(object)
-
-\S4method{stericHindrance}{ExperimentTranscriptionRates}(object)
-}
-\arguments{
-\item{object}{an \code{ExperimentTranscriptionRates} object}
-}
-\value{
-a \code{DataFrame} with the following columns:
-\item{geneId}{a character vector of gene IDs}
-\item{chi}{a numeric vector of RNAP density along gene body}
-\item{betaOrg}{a numeric vector }
-\item{betaAdp}{a numeric vector }
-\item{fkMean}{a numeric vector of the mean position of pause sites}
-\item{fkVar}{a numeric vector of the variance of pause site positions}
-\item{phi}{a numeric vector of the landing-pad occupancy}
-\item{betaZeta}{a numeric vector of the pause-escape rate}
-\item{alphaZeta}{a numeric vector of the potential initiation rate}
-\item{omega}{a numeric vector of the effective initiation rate}
-\item{omegaZeta}{a numeric vector of the effective initiation rate}
-
-a \code{DataFrame} with the following columns:
-\item{geneId}{a character vector of gene IDs}
-\item{summarizedGbCounts}{a numeric vector of the sum of gene body read
-counts}
-\item{gbLength}{a numeric vector of the gene body length}
-\item{summarizedPauseCounts}{a numeric vector of the sum of pause region
-read counts}
-
-a \link[GenomicRanges]{GRanges-class} object with the pause regions
-
-a \link[GenomicRanges]{GRanges-class} object with the gene body
-regions
-
-a string that indicates which column in the GRanges represents gene
-names information
-
-a numeric value for the scaling factor for omega
-
-a logical value to determine whether to infer landing-pad occupancy
-or not
 }
 \description{
 Class \code{ExperimentTranscriptionRates} has read counts, pause and gene
 body genomic region coordinates, steric hindrance and omega scale factor
-parameters used to estimate the transcription rates
+parameters used to estimate the transcription rates as well as the estimated
+rates
 }
 \section{Slots}{
 
@@ -105,96 +29,50 @@ parameters used to estimate the transcription rates
 \item{\code{counts}}{a \code{data.frame} with five columns gene_id,
 summarizedPauseCounts, pauseLength, summarizedGbCounts, gbLength}
 
-\item{\code{bigwigPlus}}{a path to bigwig for plus strand}
+\item{\code{bigwigPlus}}{a path to bigwig for plus strand recording PRO-seq read
+counts. This can be generated with the proseq2.0 pipeline.}
 
-\item{\code{bigwigMinus}}{a path to bigwig for minus strand}
+\item{\code{bigwigMinus}}{a path to bigwig for minus strand recording PRO-seq read
+counts. This can be generated with the proseq2.0 pipeline.}
 
 \item{\code{pauseRegions}}{a \code{\link[GenomicRanges]{GRanges-class}} that holds
-all the pause region coordinates}
+all the pause region coordinates for every gene to handle read counting in
+this region}
 
 \item{\code{geneBodyRegions}}{a \code{\link[GenomicRanges]{GRanges-class}}
-that holds all the gene body region coordinates}
+that holds all the gene body region coordinates for every gene to handle
+read counting in this region}
 
 \item{\code{geneNameColumn}}{a string for the gene name column in the GRanges}
 
 \item{\code{stericHindrance}}{a logical value representing whether landing-pad
-occupancy was inferred when estimating the rates}
+occupancy was inferred when estimating the rates. Landing pad occupancy
+represents the probability that the landing pad required for a new
+initiation event is already occupied by an RNAP If TRUE, the omegaScale
+slot must be set to a numeric value greater than 0.}
 
-\item{\code{omegaScale}}{a numeric for the scale factor used to calculate omega}
+\item{\code{omegaScale}}{a numeric for the scale factor used to calculate omega.
+Omega represents the effective initiation rate, the initiation rate after a
+portion of initiation events are blocked by RNAPs in the pause region due to
+steric hindrance. Scale factors calibrate omega based on prior knowledge}
 
-\item{\code{rates}}{a \code{tbl_df} containing estimated transcription rates such as
-chi estimates, betaOrg estimates from the initial model, betaAdp estimates
-from the model with varying pause sites, fkMean giving the mean position
-of pause sites, fkVar for variance of pause sites, phi estimates for
-landing-pad occupancy, omegaZeta for the effective initiation rate,
-betaZeta for the pause-escape rate, alphaZeta for the potential initiation
-rate, and likelihoods}
+\item{\code{data}}{A \code{tbl_df} containing the estimated transcription rates:
+\describe{
+\item{\eqn{\chi}}{Numeric. Maximum likelihood estimate of the average read
+depth in the gene body region.}
+\item{\eqn{\beta_{org}}}{Numeric. Maximum likelihood estimate of average
+read depth in pause region without varying pause sites}
+\item{\eqn{\beta_{adp}}}{Numeric. Maximum likelihood estimate of average
+read depth in pause region with varying pause sites}
+\item{fkMean}{Numeric. Mean position of pause sites}
+\item{fkVar}{Numeric. Variance of pause sites}
+\item{\eqn{\phi}}{Numeric. Landing-pad occupancy estimates representing
+probability of RNAP occupying the landing pad required for a new initiation
+event}
+\item{\eqn{\omega_{\zeta}}}{Numeric. Effective initiation rate, considering
+steric hindrance}
+\item{\eqn{\beta_{\zeta}}}{Numeric. Pause-escape rate}
+\item{\eqn{\alpha_{\zeta}}}{Numeric. Potential initiation rate}
+}}
 }}
 
-\examples{
-# Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
-)
-
-# Get the rates from the object
-rates(expRates)
-# Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
-)    
-counts(expRates)
-# Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
-)    
-pauseRegions(expRates)
-# Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
-)    
-geneBodyRegions(expRates)
-# Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
-)    
-geneNameColumn(expRates)
-# Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
-)    
-omegaScale(expRates)
-# Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
-)    
-stericHindrance(expRates)
-}

@@ -1,18 +1,11 @@
-#' Class TranscriptionRatesLRT for comparing aspects of transcriptional
-#' dynamics of the same TU under different conditions using Likelihood Ratio
-#' Test Statistics. Uses read counts and rate estimates estimated from
-#' \code{\link{estimateExperimentTranscriptionRates}}. The method also requires
-#' scaling factors to determine changes in χ estimates. They can be the numbers
-#' of total mapped reads or spike-in reads from the samples. Likelihood ratio
-#' test computes the log 2 fold change in χ estimates between conditions, the
-#' log 2 fold change in beta estimates between conditions, the t-statistics for
-#' the likelihood ratio tests, and the adjusted p-values based on the "BH"
-#' method.
+#' @title Constructor for TranscriptionRatesLRT object
+#' 
+#' @description 
+#' Constructs results of likelihood ratio test comparing transcription data
+#' estimated from two different sets of experimental read counts.
 #'
-#' Class \code{TranscriptionRatesLRT}
-#'
-#' @name TranscriptionRatesLRT-class
-#' @rdname TranscriptionRatesLRT-class
+#' @name TranscriptionRatesLRT
+#' @rdname TranscriptionRatesLRT
 #' @exportClass TranscriptionRatesLRT
 methods::setClass("TranscriptionRatesLRT",
     slots = c(
@@ -182,9 +175,20 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
     return(betaTbl)
 }
 
-#' likelihoodRatioTest
+#' @rdname TranscriptionRatesLRT
+#' @title Likelihood Ratio Test
 #'
-#' DESCRIPTION
+#' @description
+#' Likelihood ratio test comparing aspects of transcriptional
+#' dynamics of the same TU under different conditions using Likelihood Ratio
+#' Test Statistics. Uses read counts and rate estimates estimated from
+#' \code{\link{estimateExperimentTranscriptionRates}}. The method also requires
+#' scaling factors to determine changes in χ estimates. They can be the numbers
+#' of total mapped reads or spike-in reads from the samples. Likelihood ratio
+#' test computes the log 2 fold change in χ estimates between conditions, the
+#' log 2 fold change in beta estimates between conditions, the t-statistics for
+#' the likelihood ratio tests, and the adjusted p-values based on the "BH"
+#' method.
 #' @param expData1 an \code{\link{experimentTranscriptionRates-class}} object
 #' @param expData2 an \code{\link{experimentTranscriptionRates-class}} object
 #' @param spikeInScalingFactor path to a csv file containing scale factorsbased
@@ -248,7 +252,13 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
     ))
 }
 
-#' @rdname TranscriptionRatesLRT-class
+#' @rdname TranscriptionRatesLRT
+#' @title Accessor for ExperimentTranscriptionRates Object
+#'
+#' @description
+#' Accessor for the first ExperimentTranscriptionRates object from a
+#' TranscriptionRatesLRT object.
+#'
 #' @examples
 #' expData1 <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
@@ -272,7 +282,13 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
     slot(object, "expData1")
 })
 
-#' @rdname TranscriptionRatesLRT-class
+#' @rdname TranscriptionRatesLRT
+#' @title Accessor for ExperimentTranscriptionRates Object
+#'
+#' @description
+#' Accessor for the second ExperimentTranscriptionRates object from a
+#' TranscriptionRatesLRT object.
+#'
 #' @examples
 #' expData1 <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
@@ -296,7 +312,13 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
     slot(object, "expData2")
 })
 
-#' @rdname TranscriptionRatesLRT-class
+#' @rdname TranscriptionRatesLRT
+#' @title Accessor for Spike-In Scaling Factor
+#'
+#' @description
+#' Accessor for the spike-in scaling factor from a
+#' TranscriptionRatesLRT object.
+#'
 #' @examples
 #' expData1 <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",

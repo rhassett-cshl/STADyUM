@@ -42,13 +42,15 @@ simulationTranscriptionRatesValid <- function(object) {
     if (length(errors) == 0) TRUE else errors
 }
 
-#' Class SimulationTranscriptionRates
+#' @title Constructor for SimulationTranscriptionRates object
 #'
-#' Class \code{SimulationTranscriptionRates} estimates the transcription
-#' rates, such as initiation, pause-release rates and landing pad occupancy,
-#' from simulated data, such as nascent RNA sequencing read counts and genomic
-#' coordinates simulated from polymerase movement over a specified time period
-#' calculated by simulator, and contructs an object that holds these rates.
+#' @description
+#' Class containing the simulated data, such as the nascent RNA sequencing reads
+#' sampled from the simulated polymerase movement in the 
+#' \code{SimulatePolymerase} object. It also contains the estimated average
+#' read depths along the gene body and pause regions, given fixed or varied
+#' pause sites, as well as the landing pad occupancy estimate. These can be
+#' under a model with or without steric hindrance.
 #'
 #' @name SimulationTranscriptionRates-class
 #' @rdname SimulationTranscriptionRates-class
@@ -368,12 +370,17 @@ calculateFinalRates <- function(bwDfs, stericHindrance) {
     return(results)
 }
 
-#' estimateSimulationTranscriptionRates
+#' @rdname SimulationTranscriptionRates-class
+#' @title Estimate Simulation Transcription Rates
 #'
-#' Estimates the transcription rates, such as initiation, pause-release rates
-#' and landing pad occupancy, from simulated data, such as nascent RNA
-#' sequencing read counts and genomic coordinates, and contructs an object
-#' that holds these rates
+#' @description
+#' Estimates the maximum likelihood estimates for the average read depth along
+#' the gene body and pause regions using an Expectation Maximization formula as
+#' well as the landing pad occupancy. This is estimated from simulated data,
+#' such as nascent RNA sequencing read counts and genomic coordinates simulated
+#' from polymerase movement over a specified time period calculated by the
+#' simulator \code{SimulatePolymerase}, and contructs a new object that holds
+#' these rates.
 #'
 #' @param simpol a \code{\link{simulatePolymerase-class}} object
 #' @param stericHindrance a logical value to determine whether to infer
@@ -443,6 +450,12 @@ estimateSimulationTranscriptionRates <- function(simpol, stericHindrance=FALSE)
 }
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Show Method for SimulationTranscriptionRates Object
+#'
+#' @description
+#' Show method for SimulationTranscriptionRates object in human readable format
+#' including summary statistics
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -475,9 +488,12 @@ setMethod("show", "SimulationTranscriptionRates", function(object) {
     print(df, row.names = FALSE)
 })
 
-
-# Plotting methods
-#' Plot transcription rates
+#' @rdname SimulationTranscriptionRates-class
+#' @title Plot Transcription Rates
+#'
+#' @description
+#' Plot the transcription rates across trials.
+#'
 #' @param object A SimulationTranscriptionRates object
 #' @param file Optional file path to save the plot
 #' @param width Plot width in inches
@@ -536,7 +552,12 @@ setMethod(
     }
 )
 
-#' Plot pause site distribution
+#' @rdname SimulationTranscriptionRates-class
+#' @title Plot Pause Site Distribution
+#'
+#' @description
+#' Plot the pause site distribution across trials.
+#'
 #' @param object A SimulationTranscriptionRates object
 #' @param file Optional file path to save the plot
 #' @param width Plot width in inches
@@ -587,7 +608,12 @@ setMethod(
     }
 )
 
-#' Plot RNAP counts
+#' @rdname SimulationTranscriptionRates-class
+#' @title Plot RNAP Counts
+#'
+#' @description
+#' Plot the RNAP counts across trials.
+#'
 #' @param object A SimulationTranscriptionRates object
 #' @param file Optional file path to save the plot
 #' @param width Plot width in inches
@@ -644,6 +670,13 @@ setMethod(
 
 # Accessor methods
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for SimulatePolymerase Object
+#'
+#' @description
+#' Accessor for the SimulatePolymerase object from a
+#' SimulationTranscriptionRates object.
+#'
+#' @param object a \code{SimulationTranscriptionRates} object
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -665,6 +698,12 @@ setMethod(
 )
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for Steric Hindrance
+#'
+#' @description
+#' Accessor for the steric hindrance flag from a
+#' SimulationTranscriptionRates object.
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -684,6 +723,12 @@ setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
 })
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for Trial
+#'
+#' @description
+#' Accessor for the trial number from a
+#' SimulationTranscriptionRates object.
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -705,6 +750,12 @@ setMethod(
 )
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for Chi
+#'
+#' @description
+#' Accessor for the maximum likelihood estimate of the average read depth along
+#' the gene body from a SimulationTranscriptionRates object.
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -726,6 +777,13 @@ setMethod(
 )
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for BetaOrg
+#'
+#' @description
+#' Accessor for the maximum likelihood estimate of the average read depth along
+#' the pause regions from a SimulationTranscriptionRates object given a fixed
+#' pause site.
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -747,6 +805,13 @@ setMethod(
 )
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for BetaAdp
+#'
+#' @description
+#' Accessor for the maximum likelihood estimate of the average read depth along
+#' the pause regions from a SimulationTranscriptionRates object given variable
+#' pause sites  
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -768,6 +833,12 @@ setMethod(
 )
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for Phi
+#'
+#' @description
+#' Accessor for the landing pad occupancy from a SimulationTranscriptionRates
+#' object.
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -789,6 +860,12 @@ setMethod(
 )
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for Fk
+#'
+#' @description
+#' Accessor for the numeric vector of pause site distribution for variable pause
+#' sites from a SimulationTranscriptionRates object.
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -810,6 +887,12 @@ setMethod(
 )
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for FkMean
+#'
+#' @description
+#' Accessor for the mean of the numeric vector of pause site distribution for
+#' variable pause sites from a SimulationTranscriptionRates object.
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -831,6 +914,12 @@ setMethod(
 )
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for FkVar
+#'
+#' @description
+#' Accessor for the variance of the numeric vector of pause site distribution
+#' for variable pause sites from a SimulationTranscriptionRates object.
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -852,6 +941,12 @@ setMethod(
 )
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for Flag
+#'
+#' @description
+#' Accessor for the flag indicating whether the steric hindrance model is used
+#' from a SimulationTranscriptionRates object.
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -873,6 +968,11 @@ setMethod(
 )
 
 #' @rdname SimulationTranscriptionRates-class
+#' @title Accessor for RnapN
+#'
+#' @description
+#' Accessor for the number of RNAPs from a SimulationTranscriptionRates object.
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
