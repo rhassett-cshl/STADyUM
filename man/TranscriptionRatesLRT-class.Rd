@@ -8,7 +8,14 @@
 \alias{spikeInScalingFactor}
 \title{Class TranscriptionRatesLRT for comparing aspects of transcriptional
 dynamics of the same TU under different conditions using Likelihood Ratio
-Test Statistics}
+Test Statistics. Uses read counts and rate estimates estimated from
+\code{\link{estimateExperimentTranscriptionRates}}. The method also requires
+scaling factors to determine changes in χ estimates. They can be the numbers
+of total mapped reads or spike-in reads from the samples. Likelihood ratio
+test computes the log 2 fold change in χ estimates between conditions, the
+log 2 fold change in beta estimates between conditions, the t-statistics for
+the likelihood ratio tests, and the adjusted p-values based on the "BH"
+method.}
 \usage{
 expData1(object)
 

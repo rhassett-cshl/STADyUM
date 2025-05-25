@@ -11,8 +11,6 @@ experimentTranscriptionRatesValid <- function(object) {
     if (length(errors) == 0) TRUE else errors
 }
 
-# Helper validation functions
-
 validateCounts <- function(object) {
     errors <- character()
     if (!is.data.frame(counts(object))) {
