@@ -51,7 +51,8 @@ Imports:
     data.table,
     purrr,
     reshape2,
-    Matrix
+    Matrix,
+    magrittr
 LinkingTo:
     Rcpp
 Suggests: 
@@ -61,3 +62,4 @@ Suggests:
     devtools
 Config/testthat/edition: 3
 VignetteBuilder: knitr
+Depends: R (>= 4.4.0)

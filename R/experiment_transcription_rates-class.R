@@ -1,5 +1,3 @@
-#' @importFrom dplyr mutate select left_join
-
 experimentTranscriptionRatesValid <- function(object) {
     errors <- c(
         validateCounts(object),
@@ -146,6 +144,8 @@ validateRates <- function(object) {
 #' @rdname ExperimentTranscriptionRates-class
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom tibble tbl_df
+#' @importFrom dplyr mutate select left_join
+#' @importFrom magrittr %>%
 #' @exportClass ExperimentTranscriptionRates
 methods::setClass("ExperimentTranscriptionRates",
     slots = c(
