@@ -140,8 +140,11 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
 #' @rdname SimulatePolymerase-class
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom tibble tbl_df
+#' @importFrom methods slot new
 #' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
+#' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave
 #' @importFrom reshape2 melt
+#' @importFrom readr read_csv
 #' @exportClass SimulatePolymerase
 methods::setClass("SimulatePolymerase",
     slots = c(

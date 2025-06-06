@@ -1,5 +1,10 @@
-#' @importFrom dplyr mutate bind_rows
+#' @importFrom dplyr mutate bind_rows bind_cols
 #' @importFrom tibble tibble
+#' @importFrom purrr map2 pmap
+#' @importFrom stats pchisq p.adjust
+#' @importFrom methods slot
+#' @importFrom readr read_csv
+#' @importFrom stringr str_detect
 #' @title Constructor for TranscriptionRatesLRT object
 #' 
 #' @description 
@@ -23,10 +28,13 @@ computeOmegaLRT <- function(lambda1, lambda2, rc1, rc2) {
     tao1 <- lambda1 / (lambda1 + lambda2)
     tao2 <- 1 - tao1
 
+    chi1 <- rc1$chi; chi2 <- rc2$chi * lambda1 / lambda2
+    p <- numeric(length(rc1$geneId)) #is this correct?
+
     omegaTbl <-
         tibble(
-            geneId = rc1$geneId, chi1 = rc1$chi,
-            chi2 = rc2$chi * lambda1 / lambda2, lfc = log2(chi2 / chi1)
+            geneId = rc1$geneId, chi1 = chi1, chi2 = chi2,  
+            lfc = log2(chi2 / chi1)
         )
 
     omegaTbl <- omegaTbl %>%
@@ -135,19 +143,23 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
 }
 
 constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results) {
+    beta1 <- rc1$betaAdp; beta2 <- rc2$betaAdp
+    tStats <- rc1$likelihood + rc2$likelihood - h0Results$h0Likelihood
+    p <- numeric(length(rc1$geneId)) #is this correct?
 
     betaTbl <- tibble(
-        geneId = rc1$geneId, beta1 = rc1$betaAdp, beta2 = rc2$betaAdp,
+        geneId = rc1$geneId, beta1 = beta1, beta2 = beta2,
         lfc = log2(beta2 / beta1), fkMean1 = rc1$fkMean, fkMean2 = rc2$fkMean,
-        fkVar1 = rc1$fkVar, fkVar2 = rc2$fkVar,
-        tStats = rc1$likelihood + rc2$likelihood - h0Results$h0Likelihood
+        fkVar1 = rc1$fkVar, fkVar2 = rc2$fkVar, tStats = tStats
     )
 
     idx <- betaTbl$tStats < 0
     
     betaTblIdx <- tibble(
-        geneId = names(h1Results$emHc), beta1 = map_dbl(h1Results$emHc, "beta"),
-        beta2 = map_dbl(h1Results$emHt, "beta"), lfc = log2(beta2 / beta1),
+        geneId = names(h1Results$emHc), 
+        beta1 = map_dbl(h1Results$emHc, "beta"),
+        beta2 = map_dbl(h1Results$emHt, "beta"), 
+        lfc = log2(beta2 / beta1),
         fkMean1 = map_dbl(h1Results$emHc, "fkMean"),
         fkMean2 = map_dbl(h1Results$emHt, "fkMean"),
         fkVar1 = map_dbl(h1Results$emHc, "fkVar"),

@@ -45,14 +45,15 @@ Imports:
     ggplot2,
     progress,
     plyranges,
-    rtracklayer,
     GenomeInfoDb,
     Rcpp,
     data.table,
     purrr,
     reshape2,
     Matrix,
-    magrittr
+    magrittr,
+    readr,
+    stringr
 LinkingTo:
     Rcpp
 Suggests: 

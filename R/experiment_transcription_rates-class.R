@@ -145,7 +145,11 @@ validateRates <- function(object) {
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom tibble tbl_df
 #' @importFrom dplyr mutate select left_join
+#' @importFrom stats dnorm
 #' @importFrom magrittr %>%
+#' @importFrom methods slot
+#' @importFrom S4Vectors DataFrame splitAsList
+#' @importFrom tibble as_tibble
 #' @exportClass ExperimentTranscriptionRates
 methods::setClass("ExperimentTranscriptionRates",
     slots = c(

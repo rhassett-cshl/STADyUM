@@ -59,6 +59,9 @@ simulationTranscriptionRatesValid <- function(object) {
 #' @importClassesFrom data.table data.table
 #' @importFrom purrr map map_chr map_dbl
 #' @importFrom dplyr mutate
+#' @importFrom methods slot
+#' @importFrom stats rpois optim rnorm var dnorm
+#' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
 #' @exportClass SimulationTranscriptionRates
 methods::setClass("SimulationTranscriptionRates",
     slots = c(
@@ -202,7 +205,17 @@ generateRnapPositions <- function(params, regions) {
 }
 
 calculateReadCounts <- function(rnapData, regions, params) {
-    bwDfs <- tibble(trial = seq_len(params$sampleN))
+    bwDfs <- tibble(
+        trial = seq_len(params$sampleN),
+        rcRegion = vector("list", params$sampleN),
+        rcTss = numeric(params$sampleN),
+        rcGb = numeric(params$sampleN),
+        rcLanding = numeric(params$sampleN),
+        R = numeric(params$sampleN),
+        Rpause = numeric(params$sampleN),
+        rnapProp = numeric(params$sampleN)
+    )
+
     bwDfs$rcRegion <- map(rnapData$rnapGrng, 
         ~ summariseSimulationBw(.x, regions$gnRng, regions$regionNames))
 
@@ -210,11 +223,9 @@ calculateReadCounts <- function(rnapData, regions, params) {
     bwDfs$rcGb <- map_dbl(bwDfs$rcRegion, "gb")
     bwDfs$rcLanding <- map_dbl(bwDfs$rcRegion, "landing")
 
-    bwDfs <- bwDfs %>% mutate(
-        R = (rcTss + rcGb) / params$sampleCell,
-        Rpause = rcTss / params$sampleCell,
-        rnapProp = rcLanding / params$sampleCell
-    )
+    bwDfs$R <- (bwDfs$rcTss + bwDfs$rcGb) / params$sampleCell
+    bwDfs$Rpause <- bwDfs$rcTss / params$sampleCell
+    bwDfs$rnapProp <- bwDfs$rcLanding / params$sampleCell
 
     return(bwDfs)
 }
@@ -253,7 +264,7 @@ calculateInitialRates <- function(bwDfs, regions, params, simpol, rnapGrng) {
 
     bwDfs$chi <- bwDfs$rcGb / regions$len$gb
 
-    if (slot(simpol, "ksd") == 0) {
+    if (simpol$ksd == 0) {
         bwDfs$betaOrg <- bwDfs$chi / map_dbl(bwDfs$Xk, params$k)
     } else {
         bwDfs$betaOrg <- bwDfs$chi / (bwDfs$rcTss / regions$len$tss)

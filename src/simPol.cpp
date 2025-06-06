@@ -1,5 +1,4 @@
 #include <vector>
-#include <random>
 #include <list>
 #include <chrono>
 #include <algorithm>
@@ -11,6 +10,7 @@
 #include <sys/stat.h>
 #include <Rcpp.h>
 #include <Rinternals.h>  // For R_CheckUserInterrupt
+#include <Rmath.h>      // For R's random number generators
 #include "simPol.h"
 
 using namespace std;
@@ -30,14 +30,11 @@ void ConvertSiteDataToMatrix(vector<vector<int>> &input, vector<vector<int>> &ou
 
 vector<double> NormalDistrubtionGenerator(double mean, double stddev, double min, double max, size_t length, bool round_result, double multiplication_factor=1)
 {
-    random_device rd; // Get seed for random number generator
-    default_random_engine generator;
-    normal_distribution<double> distribution(mean, stddev);
-    generator.seed(rd());
+    GetRNGstate();  // Initialize R's random number generator
     vector<double> random_values;
     while(random_values.size() < length)
     {
-        double number = distribution(generator);
+        double number = R::rnorm(mean, stddev);
         if (number >= min && number <= max) {
             if(round_result)
             {
@@ -46,7 +43,7 @@ vector<double> NormalDistrubtionGenerator(double mean, double stddev, double min
             random_values.push_back(number * multiplication_factor);
         }
     }
-
+    PutRNGstate();  // Clean up R's random number generator
     return random_values;
 }
 
@@ -121,9 +118,7 @@ Rcpp::List simulate_polymerase_cpp(
                       });
     }
 
-    std::random_device rd; // Get seed for random number generator
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> distrib(0.0, 1.0);
+    GetRNGstate();  // Initialize R's random number generator
 
     auto start = std::chrono::high_resolution_clock::now();
     std::vector<std::vector<std::vector<int>>> pos_matrices; 
@@ -148,7 +143,7 @@ Rcpp::List simulate_polymerase_cpp(
                 double prob = site_idx == 0            ? alpha * delta_t
                               : site_idx == y.at(cell) ? beta * delta_t
                                                   : zv.at(site_idx);
-                double draw = distrib(gen);
+                double draw = R::runif(0.0, 1.0);  // Using R's uniform random number generator
                 if (prob > draw)
                 {
                     size_t last_polymerase = sites->size() - 1;
@@ -211,6 +206,8 @@ Rcpp::List simulate_polymerase_cpp(
             pos_matrix_r((*sites)[j], cell) = 1;
         }
     }
+
+    PutRNGstate();  // Clean up R's random number generator
 
     return Rcpp::List::create(
         Rcpp::Named("probabilityVector") = zv,

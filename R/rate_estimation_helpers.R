@@ -258,7 +258,7 @@ calculateF <- function(s, k) {
     return(c("f" = f, "f1" = f1, "f2" = f2))
 }
 
-stericHindranceEM <- function(
+stericHindranceEm <- function(
     Xk, kmin, kmax, f1, f2, fkInt, betaInt, phiInt, chiHat, lambda, zeta,
     maxItr = 100, tor = 1e-3) {
     betas <- list(); likelihoods <- list(); flag <- "normal"
