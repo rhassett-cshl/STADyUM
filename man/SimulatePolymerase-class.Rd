@@ -5,21 +5,18 @@
 \alias{SimulatePolymerase-class}
 \alias{simulatePolymerase}
 \alias{sampleReadCountsPerNucleotide}
-\alias{sampleGeneBodyAvgReadDensity}
 \alias{show,SimulatePolymerase-method}
 \alias{plotPolymeraseDistribution}
 \alias{plotPauseSites}
 \alias{plotTransitionProbabilities}
 \alias{plotPositionMatrix}
 \alias{savePlots}
-\alias{plotAvgReadDensity}
 \alias{pauseSites}
 \alias{probabilityVector}
 \alias{combinedCellsData}
 \alias{positionMatrix}
 \alias{parameters}
 \alias{readCounts}
-\alias{avgReadDensity}
 \title{Constructor for SimulatePolymerase object}
 \usage{
 simulatePolymerase(
@@ -44,8 +41,6 @@ simulatePolymerase(
 
 sampleReadCountsPerNucleotide(object, readDensity = 0.0489)
 
-sampleGeneBodyAvgReadDensity(object, readDensity = 0.0489)
-
 \S4method{show}{SimulatePolymerase}(object)
 
 plotPolymeraseDistribution(object, file = NULL, width = 8, height = 6)
@@ -58,8 +53,6 @@ plotPositionMatrix(object, file = NULL, width = 8, height = 6)
 
 savePlots(object, dir = "results", width = 8, height = 6)
 
-plotAvgReadDensity(object)
-
 pauseSites(object)
 
 probabilityVector(object)
@@ -71,8 +64,6 @@ positionMatrix(object)
 parameters(object)
 
 readCounts(object)
-
-avgReadDensity(object)
 }
 \arguments{
 \item{k}{an integer value for the mean of pause sites across cells.}
@@ -113,7 +104,7 @@ RNAP size.}
 \item{stepsToRecord}{an integer value for the number of steps to record in
 position matrix.}
 
-\item{object}{a \code{SimulatePolymerase-class} object}
+\item{object}{a \code{SimulatePolymerase} object}
 
 \item{readDensity}{A numeric value for the read density within gene body in
 \emph{Dukler et al.} (2017) for genes with median expression (i.e., 0.0489).}
@@ -130,8 +121,6 @@ position matrix.}
 a \code{SimulatePolymerase} object
 
 The read count per nucleotide value
-
-The average read density within gene body
 
 A ggplot object showing the distribution of polymerases across the
 gene
@@ -179,9 +168,6 @@ If we assume the read counts following a Poisson distribution, we can then
 sample the read counts with mean equals to the RNAP frequency multiplied by
 lambda.
 
-Sample the average read density within gene body from a SimulatePolymerase
-object.
-
 Show method for SimulatePolymerase object in human readable format
 including summary statistics
 
@@ -195,9 +181,6 @@ Plot the position matrix as a heatmap.
 
 Save all plots to files.
 
-Plot the average read density within gene body from a SimulatePolymerase
-object.
-
 Accessor for the pause sites numeric vector from a SimulatePolymerase object.
 
 Accessor for the probability numeric vector from a SimulatePolymerase object.
@@ -210,9 +193,6 @@ Accessor for the position matrix from a SimulatePolymerase object.
 Accessor for the simulation parameters from a SimulatePolymerase object.
 
 Accessor for the read counts numeric vector sampled from a
-SimulatePolymerase object.
-
-Accessor for the average read density numeric vector sampledfrom a
 SimulatePolymerase object.
 }
 \section{Slots}{
@@ -269,8 +249,6 @@ RNAPs at each site across all cells}
 \item{\code{positionMatrix}}{a matrix of position of polymerase}
 
 \item{\code{readCounts}}{a numeric vector for read counts per nucleotide}
-
-\item{\code{avgReadDensity}}{a numeric vector for average read density}
 }}
 
 \examples{
@@ -292,16 +270,6 @@ sim <- SimulatePolymerase(
 readCounts <- sampleReadCountsPerNucleotide(sim)
 # Print the read counts per nucleotide
 print(readCounts)
-# Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1) 
-# Sample average read density within gene body
-avgReadDensity <- sampleGeneBodyAvgReadDensity(sim)
-# Print the average read density within gene body
-print(avgReadDensity)
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
@@ -351,14 +319,6 @@ sim <- SimulatePolymerase(
     stepsToRecord=1)
 # Save plots
 savePlots(sim)
-# Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
-# Plot average read density
-plotAvgReadDensity(sim)
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
@@ -419,14 +379,4 @@ sim <- SimulatePolymerase(
 readCounts <- readCounts(sim)
 # Print the read counts
 print(readCounts)
-# Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
-# Get average read density
-avgReadDensity <- avgReadDensity(sim)
-# Print the average read density
-print(avgReadDensity)
 }

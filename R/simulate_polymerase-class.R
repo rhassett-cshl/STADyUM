@@ -139,7 +139,6 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
 #' RNAPs at each site across all cells
 #' @slot positionMatrix a matrix of position of polymerase
 #' @slot readCounts a numeric vector for read counts per nucleotide
-#' @slot avgReadDensity a numeric vector for average read density
 #'
 #' @name SimulatePolymerase-class
 #' @rdname SimulatePolymerase-class
@@ -160,8 +159,7 @@ methods::setClass("SimulatePolymerase",
         polSize = "integer", addSpace = "integer", time = "numeric", 
         deltaT = "numeric", stepsToRecord = "integer", pauseSites = "numeric",
         probabilityVector = "numeric", combinedCellsData = "integer",
-        positionMatrix = "matrix", readCounts = "ANY",
-        avgReadDensity = "ANY"
+        positionMatrix = "matrix", readCounts = "ANY"
     ),
     validity = simulatePolymeraseValid
 )
@@ -247,9 +245,9 @@ simulatePolymerase <- function(
         zetaVec = if (is.null(zetaVec)) "" else zetaVec,
         cellNum = as.integer(cellNum), polSize = as.integer(polSize),
         addSpace = as.integer(addSpace), time = time,
-        stepsToRecord = as.integer(stepsToRecord), readCounts = NULL,
-        avgReadDensity = NULL
-    )
+        stepsToRecord = as.integer(stepsToRecord), readCounts = NULL)
+
+    sampleReadCountsPerNucleotide(obj)
     
     validObject(obj)
     
@@ -312,52 +310,6 @@ setMethod("sampleReadCountsPerNucleotide", "SimulatePolymerase", function(
 
     return(rcPerNt)
 })
-
-#' @rdname SimulatePolymerase-class
-#' @title Sample Average Read Density from SimulatePolymerase Object
-#'
-#' @description
-#' Sample the average read density within gene body from a SimulatePolymerase
-#' object.
-#'
-#' @param object A SimulatePolymerase object
-#' @param readDensity A numeric value for the read density within gene body in
-#' _Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
-#' @return The average read density within gene body
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1) 
-#' # Sample average read density within gene body
-#' avgReadDensity <- sampleGeneBodyAvgReadDensity(sim)
-#' # Print the average read density within gene body
-#' print(avgReadDensity)
-#' @export
-setGeneric("sampleGeneBodyAvgReadDensity", function(
-    object,
-    readDensity = 0.0489) {
-    standardGeneric("sampleGeneBodyAvgReadDensity")
-})
-setMethod(
-    "sampleGeneBodyAvgReadDensity", "SimulatePolymerase",
-    function(object, readDensity = 0.0489) {
-        cellNum <- slot(object, "cellNum")
-        kMax <- slot(object, "kMax")
-        totalRnap <- slot(object, "combinedCellsData")
-
-        N <- length(totalRnap)
-        L <- N - kMax
-
-        simAvgReadDensity <- sum(totalRnap[(kMax + 1):N]) / L
-
-        slot(object, "avgReadDensity") <- simAvgReadDensity
-
-        return(simAvgReadDensity)
-    }
-)
 
 #' @rdname SimulatePolymerase-class
 #' @title Show Method for SimulatePolymerase Object
@@ -654,42 +606,6 @@ setMethod("savePlots", "SimulatePolymerase", function(
     )
 })
 
-#' @rdname SimulatePolymerase-class
-#' @title Plot Average Read Density
-#'
-#' @description
-#' Plot the average read density within gene body from a SimulatePolymerase
-#' object.
-#'
-#' @param object a \code{SimulatePolymerase-class} object
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Plot average read density
-#' plotAvgReadDensity(sim)
-#' @export
-setGeneric("plotAvgReadDensity", function(object) {
-    standardGeneric("plotAvgReadDensity")
-})
-setMethod("plotAvgReadDensity", "SimulatePolymerase", function(object) {
-    df <- data.frame(
-        position = 0:geneLen(object),
-        density = avgReadDensity(object)
-    )
-    ggplot(df, aes(x = position, y = density)) +
-        geom_line() +
-        theme_minimal() +
-        labs(
-            title = "Average Read Density",
-            x = "Position",
-            y = "Density"
-        )
-})
-
 # Accessor methods
 #' @rdname SimulatePolymerase-class
 #' @title Accessor for Pause Sites
@@ -861,33 +777,4 @@ setMethod("parameters", "SimulatePolymerase", function(object) {
 setGeneric("readCounts", function(object) standardGeneric("readCounts"))
 setMethod("readCounts", "SimulatePolymerase", function(object) {
     slot(object, "readCounts")
-})
-
-#' @rdname SimulatePolymerase-class
-#' @title Accessor for Average Read Density
-#'
-#' @description
-#' Accessor for the average read density numeric vector sampledfrom a
-#' SimulatePolymerase object.
-#'
-#' @param object a \code{SimulatePolymerase-class} object
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Get average read density
-#' avgReadDensity <- avgReadDensity(sim)
-#' # Print the average read density
-#' print(avgReadDensity)
-#' @export
-#' @exportMethod avgReadDensity
-setGeneric("avgReadDensity", function(object) {
-    standardGeneric("avgReadDensity")
-})
-setMethod("avgReadDensity", "SimulatePolymerase", function(object) {
-    slot(object, "avgReadDensity")
 })
