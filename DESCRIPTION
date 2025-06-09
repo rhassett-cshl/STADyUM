@@ -53,7 +53,8 @@ Imports:
     Matrix,
     magrittr,
     readr,
-    stringr
+    stringr,
+    rtracklayer
 LinkingTo:
     Rcpp
 Suggests: 

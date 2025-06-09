@@ -2,7 +2,7 @@
 #' @importFrom tibble tibble
 #' @importFrom purrr map2 pmap
 #' @importFrom stats pchisq p.adjust
-#' @importFrom methods slot
+#' @importFrom methods slot is slot<- validObject
 #' @importFrom readr read_csv
 #' @importFrom stringr str_detect
 #' @title Constructor for TranscriptionRatesLRT object
@@ -206,14 +206,14 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #' log 2 fold change in beta estimates between conditions, the t-statistics for
 #' the likelihood ratio tests, and the adjusted p-values based on the "BH"
 #' method.
-#' @param expData1 an \code{\link{experimentTranscriptionRates-class}} object
-#' @param expData2 an \code{\link{experimentTranscriptionRates-class}} object
-#' @param spikeInScalingFactor path to a csv file containing scale factorsbased
-#' on total or spike-in reads
+#' @param expData1 an \code{\linkS4class{ExperimentTranscriptionRates}} object
+#' @param expData2 an \code{\linkS4class{ExperimentTranscriptionRates}} object
+#' @param spikeInScalingFactor path to a csv file containing scale factors
+#' based on total or spike-in reads
 #' 
 #' Note: Gene body length assumed to be the same between conditions
 #'
-#' @return a \code{\link{likelihoodRatioTest-class}} object
+#' @return a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
 #' expData1 <- estimateExperimentTranscriptionRates(
@@ -247,7 +247,7 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 
     ## Poisson-based Likelihood Ratio Tests
     ## Use # of spike-in or total # of mappable reads as scaling factor
-    scaleTbl <- read_csv(spikeInScalingFactor, showColTypes = FALSE)
+    scaleTbl <- read_csv(spikeInScalingFactor, show_col_types = FALSE)
     scaleTbl <- scaleTbl[str_detect(rc2$geneId, scaleTbl$sample), ]
     ## Cancel out M and zeta since they are the same between conditions
     lambda1 <- scaleTbl$control1 + ifelse(is.na(scaleTbl$control2), 0,
@@ -275,6 +275,8 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 #' @description
 #' Accessor for the first ExperimentTranscriptionRates object from a
 #' TranscriptionRatesLRT object.
+#'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
 #' expData1 <- estimateExperimentTranscriptionRates(
@@ -306,6 +308,8 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
 #' Accessor for the second ExperimentTranscriptionRates object from a
 #' TranscriptionRatesLRT object.
 #'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
+#'
 #' @examples
 #' expData1 <- estimateExperimentTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
@@ -335,6 +339,8 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
 #' @description
 #' Accessor for the spike-in scaling factor from a
 #' TranscriptionRatesLRT object.
+#'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
 #' expData1 <- estimateExperimentTranscriptionRates(

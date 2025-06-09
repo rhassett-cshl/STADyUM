@@ -104,40 +104,33 @@ validateRates <- function(object) {
 #' counts. This can be generated with the proseq2.0 pipeline.
 #' @slot bigwigMinus a path to bigwig for minus strand recording PRO-seq read
 #' counts. This can be generated with the proseq2.0 pipeline.
-#' @slot pauseRegions a \code{\link[GenomicRanges]{GRanges-class}} that holds
-#' all the pause region coordinates for every gene to handle read counting in
-#' this region
-#' @slot geneBodyRegions a \code{\link[GenomicRanges]{GRanges-class}}
-#' that holds all the gene body region coordinates for every gene to handle
-#' read counting in this region
-#' @slot geneNameColumn a string for the gene name column in the GRanges
-#' @slot stericHindrance a logical value representing whether landing-pad
-#' occupancy was inferred when estimating the rates. Landing pad occupancy
-#' represents the probability that the landing pad required for a new
-#' initiation event is already occupied by an RNAP If TRUE, the omegaScale
-#' slot must be set to a numeric value greater than 0.
-#' @slot omegaScale a numeric for the scale factor used to calculate omega.
-#' Omega represents the effective initiation rate, the initiation rate after a
-#' portion of initiation events are blocked by RNAPs in the pause region due to
-#' steric hindrance. Scale factors calibrate omega based on prior knowledge
-#' 
-#' @slot data A \code{tbl_df} containing the estimated transcription rates:
+#' @slot pauseRegions a \code{\link[GenomicRanges]{GRanges-class}} object that
+#' holds the pause regions coordinates
+#' @slot geneBodyRegions a \code{\link[GenomicRanges]{GRanges-class}} object
+#' that holds the gene body regions coordinates
+#' @slot geneNameColumn a character string indicating which column in the
+#' GRanges objects contains gene names
+#' @slot stericHindrance a logical value indicating whether to infer
+#' landing-pad occupancy
+#' @slot omegaScale a numeric value for scaling omega, or NULL if steric
+#' hindrance is disabled
+#' @slot rates a \code{\link[tibble]{tbl_df}} containing the estimated rates
+#' with columns:
 #' \describe{
-#'   \item{\eqn{\chi}}{Numeric. Maximum likelihood estimate of the average read
-#' depth in the gene body region.}
-#'   \item{\eqn{\beta_{org}}}{Numeric. Maximum likelihood estimate of average
-#' read depth in pause region without varying pause sites}
-#'   \item{\eqn{\beta_{adp}}}{Numeric. Maximum likelihood estimate of average
-#' read depth in pause region with varying pause sites}
+#'   \item{geneId}{Character. Gene identifier}
+#'   \item{chi}{Numeric. RNAP density along gene body}
+#'   \item{betaOrg}{Numeric. Original pause-release rate estimate}
+#'   \item{betaAdp}{Numeric. Adjusted pause-release rate estimate}
 #'   \item{fkMean}{Numeric. Mean position of pause sites}
-#'   \item{fkVar}{Numeric. Variance of pause sites}
-#'   \item{\eqn{\phi}}{Numeric. Landing-pad occupancy estimates representing
-#' probability of RNAP occupying the landing pad required for a new initiation
-#' event}
-#'   \item{\eqn{\omega_{\zeta}}}{Numeric. Effective initiation rate, considering
-#' steric hindrance}
-#'   \item{\eqn{\beta_{\zeta}}}{Numeric. Pause-escape rate}
-#'   \item{\eqn{\alpha_{\zeta}}}{Numeric. Potential initiation rate}
+#'   \item{fkVar}{Numeric. Variance of pause site positions}
+#'   \item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
+#'   enabled)}
+#'   \item{betaZeta}{Numeric. Pause-escape rate (only if steric hindrance is
+#'   enabled)}
+#'   \item{alphaZeta}{Numeric. Potential initiation rate (only if steric
+#'   hindrance is enabled)}
+#'   \item{omegaZeta}{Numeric. Effective initiation rate (only if steric
+#'   hindrance is enabled)}
 #' }
 #'
 #' @name ExperimentTranscriptionRates-class
@@ -145,11 +138,12 @@ validateRates <- function(object) {
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom tibble tbl_df
 #' @importFrom dplyr mutate select left_join
-#' @importFrom stats dnorm
+#' @importFrom stats dnorm uniroot density
 #' @importFrom magrittr %>%
-#' @importFrom methods slot
+#' @importFrom methods slot is slot<- validObject
 #' @importFrom S4Vectors DataFrame splitAsList
 #' @importFrom tibble as_tibble
+#' @importFrom rtracklayer import.bw
 #' @exportClass ExperimentTranscriptionRates
 methods::setClass("ExperimentTranscriptionRates",
     slots = c(
@@ -595,8 +589,6 @@ setGeneric("plotRates", function(
     standardGeneric("plotRates")
 })
 
-#' @rdname ExperimentTranscriptionRates-class
-#' @export
 setMethod("plotRates", "ExperimentTranscriptionRates", function(
     object, type = "scatter", rateType = "betaAdp", file = NULL, width = 8,
     height = 6, dpi = 300, ...) {

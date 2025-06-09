@@ -119,7 +119,7 @@ RNAP size.}
 \item{stepsToRecord}{an integer value for the number of steps to record in
 position matrix.}
 
-\item{object}{a \code{SimulatePolymerase} object}
+\item{object}{a \code{SimulatePolymerase-class} object}
 
 \item{readDensity}{A numeric value for the read density within gene body in
 \emph{Dukler et al.} (2017) for genes with median expression (i.e., 0.0489).}
@@ -255,6 +255,8 @@ across sites.}
 
 \item{\code{zetaMax}}{a numeric value for the maximum elongation rate.}
 
+\item{\code{zetaVec}}{a character value for the path to the zetaVec file.}
+
 \item{\code{cellNum}}{an integer value for the number of cells to simulate.}
 
 \item{\code{polSize}}{an integer value for the polymerase II size.}
@@ -263,6 +265,8 @@ across sites.}
 RNAP size.}
 
 \item{\code{time}}{a numeric value for the time to simulate.}
+
+\item{\code{deltaT}}{a numeric value for the time step size in the simulation.}
 
 \item{\code{stepsToRecord}}{an integer value for the number of steps to record in
 position matrix.}
@@ -278,6 +282,8 @@ RNAPs at each site across all cells}
 \item{\code{positionMatrix}}{a matrix of position of polymerase}
 
 \item{\code{readCounts}}{a numeric vector for read counts per nucleotide}
+
+\item{\code{avgReadDensity}}{a numeric vector for average read density}
 }}
 
 \examples{

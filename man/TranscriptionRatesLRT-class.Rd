@@ -18,17 +18,19 @@ expData2(object)
 spikeInScalingFactor(object)
 }
 \arguments{
-\item{expData1}{an \code{\link{experimentTranscriptionRates-class}} object}
+\item{expData1}{an \code{\linkS4class{ExperimentTranscriptionRates}} object}
 
-\item{expData2}{an \code{\link{experimentTranscriptionRates-class}} object}
+\item{expData2}{an \code{\linkS4class{ExperimentTranscriptionRates}} object}
 
-\item{spikeInScalingFactor}{path to a csv file containing scale factorsbased
-on total or spike-in reads
+\item{spikeInScalingFactor}{path to a csv file containing scale factors
+based on total or spike-in reads
 
 Note: Gene body length assumed to be the same between conditions}
+
+\item{object}{a \code{\linkS4class{TranscriptionRatesLRT}} object}
 }
 \value{
-a \code{\link{likelihoodRatioTest-class}} object
+a \code{\linkS4class{TranscriptionRatesLRT}} object
 }
 \description{
 Constructs results of likelihood ratio test comparing transcription data

@@ -6,7 +6,6 @@
 \alias{estimateExperimentTranscriptionRates}
 \alias{show,ExperimentTranscriptionRates-method}
 \alias{plotRates}
-\alias{plotRates,ExperimentTranscriptionRates-method}
 \alias{rates}
 \alias{counts}
 \alias{pauseRegions}
@@ -29,17 +28,6 @@ estimateExperimentTranscriptionRates(
 \S4method{show}{ExperimentTranscriptionRates}(object)
 
 plotRates(
-  object,
-  type = "scatter",
-  rateType = "betaAdp",
-  file = NULL,
-  width = 8,
-  height = 6,
-  dpi = 300,
-  ...
-)
-
-\S4method{plotRates}{ExperimentTranscriptionRates}(
   object,
   type = "scatter",
   rateType = "betaAdp",
@@ -196,44 +184,38 @@ counts. This can be generated with the proseq2.0 pipeline.}
 \item{\code{bigwigMinus}}{a path to bigwig for minus strand recording PRO-seq read
 counts. This can be generated with the proseq2.0 pipeline.}
 
-\item{\code{pauseRegions}}{a \code{\link[GenomicRanges]{GRanges-class}} that holds
-all the pause region coordinates for every gene to handle read counting in
-this region}
+\item{\code{pauseRegions}}{a \code{\link[GenomicRanges]{GRanges-class}} object that
+holds the pause regions coordinates}
 
-\item{\code{geneBodyRegions}}{a \code{\link[GenomicRanges]{GRanges-class}}
-that holds all the gene body region coordinates for every gene to handle
-read counting in this region}
+\item{\code{geneBodyRegions}}{a \code{\link[GenomicRanges]{GRanges-class}} object
+that holds the gene body regions coordinates}
 
-\item{\code{geneNameColumn}}{a string for the gene name column in the GRanges}
+\item{\code{geneNameColumn}}{a character string indicating which column in the
+GRanges objects contains gene names}
 
-\item{\code{stericHindrance}}{a logical value representing whether landing-pad
-occupancy was inferred when estimating the rates. Landing pad occupancy
-represents the probability that the landing pad required for a new
-initiation event is already occupied by an RNAP If TRUE, the omegaScale
-slot must be set to a numeric value greater than 0.}
+\item{\code{stericHindrance}}{a logical value indicating whether to infer
+landing-pad occupancy}
 
-\item{\code{omegaScale}}{a numeric for the scale factor used to calculate omega.
-Omega represents the effective initiation rate, the initiation rate after a
-portion of initiation events are blocked by RNAPs in the pause region due to
-steric hindrance. Scale factors calibrate omega based on prior knowledge}
+\item{\code{omegaScale}}{a numeric value for scaling omega, or NULL if steric
+hindrance is disabled}
 
-\item{\code{data}}{A \code{tbl_df} containing the estimated transcription rates:
+\item{\code{rates}}{a \code{\link[tibble]{tbl_df}} containing the estimated rates
+with columns:
 \describe{
-\item{\eqn{\chi}}{Numeric. Maximum likelihood estimate of the average read
-depth in the gene body region.}
-\item{\eqn{\beta_{org}}}{Numeric. Maximum likelihood estimate of average
-read depth in pause region without varying pause sites}
-\item{\eqn{\beta_{adp}}}{Numeric. Maximum likelihood estimate of average
-read depth in pause region with varying pause sites}
+\item{geneId}{Character. Gene identifier}
+\item{chi}{Numeric. RNAP density along gene body}
+\item{betaOrg}{Numeric. Original pause-release rate estimate}
+\item{betaAdp}{Numeric. Adjusted pause-release rate estimate}
 \item{fkMean}{Numeric. Mean position of pause sites}
-\item{fkVar}{Numeric. Variance of pause sites}
-\item{\eqn{\phi}}{Numeric. Landing-pad occupancy estimates representing
-probability of RNAP occupying the landing pad required for a new initiation
-event}
-\item{\eqn{\omega_{\zeta}}}{Numeric. Effective initiation rate, considering
-steric hindrance}
-\item{\eqn{\beta_{\zeta}}}{Numeric. Pause-escape rate}
-\item{\eqn{\alpha_{\zeta}}}{Numeric. Potential initiation rate}
+\item{fkVar}{Numeric. Variance of pause site positions}
+\item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
+enabled)}
+\item{betaZeta}{Numeric. Pause-escape rate (only if steric hindrance is
+enabled)}
+\item{alphaZeta}{Numeric. Potential initiation rate (only if steric
+hindrance is enabled)}
+\item{omegaZeta}{Numeric. Effective initiation rate (only if steric
+hindrance is enabled)}
 }}
 }}
 

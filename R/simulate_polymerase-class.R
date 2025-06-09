@@ -89,8 +89,10 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
     }
     
     # Read the full file
-    zeta_data <- read.csv(zetaVec, header = FALSE, 
-                        colClasses = "numeric")
+    zeta_data <- read_csv(zetaVec, 
+                            col_names = FALSE,
+                            col_types = "d",
+                            show_col_types = FALSE)
     
     # Convert to numeric vector and ensure correct length
     zeta_vec <- as.numeric(zeta_data[[1]])
@@ -121,11 +123,13 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
 #' across sites.
 #' @slot zetaMin a numeric value for the minimum elongation rate.
 #' @slot zetaMax a numeric value for the maximum elongation rate.
+#' @slot zetaVec a character value for the path to the zetaVec file.
 #' @slot cellNum an integer value for the number of cells to simulate.
 #' @slot polSize an integer value for the polymerase II size.
 #' @slot addSpace an integer value for the additional space in addition to
 #' RNAP size.
 #' @slot time a numeric value for the time to simulate.
+#' @slot deltaT a numeric value for the time step size in the simulation.
 #' @slot stepsToRecord an integer value for the number of steps to record in
 #' position matrix.
 #' @slot pauseSites a numeric vector of pause sites
@@ -135,14 +139,15 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
 #' RNAPs at each site across all cells
 #' @slot positionMatrix a matrix of position of polymerase
 #' @slot readCounts a numeric vector for read counts per nucleotide
-
+#' @slot avgReadDensity a numeric vector for average read density
+#'
 #' @name SimulatePolymerase-class
 #' @rdname SimulatePolymerase-class
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom tibble tbl_df
-#' @importFrom methods slot new
+#' @importFrom methods slot new is slot<- validObject
 #' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
-#' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave
+#' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave geom_histogram
 #' @importFrom reshape2 melt
 #' @importFrom readr read_csv
 #' @exportClass SimulatePolymerase
@@ -940,6 +945,8 @@ setMethod("readCounts", "SimulatePolymerase", function(object) {
 #' Accessor for the average read density numeric vector sampledfrom a
 #' SimulatePolymerase object.
 #'
+#' @param object a \code{SimulatePolymerase-class} object
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- SimulatePolymerase(
@@ -952,6 +959,7 @@ setMethod("readCounts", "SimulatePolymerase", function(object) {
 #' # Print the average read density
 #' print(avgReadDensity)
 #' @export
+#' @exportMethod avgReadDensity
 setGeneric("avgReadDensity", function(object) {
     standardGeneric("avgReadDensity")
 })

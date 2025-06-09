@@ -59,7 +59,7 @@ simulationTranscriptionRatesValid <- function(object) {
 #' @importClassesFrom data.table data.table
 #' @importFrom purrr map map_chr map_dbl
 #' @importFrom dplyr mutate
-#' @importFrom methods slot
+#' @importFrom methods slot is slot<- validObject
 #' @importFrom stats rpois optim rnorm var dnorm
 #' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
 #' @exportClass SimulationTranscriptionRates
@@ -394,7 +394,7 @@ calculateFinalRates <- function(bwDfs, stericHindrance) {
 #' simulator \code{SimulatePolymerase}, and contructs a new object that holds
 #' these rates.
 #'
-#' @param simpol a \code{\link{simulatePolymerase-class}} object
+#' @param simpol a \code{\linkS4class{SimulatePolymerase}} object
 #' @param stericHindrance a logical value to determine whether to infer
 #' landing-pad occupancy or not.
 #' Defaults to FALSE.
@@ -796,6 +796,8 @@ setMethod(
 #' the pause regions from a SimulationTranscriptionRates object given a fixed
 #' pause site.
 #'
+#' @param object a \code{\linkS4class{SimulationTranscriptionRates}} object
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -823,6 +825,8 @@ setMethod(
 #' Accessor for the maximum likelihood estimate of the average read depth along
 #' the pause regions from a SimulationTranscriptionRates object given variable
 #' pause sites  
+#'
+#' @param object a \code{\linkS4class{SimulationTranscriptionRates}} object
 #'
 #' @examples
 #' # Create a SimulatePolymerase object

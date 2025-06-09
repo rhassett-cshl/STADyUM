@@ -57,13 +57,13 @@ flag(object)
 rnapN(object)
 }
 \arguments{
-\item{simpol}{a \code{\link{simulatePolymerase-class}} object}
+\item{simpol}{a \code{\linkS4class{SimulatePolymerase}} object}
 
 \item{stericHindrance}{a logical value to determine whether to infer
 landing-pad occupancy or not.
 Defaults to FALSE.}
 
-\item{object}{a \code{SimulationTranscriptionRates} object}
+\item{object}{a \code{\linkS4class{SimulationTranscriptionRates}} object}
 
 \item{file}{Optional file path to save the plot}
 
