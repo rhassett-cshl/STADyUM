@@ -6,8 +6,6 @@
 \alias{simulatePolymerase}
 \alias{sampleReadCountsPerNucleotide}
 \alias{sampleGeneBodyAvgReadDensity}
-\alias{simulateReadCounts}
-\alias{simulateAvgReadDensity}
 \alias{show,SimulatePolymerase-method}
 \alias{plotPolymeraseDistribution}
 \alias{plotPauseSites}
@@ -47,10 +45,6 @@ simulatePolymerase(
 sampleReadCountsPerNucleotide(object, readDensity = 0.0489)
 
 sampleGeneBodyAvgReadDensity(object, readDensity = 0.0489)
-
-simulateReadCounts(object)
-
-simulateAvgReadDensity(object)
 
 \S4method{show}{SimulatePolymerase}(object)
 
@@ -139,8 +133,6 @@ The read count per nucleotide value
 
 The average read density within gene body
 
-a \code{SimulatePolymerase-class} object
-
 A ggplot object showing the distribution of polymerases across the
 gene
 
@@ -188,11 +180,6 @@ sample the read counts with mean equals to the RNAP frequency multiplied by
 lambda.
 
 Sample the average read density within gene body from a SimulatePolymerase
-object.
-
-Simulate the read counts per nucleotide from a SimulatePolymerase object.
-
-Simulate the average read density within gene body from a SimulatePolymerase
 object.
 
 Show method for SimulatePolymerase object in human readable format
@@ -315,26 +302,6 @@ sim <- SimulatePolymerase(
 avgReadDensity <- sampleGeneBodyAvgReadDensity(sim)
 # Print the average read density within gene body
 print(avgReadDensity)
-# Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
-# Simulate read counts
-sim <- simulateReadCounts(sim)
-# Print the read counts
-print(sim)
-# Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
-# Simulate average read density
-sim <- simulateAvgReadDensity(sim)
-# Print the average read density
-print(sim)
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
