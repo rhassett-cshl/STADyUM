@@ -199,7 +199,7 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #' Likelihood ratio test comparing aspects of transcriptional
 #' dynamics of the same TU under different conditions using Likelihood Ratio
 #' Test Statistics. Uses read counts and rate estimates estimated from
-#' estimateExperimentTranscriptionRates. The method also requires
+#' estimateTranscriptionRates. The method also requires
 #' scaling factors to determine changes in χ estimates. They can be the numbers
 #' of total mapped reads or spike-in reads from the samples. Likelihood ratio
 #' test computes the log 2 fold change in χ estimates between conditions, the
@@ -216,14 +216,14 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #' @return a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
-#' expData1 <- estimateExperimentTranscriptionRates(
+#' expData1 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
 #'     geneNameColumn = "gene_id"
 #' )
-#' expData2 <- estimateExperimentTranscriptionRates(
+#' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
@@ -279,14 +279,14 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 #' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
-#' expData1 <- estimateExperimentTranscriptionRates(
+#' expData1 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
 #'     geneNameColumn = "gene_id"
 #' )
-#' expData2 <- estimateExperimentTranscriptionRates(
+#' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
@@ -311,14 +311,14 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
 #' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
-#' expData1 <- estimateExperimentTranscriptionRates(
+#' expData1 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
 #'     geneNameColumn = "gene_id"
 #' )
-#' expData2 <- estimateExperimentTranscriptionRates(
+#' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
@@ -343,14 +343,14 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
 #' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
-#' expData1 <- estimateExperimentTranscriptionRates(
+#' expData1 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
 #'     geneNameColumn = "gene_id"
 #' )
-#' expData2 <- estimateExperimentTranscriptionRates(
+#' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),

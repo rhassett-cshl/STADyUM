@@ -135,7 +135,7 @@ validateRates <- function(object) {
 #'
 #' @name ExperimentTranscriptionRates-class
 #' @rdname ExperimentTranscriptionRates-class
-#' @importClassesFrom GenomicRanges GRanges
+#' @import GenomicRanges
 #' @importClassesFrom tibble tbl_df
 #' @importFrom dplyr mutate select left_join
 #' @importFrom stats dnorm uniroot density
@@ -211,7 +211,7 @@ inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
 }
 
 prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
-                                    geneBodyRegions, kmax) {
+                                    geneBodyRegions, kmax, geneNameColumn) {
     rcCutoff <- 20
     pb <- progress::progress_bar$new(
         format = "Processing [:bar] :percent eta: :eta",
@@ -261,7 +261,7 @@ prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
 }
 
 prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax, 
-                            stericHindrance, omegaScale, zeta) {
+                            stericHindrance, omegaScale, zeta, geneNameColumn) {
     emRate <- DataFrame(
         geneId = rc1$geneId, 
         s = rc1$summarizedGbCounts, 
@@ -272,7 +272,7 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
 
     bwCov <- coverage(bw1P3, weight = "score")
 
-    geneIds <- pauseRegions$geneId
+    geneIds <- pauseRegions[[geneNameColumn]]
     strands <- as.character(strand(pauseRegions))
     regionsChr <- as.character(seqnames(pauseRegions))
     starts <- start(pauseRegions)
@@ -295,7 +295,7 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
     }))
 
     Xk <- splitAsList(Xk$signal, Xk$region)
-    names(Xk) <- pauseRegions$geneId
+    names(Xk) <- pauseRegions[[geneNameColumn]]
     
     emRate$Xk <- Xk[emRate$geneId]
     
@@ -359,9 +359,9 @@ experimentProcessEmResults <- function(emRate, emLs, stericHindrance, zeta) {
 }
 
 estimateEmRates <- function(rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
-                            stericHindrance, omegaScale, zeta) {
+                            stericHindrance, omegaScale, zeta, geneNameColumn) {
     emRate <- prepareEmData(rc1, bw1P3, pauseRegions, kmin, kmax,
-                            stericHindrance, omegaScale, zeta)
+                            stericHindrance, omegaScale, zeta, geneNameColumn)
     lambda <- if (stericHindrance) zeta^2 / omegaScale else NULL
     emLs <- experimentRunEmAlgorithm(emRate, kmin, kmax, fkInt,
                                     stericHindrance, zeta, lambda)
@@ -386,8 +386,21 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
     return(emRate)
 }
 
-#' estimateExperimentTranscriptionRates
+#' @title Generic function for estimating transcription rates
 #' 
+#' @description
+#' Generic function that estimates transcription rates from either simulation
+#' data (SimulatePolymerase object) or experimental data (bigwig files and
+#' genomic regions).
+#'
+#' @param x The input data (either a SimulatePolymerase object or bigwig files)
+#' @param ... Additional arguments passed to the specific methods
+#' @return An object containing estimated transcription rates
+#' @export
+setGeneric("estimateTranscriptionRates", function(x, ...) {
+    standardGeneric("estimateTranscriptionRates")
+})
+
 #' @title Estimate transcription rates from real PRO-seq data
 #'
 #' @description
@@ -399,8 +412,8 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #' that holds these rates. Considers models where pause sites are fixed or
 #' varied. Considers models where steric hindrance is enabled or disabled.
 #'
-#' @param bigwigPlus the path to a bigwig file from the plus strand recording
-#' PRO-seq read counts
+#' @param x The path to a bigwig file from the plus strand recording PRO-seq
+#' read counts
 #' @param bigwigMinus the path to a bigwig file from the minus strand recording
 #' PRO-seq read counts
 #' @param pauseRegions a \link[GenomicRanges]{GRanges-class} object that must
@@ -412,13 +425,14 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #' @param stericHindrance a logical value to determine whether to infer
 #' landing-pad occupancy or not. Defaults to FALSE.
 #' @param omegaScale a numeric value for scaling omega. Defaults to NULL.
+#' @param ... Additional arguments (not used)
 #'
 #' @return an \code{\link{ExperimentTranscriptionRates-class}} object
 #' 
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
+#' expRates <- estimateTranscriptionRates(
+#'     "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",    
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -427,10 +441,12 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #'
 #' @rdname ExperimentTranscriptionRates-class
 #' @export
-estimateExperimentTranscriptionRates <- function(bigwigPlus, bigwigMinus,
-pauseRegions, geneBodyRegions, geneNameColumn="gene_id", stericHindrance=FALSE,
-omegaScale=NULL) {
-
+setMethod("estimateTranscriptionRates", "character", 
+function(x, bigwigMinus, pauseRegions, geneBodyRegions, 
+geneNameColumn="gene_id", stericHindrance=FALSE, omegaScale=NULL, ...) {
+    
+    bigwigPlus <- x  # x is the first bigwig file path
+    
     inputValidationChecks(
         bigwigPlus, bigwigMinus, pauseRegions,
         geneBodyRegions, geneNameColumn, stericHindrance, omegaScale
@@ -449,7 +465,7 @@ omegaScale=NULL) {
     kmin <- 1; kmax <- 200; rnapSize <- 50; zeta <- 2000
 
     processedData <- prepareReadCountTable(bigwigPlus, bigwigMinus,
-    pauseRegions, geneBodyRegions, kmax)
+    pauseRegions, geneBodyRegions, kmax, geneNameColumn)
     rc1 <- processedData$rc1; bw1P3 <- processedData$bw1P3
 
     message("estimating rates...")
@@ -463,7 +479,7 @@ omegaScale=NULL) {
     fkInt <- fkInt / sum(fkInt)
 
     emRate <- estimateEmRates(rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
-    stericHindrance, omegaScale, zeta)
+    stericHindrance, omegaScale, zeta, geneNameColumn)
     emRate <- prepareRateTable(emRate, analyticalRateTbl, stericHindrance)
 
     return(methods::new(
@@ -474,7 +490,7 @@ omegaScale=NULL) {
         geneNameColumn, stericHindrance = stericHindrance, omegaScale =
         omegaScale, rates = emRate
     ))
-}
+})
 
 #' @title Show method for ExperimentTranscriptionRates
 #' @description
@@ -487,8 +503,8 @@ omegaScale=NULL) {
 #' @export
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
+#' expRates <- estimateTranscriptionRates(
+#'     "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -571,8 +587,8 @@ applyCommonTheme <- function() {
 #' 
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
+#' expRates <- estimateTranscriptionRates(
+#'     "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -642,8 +658,8 @@ setMethod("plotRates", "ExperimentTranscriptionRates", function(
 #' @export
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
+#' expRates <- estimateTranscriptionRates(
+#'     "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -685,8 +701,8 @@ setMethod("counts", "ExperimentTranscriptionRates", function(object) {
 #' @return a \link[GenomicRanges]{GRanges-class} object with the pause regions
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
+#' expRates <- estimateTranscriptionRates(
+#'     "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -709,8 +725,8 @@ setMethod("pauseRegions", "ExperimentTranscriptionRates", function(object) {
 #' regions
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
+#' expRates <- estimateTranscriptionRates(
+#'     "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -739,8 +755,8 @@ setMethod(
 #' names information
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
+#' expRates <- estimateTranscriptionRates(
+#'     "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -768,8 +784,8 @@ setMethod(
 #' @return a numeric value for the scaling factor for omega
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
+#' expRates <- estimateTranscriptionRates(
+#'     "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -793,8 +809,8 @@ setMethod("omegaScale", "ExperimentTranscriptionRates", function(object) {
 #' or not
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateExperimentTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
+#' expRates <- estimateTranscriptionRates(
+#'     "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),

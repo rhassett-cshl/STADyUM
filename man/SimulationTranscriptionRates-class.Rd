@@ -3,7 +3,7 @@
 \docType{class}
 \name{SimulationTranscriptionRates-class}
 \alias{SimulationTranscriptionRates-class}
-\alias{estimateSimulationTranscriptionRates}
+\alias{estimateTranscriptionRates,SimulatePolymerase-method}
 \alias{show,SimulationTranscriptionRates-method}
 \alias{plotTranscriptionRates}
 \alias{plotPauseSiteDistribution}
@@ -22,7 +22,7 @@
 \alias{rnapN}
 \title{Constructor for SimulationTranscriptionRates object}
 \usage{
-estimateSimulationTranscriptionRates(simpol, stericHindrance = FALSE)
+\S4method{estimateTranscriptionRates}{SimulatePolymerase}(x, stericHindrance = FALSE, ...)
 
 \S4method{show}{SimulationTranscriptionRates}(object)
 
@@ -57,11 +57,10 @@ flag(object)
 rnapN(object)
 }
 \arguments{
-\item{simpol}{a \code{\linkS4class{SimulatePolymerase}} object}
-
 \item{stericHindrance}{a logical value to determine whether to infer
-landing-pad occupancy or not.
-Defaults to FALSE.}
+landing-pad occupancy or not. Defaults to FALSE.}
+
+\item{...}{Additional arguments (not used)}
 
 \item{object}{a \code{\linkS4class{SimulationTranscriptionRates}} object}
 
@@ -70,9 +69,11 @@ Defaults to FALSE.}
 \item{width}{Plot width in inches}
 
 \item{height}{Plot height in inches}
+
+\item{simpol}{a \code{\linkS4class{SimulatePolymerase}} object}
 }
 \value{
-an \code{\link{SimulationTranscriptionRates-class}} object
+a \code{\linkS4class{SimulationTranscriptionRates}} object
 
 A ggplot object showing the transcription rates
 
@@ -88,13 +89,8 @@ read depths along the gene body and pause regions, given fixed or varied
 pause sites, as well as the landing pad occupancy estimate. These can be
 under a model with or without steric hindrance.
 
-Estimates the maximum likelihood estimates for the average read depth along
-the gene body and pause regions using an Expectation Maximization formula as
-well as the landing pad occupancy. This is estimated from simulated data,
-such as nascent RNA sequencing read counts and genomic coordinates simulated
-from polymerase movement over a specified time period calculated by the
-simulator \code{SimulatePolymerase}, and contructs a new object that holds
-these rates.
+Estimates transcription rates from a SimulatePolymerase object using
+Expectation Maximization likelihood formula.
 
 Show method for SimulationTranscriptionRates object in human readable format
 including summary statistics
@@ -150,7 +146,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Print the estimated rates
 print(estRates)
 
@@ -161,7 +157,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Show the object
 show(estRates)
 # Create a SimulatePolymerase object
@@ -171,7 +167,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Plot transcription rates
 plotTranscriptionRates(estRates)
 # Create a SimulatePolymerase object
@@ -181,7 +177,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Plot pause site distribution
 plotPauseSiteDistribution(estRates)
 # Create a SimulatePolymerase object
@@ -191,7 +187,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Plot RNAP counts
 plotRnapCounts(estRates)
 # Create a SimulatePolymerase object
@@ -201,7 +197,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get simpol
 simpol <- simpol(estRates)
 # Print the simpol
@@ -213,7 +209,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get steric hindrance
 stericHindrance <- stericHindrance(estRates)
 # Print the steric hindrance
@@ -225,7 +221,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get trial
 trial <- trial(estRates)
 # Print the trial
@@ -237,7 +233,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get chi
 chi <- chi(estRates)
 # Print the chi
@@ -249,7 +245,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get betaOrg
 betaOrg <- betaOrg(estRates)
 # Print the betaOrg
@@ -261,7 +257,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get betaAdp
 betaAdp <- betaAdp(estRates)
 # Print the betaAdp
@@ -273,7 +269,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get phi
 phi <- phi(estRates)
 # Print the phi
@@ -285,7 +281,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get fk
 fk <- fk(estRates)
 # Print the fk
@@ -297,7 +293,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get fkMean
 fkMean <- fkMean(estRates)
 # Print the fkMean
@@ -309,7 +305,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get fkVar
 fkVar <- fkVar(estRates)
 # Print the fkVar
@@ -321,7 +317,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get flag
 flag <- flag(estRates)
 # Print the flag
@@ -333,7 +329,7 @@ sim <- simulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     stepsToRecord=1)
 # Estimate transcription rates
-estRates <- estimateSimulationTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim)
 # Get rnapN
 rnapN <- rnapN(estRates)
 # Print the rnapN

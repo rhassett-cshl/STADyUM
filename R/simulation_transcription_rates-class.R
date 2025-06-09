@@ -382,25 +382,18 @@ calculateFinalRates <- function(bwDfs, stericHindrance) {
     return(results)
 }
 
-#' @rdname SimulationTranscriptionRates-class
-#' @title Estimate Simulation Transcription Rates
+#' @title Estimate transcription rates from simulation data
 #'
 #' @description
-#' Estimates the maximum likelihood estimates for the average read depth along
-#' the gene body and pause regions using an Expectation Maximization formula as
-#' well as the landing pad occupancy. This is estimated from simulated data,
-#' such as nascent RNA sequencing read counts and genomic coordinates simulated
-#' from polymerase movement over a specified time period calculated by the
-#' simulator \code{SimulatePolymerase}, and contructs a new object that holds
-#' these rates.
+#' Estimates transcription rates from a SimulatePolymerase object using
+#' Expectation Maximization likelihood formula.
 #'
 #' @param simpol a \code{\linkS4class{SimulatePolymerase}} object
 #' @param stericHindrance a logical value to determine whether to infer
-#' landing-pad occupancy or not.
-#' Defaults to FALSE.
-#' @importFrom IRanges IRanges
-#' @import GenomicRanges
-#' @return an \code{\link{SimulationTranscriptionRates-class}} object
+#' landing-pad occupancy or not. Defaults to FALSE.
+#' @param ... Additional arguments (not used)
+#' @return a \code{\linkS4class{SimulationTranscriptionRates}} object
+#' 
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
@@ -409,13 +402,17 @@ calculateFinalRates <- function(bwDfs, stericHindrance) {
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Print the estimated rates
 #' print(estRates)
 #'
+#' @rdname SimulationTranscriptionRates-class
 #' @export
-estimateSimulationTranscriptionRates <- function(simpol, stericHindrance=FALSE)
-{
+setMethod("estimateTranscriptionRates", "SimulatePolymerase", 
+function(x, stericHindrance=FALSE, ...) {
+    
+    simpol <- x  # x is the SimulatePolymerase object
+    
     # Prepare parameters and regions
     params <- prepareSimulationParameters(simpol)
     regions <- createGenomicRegions(params)
@@ -459,7 +456,7 @@ estimateSimulationTranscriptionRates <- function(simpol, stericHindrance=FALSE)
             "noStericHindrance",
         rnapN = if (params$countRnap) rnapData$rnapNls else list()
     )
-}
+})
 
 #' @rdname SimulationTranscriptionRates-class
 #' @title Show Method for SimulationTranscriptionRates Object
@@ -476,7 +473,7 @@ estimateSimulationTranscriptionRates <- function(simpol, stericHindrance=FALSE)
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Show the object
 #' show(estRates)
 #' @export
@@ -519,7 +516,7 @@ setMethod("show", "SimulationTranscriptionRates", function(object) {
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Plot transcription rates
 #' plotTranscriptionRates(estRates)
 #' @export
@@ -583,7 +580,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Plot pause site distribution
 #' plotPauseSiteDistribution(estRates)
 #' @export
@@ -639,7 +636,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Plot RNAP counts
 #' plotRnapCounts(estRates)
 #' @export
@@ -697,7 +694,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get simpol
 #' simpol <- simpol(estRates)
 #' # Print the simpol
@@ -724,7 +721,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get steric hindrance
 #' stericHindrance <- stericHindrance(estRates)
 #' # Print the steric hindrance
@@ -749,7 +746,7 @@ setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get trial
 #' trial <- trial(estRates)
 #' # Print the trial
@@ -776,7 +773,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get chi
 #' chi <- chi(estRates)
 #' # Print the chi
@@ -806,7 +803,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get betaOrg
 #' betaOrg <- betaOrg(estRates)
 #' # Print the betaOrg
@@ -836,7 +833,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get betaAdp
 #' betaAdp <- betaAdp(estRates)
 #' # Print the betaAdp
@@ -863,7 +860,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get phi
 #' phi <- phi(estRates)
 #' # Print the phi
@@ -890,7 +887,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get fk
 #' fk <- fk(estRates)
 #' # Print the fk
@@ -917,7 +914,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get fkMean
 #' fkMean <- fkMean(estRates)
 #' # Print the fkMean
@@ -944,7 +941,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get fkVar
 #' fkVar <- fkVar(estRates)
 #' # Print the fkVar
@@ -971,7 +968,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get flag
 #' flag <- flag(estRates)
 #' # Print the flag
@@ -997,7 +994,7 @@ setMethod(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
-#' estRates <- estimateSimulationTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim)
 #' # Get rnapN
 #' rnapN <- rnapN(estRates)
 #' # Print the rnapN
@@ -1019,7 +1016,7 @@ setMethod(
 #' )
 #'
 #' # Estimate transcription rates
-#' rates <- estimateSimulationTranscriptionRates(simpol)
+#' rates <- estimateTranscriptionRates(simpol)
 #'
 #' # Show the object
 #' show(rates)

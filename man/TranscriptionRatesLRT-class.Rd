@@ -39,7 +39,7 @@ estimated from two different sets of experimental read counts.
 Likelihood ratio test comparing aspects of transcriptional
 dynamics of the same TU under different conditions using Likelihood Ratio
 Test Statistics. Uses read counts and rate estimates estimated from
-estimateExperimentTranscriptionRates. The method also requires
+estimateTranscriptionRates. The method also requires
 scaling factors to determine changes in χ estimates. They can be the numbers
 of total mapped reads or spike-in reads from the samples. Likelihood ratio
 test computes the log 2 fold change in χ estimates between conditions, the
@@ -57,14 +57,14 @@ Accessor for the spike-in scaling factor from a
 TranscriptionRatesLRT object.
 }
 \examples{
-expData1 <- estimateExperimentTranscriptionRates(
+expData1 <- estimateTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
     geneNameColumn = "gene_id"
 )
-expData2 <- estimateExperimentTranscriptionRates(
+expData2 <- estimateTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
@@ -75,14 +75,14 @@ spikeInScalingFactor <- "path/to/scale.csv"
 lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
 # Print the likelihood ratio test object
 print(lrts)
-expData1 <- estimateExperimentTranscriptionRates(
+expData1 <- estimateTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
     geneNameColumn = "gene_id"
 )
-expData2 <- estimateExperimentTranscriptionRates(
+expData2 <- estimateTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
@@ -91,14 +91,14 @@ expData2 <- estimateExperimentTranscriptionRates(
 )
 lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
 expData1(lrts)
-expData1 <- estimateExperimentTranscriptionRates(
+expData1 <- estimateTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
     geneNameColumn = "gene_id"
 )
-expData2 <- estimateExperimentTranscriptionRates(
+expData2 <- estimateTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
@@ -107,14 +107,14 @@ expData2 <- estimateExperimentTranscriptionRates(
 )
 lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
 expData2(lrts)
-expData1 <- estimateExperimentTranscriptionRates(
+expData1 <- estimateTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
     geneNameColumn = "gene_id"
 )
-expData2 <- estimateExperimentTranscriptionRates(
+expData2 <- estimateTranscriptionRates(
     bigwigPlus = "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),

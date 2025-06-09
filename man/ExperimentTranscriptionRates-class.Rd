@@ -3,7 +3,7 @@
 \docType{class}
 \name{ExperimentTranscriptionRates-class}
 \alias{ExperimentTranscriptionRates-class}
-\alias{estimateExperimentTranscriptionRates}
+\alias{estimateTranscriptionRates,character-method}
 \alias{show,ExperimentTranscriptionRates-method}
 \alias{plotRates}
 \alias{rates}
@@ -15,14 +15,15 @@
 \alias{stericHindrance,ExperimentTranscriptionRates-method}
 \title{Constructor for ExperimentTranscriptionRates object}
 \usage{
-estimateExperimentTranscriptionRates(
-  bigwigPlus,
+\S4method{estimateTranscriptionRates}{character}(
+  x,
   bigwigMinus,
   pauseRegions,
   geneBodyRegions,
   geneNameColumn = "gene_id",
   stericHindrance = FALSE,
-  omegaScale = NULL
+  omegaScale = NULL,
+  ...
 )
 
 \S4method{show}{ExperimentTranscriptionRates}(object)
@@ -53,8 +54,8 @@ omegaScale(object)
 \S4method{stericHindrance}{ExperimentTranscriptionRates}(object)
 }
 \arguments{
-\item{bigwigPlus}{the path to a bigwig file from the plus strand recording
-PRO-seq read counts}
+\item{x}{The path to a bigwig file from the plus strand recording PRO-seq
+read counts}
 
 \item{bigwigMinus}{the path to a bigwig file from the minus strand recording
 PRO-seq read counts}
@@ -73,6 +74,8 @@ landing-pad occupancy or not. Defaults to FALSE.}
 
 \item{omegaScale}{a numeric value for scaling omega. Defaults to NULL.}
 
+\item{...}{Additional arguments passed to the plotting function}
+
 \item{object}{an \code{ExperimentTranscriptionRates} object}
 
 \item{type}{Type of plot to create ("scatter", "histogram", or "density").
@@ -89,8 +92,6 @@ saved to this location.}
 \item{height}{Height of the saved plot in inches. Default is 6.}
 
 \item{dpi}{Resolution of the saved plot. Default is 300.}
-
-\item{...}{Additional arguments passed to the plotting function}
 }
 \value{
 an \code{\link{ExperimentTranscriptionRates-class}} object
@@ -169,9 +170,6 @@ studies.
 Accessor for the steric hindrance flag. If TRUE, the landing-pad
 occupancy is inferred in the rates held in this object.
 }
-\details{
-estimateExperimentTranscriptionRates
-}
 \section{Slots}{
 
 \describe{
@@ -221,8 +219,8 @@ hindrance is enabled)}
 
 \examples{
 # Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
+expRates <- estimateTranscriptionRates(
+    "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",    
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -230,8 +228,8 @@ expRates <- estimateExperimentTranscriptionRates(
 )
 
 # Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
+expRates <- estimateTranscriptionRates(
+    "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -241,8 +239,8 @@ expRates <- estimateExperimentTranscriptionRates(
 # Show the object
 show(expRates)
 # Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
+expRates <- estimateTranscriptionRates(
+    "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -252,8 +250,8 @@ expRates <- estimateExperimentTranscriptionRates(
 # Plot rates as a histogram
 plotRates(expRates, type = "histogram")
 # Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
+expRates <- estimateTranscriptionRates(
+    "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -263,8 +261,8 @@ expRates <- estimateExperimentTranscriptionRates(
 # Get the rates from the object
 rates(expRates)
 # Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
+expRates <- estimateTranscriptionRates(
+    "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -272,8 +270,8 @@ expRates <- estimateExperimentTranscriptionRates(
 )    
 pauseRegions(expRates)
 # Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
+expRates <- estimateTranscriptionRates(
+    "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -281,8 +279,8 @@ expRates <- estimateExperimentTranscriptionRates(
 )    
 geneBodyRegions(expRates)
 # Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
+expRates <- estimateTranscriptionRates(
+    "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -290,8 +288,8 @@ expRates <- estimateExperimentTranscriptionRates(
 )    
 geneNameColumn(expRates)
 # Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
+expRates <- estimateTranscriptionRates(
+    "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
@@ -299,8 +297,8 @@ expRates <- estimateExperimentTranscriptionRates(
 )    
 omegaScale(expRates)
 # Create an ExperimentTranscriptionRates object
-expRates <- estimateExperimentTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
+expRates <- estimateTranscriptionRates(
+    "path/to/plus.bw",
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
