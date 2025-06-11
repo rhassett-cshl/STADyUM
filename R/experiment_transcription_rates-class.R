@@ -3,7 +3,6 @@ experimentTranscriptionRatesValid <- function(object) {
         validateCounts(object),
         validateBigwigFiles(object),
         validateRegions(object),
-        validateGeneNameColumn(object),
         validateStericHindrance(object),
         validateRates(object)
     )
@@ -21,14 +20,15 @@ validateCounts <- function(object) {
 }
 
 validateBigwigFiles <- function(object) {
-    errors <- character()
-    if (!file.exists(bigwigPlus(object))) {
-        errors <- c(errors, "bigwigPlus file does not exist")
-    }
-    if (!file.exists(bigwigMinus(object))) {
-        errors <- c(errors, "bigwigMinus file does not exist")
-    }
-    return(errors)
+    #errors <- character()
+    #if (!file.exists(bigwigPlus(object))) {
+    #    errors <- c(errors, "bigwigPlus file does not exist")
+    #}
+    #if (!file.exists(bigwigMinus(object))) {
+    #    errors <- c(errors, "bigwigMinus file does not exist")
+    #}
+    #return(errors)
+    return(character())
 }
 
 validateRegions <- function(object) {
@@ -38,16 +38,6 @@ validateRegions <- function(object) {
     }
     if (!inherits(geneBodyRegions(object), "GRanges")) {
         errors <- c(errors, "geneBodyRegions must be a GRanges object")
-    }
-    return(errors)
-}
-
-validateGeneNameColumn <- function(object) {
-    errors <- character()
-    if (!is.character(geneNameColumn(object)) ||
-        length(geneNameColumn(object)) != 1) {
-        errors <- c(errors, "geneNameColumn must be a single character
-        string")
     }
     return(errors)
 }
@@ -108,8 +98,6 @@ validateRates <- function(object) {
 #' holds the pause regions coordinates
 #' @slot geneBodyRegions a \code{\link[GenomicRanges]{GRanges-class}} object
 #' that holds the gene body regions coordinates
-#' @slot geneNameColumn a character string indicating which column in the
-#' GRanges objects contains gene names
 #' @slot stericHindrance a logical value indicating whether to infer
 #' landing-pad occupancy
 #' @slot omegaScale a numeric value for scaling omega, or NULL if steric
@@ -152,7 +140,6 @@ methods::setClass("ExperimentTranscriptionRates",
         bigwigMinus = "character",
         pauseRegions = "GRanges",
         geneBodyRegions = "GRanges",
-        geneNameColumn = "character",
         stericHindrance = "logical",
         omegaScale = "ANY",
         rates = "tbl_df"
@@ -161,7 +148,7 @@ methods::setClass("ExperimentTranscriptionRates",
 )
 
 inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
-    geneBodyRegions, geneNameColumn, stericHindrance, omegaScale) {
+    geneBodyRegions, stericHindrance, omegaScale) {
     if (!file.exists(bigwigPlus) || !file.exists(bigwigMinus)) {
         stop("bigwigPlus or bigwigMinus file does not exist")
     }
@@ -172,33 +159,23 @@ inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
     if (length(pauseRegions) == 0 || length(geneBodyRegions) == 0) {
         stop("pauseRegions or geneBodyRegions is empty")
     }
-    if (!geneNameColumn %in%
+    if (!"gene_id" %in%
         colnames(S4Vectors::elementMetadata(pauseRegions)) ||
-        !geneNameColumn %in%
+        !"gene_id" %in%
             colnames(S4Vectors::elementMetadata(geneBodyRegions))) {
-        stop(sprintf("pauseRegions or geneBodyRegions does not have a column
-        matching %s", geneNameColumn))
+        stop("pauseRegions or geneBodyRegions does not have gene_id column")
     }
-    if (!is.character(
-        S4Vectors::elementMetadata(pauseRegions)[, geneNameColumn]
-    ) || !is.character(
-        S4Vectors::elementMetadata(geneBodyRegions)[, geneNameColumn]
-    )) {
-        stop(sprintf("gene name column %s must be of class 'character' in
-        pauseRegions and of geneBodyRegions object", geneNameColumn))
-    }
+
     duplicatedPauseRegionGeneNames <-
         any(duplicated(
-            S4Vectors::elementMetadata(pauseRegions)[,geneNameColumn
-        ]))
+            S4Vectors::elementMetadata(pauseRegions)[,"gene_id"]))
     if (duplicatedPauseRegionGeneNames) {
         stop("One or more gene names are
         duplicated in pause region, gene names must be unique")
     }
     duplicatedGeneBodyRegionGeneNames <-
         any(duplicated(
-            S4Vectors::elementMetadata(geneBodyRegions)[,geneNameColumn
-        ]))
+            S4Vectors::elementMetadata(geneBodyRegions)[,"gene_id"]))
     if (duplicatedGeneBodyRegionGeneNames) {
         stop("One or more gene names are duplicated in gene body region, gene
         names must be unique")
@@ -211,7 +188,7 @@ inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
 }
 
 prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
-                                    geneBodyRegions, kmax, geneNameColumn) {
+                                    geneBodyRegions, kmax) {
     rcCutoff <- 20
     pb <- progress::progress_bar$new(
         format = "Processing [:bar] :percent eta: :eta",
@@ -243,13 +220,13 @@ prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
                         colName = "summarizedGbCounts")
     rc1Pause$pauseLength <- kmax
     rc1Gb$gbLength <- width(geneBodyRegions)[match(
-            rc1Gb$geneId, geneBodyRegions$geneId)]
+            rc1Gb$gene_id, geneBodyRegions$gene_id)]
     pb$tick()
 
 
     message("\nGenerating read counts table...")
     rc1 <- Reduce(
-        function(x, y) merge(x, y, by=geneNameColumn, all=TRUE),
+        function(x, y) merge(x, y, by="gene_id", all=TRUE),
         list(rc1Pause, rc1Gb)
     )
     rc1 <- rc1[!(is.na(rc1$pauseLength) | is.na(rc1$gbLength)), ]
@@ -261,9 +238,9 @@ prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
 }
 
 prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax, 
-                            stericHindrance, omegaScale, zeta, geneNameColumn) {
+                            stericHindrance, omegaScale, zeta) {
     emRate <- DataFrame(
-        geneId = rc1$geneId, 
+        geneId = rc1$gene_id, 
         s = rc1$summarizedGbCounts, 
         N = rc1$gbLength
     )
@@ -272,7 +249,7 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
 
     bwCov <- coverage(bw1P3, weight = "score")
 
-    geneIds <- pauseRegions[[geneNameColumn]]
+    geneIds <- pauseRegions$gene_id
     strands <- as.character(strand(pauseRegions))
     regionsChr <- as.character(seqnames(pauseRegions))
     starts <- start(pauseRegions)
@@ -295,7 +272,7 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
     }))
 
     Xk <- splitAsList(Xk$signal, Xk$region)
-    names(Xk) <- pauseRegions[[geneNameColumn]]
+    names(Xk) <- pauseRegions$gene_id
     
     emRate$Xk <- Xk[emRate$geneId]
     
@@ -315,13 +292,13 @@ experimentRunEmAlgorithm <- function(emRate, kmin, kmax, fkInt,
     for (i in seq_len(NROW(emRate))) {
         rc <- emRate[i, ]
         if (!stericHindrance) {
-            emLs[[i]] <- pauseEscapeEm(
+            emLs[[i]] <- pauseEscapeEM(
                 Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
                 fkInt = fkInt, betaInt = rc$betaInt[[1]],
                 chiHat = rc$chi, maxItr = 500, tor = 1e-4
             )
         } else {
-            emLs[[i]] <- stericHindranceEm(
+            emLs[[i]] <- stericHindranceEM(
                 Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, 
                 f1 = 0.517, f2 = 0.024, fkInt = fkInt, 
                 betaInt = rc$betaInt[[1]], phiInt = 0.5, 
@@ -359,9 +336,9 @@ experimentProcessEmResults <- function(emRate, emLs, stericHindrance, zeta) {
 }
 
 estimateEmRates <- function(rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
-                            stericHindrance, omegaScale, zeta, geneNameColumn) {
+                            stericHindrance, omegaScale, zeta) {
     emRate <- prepareEmData(rc1, bw1P3, pauseRegions, kmin, kmax,
-                            stericHindrance, omegaScale, zeta, geneNameColumn)
+                            stericHindrance, omegaScale, zeta)
     lambda <- if (stericHindrance) zeta^2 / omegaScale else NULL
     emLs <- experimentRunEmAlgorithm(emRate, kmin, kmax, fkInt,
                                     stericHindrance, zeta, lambda)
@@ -420,8 +397,6 @@ setGeneric("estimateTranscriptionRates", function(x, ...) {
 #' contain a geneId
 #' @param geneBodyRegions a \link[GenomicRanges]{GRanges-class} object that
 #' must contain a geneId
-#' @param geneNameColumn a string that indicates which column in the GRanges
-#' represents gene names information. Defaults to "gene_id"
 #' @param stericHindrance a logical value to determine whether to infer
 #' landing-pad occupancy or not. Defaults to FALSE.
 #' @param omegaScale a numeric value for scaling omega. Defaults to NULL.
@@ -436,20 +411,18 @@ setGeneric("estimateTranscriptionRates", function(x, ...) {
 #'     bigwigMinus = "path/to/minus.bw",    
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
 #' )
 #'
 #' @rdname ExperimentTranscriptionRates-class
 #' @export
 setMethod("estimateTranscriptionRates", "character", 
-function(x, bigwigMinus, pauseRegions, geneBodyRegions, 
-geneNameColumn="gene_id", stericHindrance=FALSE, omegaScale=NULL, ...) {
+function(x, bigwigMinus, pauseRegions, geneBodyRegions, stericHindrance=FALSE, omegaScale=NULL, ...) {
     
     bigwigPlus <- x  # x is the first bigwig file path
     
     inputValidationChecks(
         bigwigPlus, bigwigMinus, pauseRegions,
-        geneBodyRegions, geneNameColumn, stericHindrance, omegaScale
+        geneBodyRegions, stericHindrance, omegaScale
     )
 
     ## Force copy underlying GRanges obj to prevent modify in place side effects
@@ -465,13 +438,13 @@ geneNameColumn="gene_id", stericHindrance=FALSE, omegaScale=NULL, ...) {
     kmin <- 1; kmax <- 200; rnapSize <- 50; zeta <- 2000
 
     processedData <- prepareReadCountTable(bigwigPlus, bigwigMinus,
-    pauseRegions, geneBodyRegions, kmax, geneNameColumn)
+    pauseRegions, geneBodyRegions, kmax)
     rc1 <- processedData$rc1; bw1P3 <- processedData$bw1P3
 
     message("estimating rates...")
 
     ## Initial model: Poisson-based Maximum Likelihood Estimation 
-    analyticalRateTbl <- tibble::tibble(geneId = rc1$geneId, betaOrg =
+    analyticalRateTbl <- tibble::tibble(geneId = rc1$gene_id, betaOrg =
     (rc1$summarizedGbCounts / rc1$gbLength) / (rc1$summarizedPauseCounts /
     rc1$pauseLength))
 
@@ -479,16 +452,15 @@ geneNameColumn="gene_id", stericHindrance=FALSE, omegaScale=NULL, ...) {
     fkInt <- fkInt / sum(fkInt)
 
     emRate <- estimateEmRates(rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
-    stericHindrance, omegaScale, zeta, geneNameColumn)
+    stericHindrance, omegaScale, zeta)
     emRate <- prepareRateTable(emRate, analyticalRateTbl, stericHindrance)
 
     return(methods::new(
         Class = "ExperimentTranscriptionRates",
         counts = as.data.frame(rc1), bigwigPlus = bigwigPlus,
         bigwigMinus = bigwigMinus, pauseRegions = pauseRegions,
-        geneBodyRegions = geneBodyRegions, geneNameColumn =
-        geneNameColumn, stericHindrance = stericHindrance, omegaScale =
-        omegaScale, rates = emRate
+        geneBodyRegions = geneBodyRegions, stericHindrance = stericHindrance,
+        omegaScale = omegaScale, rates = emRate
     ))
 })
 
@@ -508,7 +480,6 @@ geneNameColumn="gene_id", stericHindrance=FALSE, omegaScale=NULL, ...) {
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
 #' )
 #'
 #' # Show the object
@@ -592,7 +563,6 @@ applyCommonTheme <- function() {
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
 #' )
 #'
 #' # Plot rates as a histogram
@@ -663,7 +633,6 @@ setMethod("plotRates", "ExperimentTranscriptionRates", function(
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
 #' )
 #' 
 #' # Get the rates from the object
@@ -706,7 +675,6 @@ setMethod("counts", "ExperimentTranscriptionRates", function(object) {
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
 #' )    
 #' pauseRegions(expRates)
 #' @export
@@ -730,7 +698,6 @@ setMethod("pauseRegions", "ExperimentTranscriptionRates", function(object) {
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
 #' )    
 #' geneBodyRegions(expRates)
 #' @export
@@ -741,36 +708,6 @@ setMethod(
     "geneBodyRegions", "ExperimentTranscriptionRates",
     function(object) {
         slot(object, "geneBodyRegions")
-    }
-)
-
-#' @rdname ExperimentTranscriptionRates-class
-#' @title Accessor for Gene Name Column
-#' @description
-#' Accessor for the gene name column in the GRanges object that contains gene
-#' names
-#'
-#' @param object an \code{ExperimentTranscriptionRates} object
-#' @return a string that indicates which column in the GRanges represents gene
-#' names information
-#' @examples
-#' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateTranscriptionRates(
-#'     "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
-#' )    
-#' geneNameColumn(expRates)
-#' @export
-setGeneric("geneNameColumn", function(object) {
-    standardGeneric("geneNameColumn")
-})
-setMethod(
-    "geneNameColumn", "ExperimentTranscriptionRates",
-    function(object) {
-        slot(object, "geneNameColumn")
     }
 )
 
@@ -789,7 +726,6 @@ setMethod(
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
 #' )    
 #' omegaScale(expRates)
 #' @export
@@ -814,7 +750,6 @@ setMethod("omegaScale", "ExperimentTranscriptionRates", function(object) {
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
 #'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
 #' )    
 #' stericHindrance(expRates)
 #' @export

@@ -10,7 +10,6 @@
 \alias{counts}
 \alias{pauseRegions}
 \alias{geneBodyRegions}
-\alias{geneNameColumn}
 \alias{omegaScale}
 \alias{stericHindrance,ExperimentTranscriptionRates-method}
 \title{Constructor for ExperimentTranscriptionRates object}
@@ -20,7 +19,6 @@
   bigwigMinus,
   pauseRegions,
   geneBodyRegions,
-  geneNameColumn = "gene_id",
   stericHindrance = FALSE,
   omegaScale = NULL,
   ...
@@ -47,8 +45,6 @@ pauseRegions(object)
 
 geneBodyRegions(object)
 
-geneNameColumn(object)
-
 omegaScale(object)
 
 \S4method{stericHindrance}{ExperimentTranscriptionRates}(object)
@@ -65,9 +61,6 @@ contain a geneId}
 
 \item{geneBodyRegions}{a \link[GenomicRanges]{GRanges-class} object that
 must contain a geneId}
-
-\item{geneNameColumn}{a string that indicates which column in the GRanges
-represents gene names information. Defaults to "gene_id"}
 
 \item{stericHindrance}{a logical value to determine whether to infer
 landing-pad occupancy or not. Defaults to FALSE.}
@@ -126,9 +119,6 @@ a \link[GenomicRanges]{GRanges-class} object with the pause regions
 a \link[GenomicRanges]{GRanges-class} object with the gene body
 regions
 
-a string that indicates which column in the GRanges represents gene
-names information
-
 a numeric value for the scaling factor for omega
 
 a logical value to determine whether to infer landing-pad occupancy
@@ -161,9 +151,6 @@ Accessor for the pause region coords \link[GenomicRanges]{GRanges-class}
 
 Accessor for the gene body regions coords \link[GenomicRanges]{GRanges-class}
 
-Accessor for the gene name column in the GRanges object that contains gene
-names
-
 Accessor for the omega scale used to scale the omega value based on prior
 studies.
 
@@ -187,9 +174,6 @@ holds the pause regions coordinates}
 
 \item{\code{geneBodyRegions}}{a \code{\link[GenomicRanges]{GRanges-class}} object
 that holds the gene body regions coordinates}
-
-\item{\code{geneNameColumn}}{a character string indicating which column in the
-GRanges objects contains gene names}
 
 \item{\code{stericHindrance}}{a logical value indicating whether to infer
 landing-pad occupancy}
@@ -224,7 +208,6 @@ expRates <- estimateTranscriptionRates(
     bigwigMinus = "path/to/minus.bw",    
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
 )
 
 # Create an ExperimentTranscriptionRates object
@@ -233,7 +216,6 @@ expRates <- estimateTranscriptionRates(
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
 )
 
 # Show the object
@@ -244,7 +226,6 @@ expRates <- estimateTranscriptionRates(
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
 )
 
 # Plot rates as a histogram
@@ -255,7 +236,6 @@ expRates <- estimateTranscriptionRates(
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
 )
 
 # Get the rates from the object
@@ -266,7 +246,6 @@ expRates <- estimateTranscriptionRates(
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
 )    
 pauseRegions(expRates)
 # Create an ExperimentTranscriptionRates object
@@ -275,7 +254,6 @@ expRates <- estimateTranscriptionRates(
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
 )    
 geneBodyRegions(expRates)
 # Create an ExperimentTranscriptionRates object
@@ -284,16 +262,6 @@ expRates <- estimateTranscriptionRates(
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
-)    
-geneNameColumn(expRates)
-# Create an ExperimentTranscriptionRates object
-expRates <- estimateTranscriptionRates(
-    "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
 )    
 omegaScale(expRates)
 # Create an ExperimentTranscriptionRates object
@@ -302,7 +270,6 @@ expRates <- estimateTranscriptionRates(
     bigwigMinus = "path/to/minus.bw",
     pauseRegions = GRanges("chr1:1-1000"),
     geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
 )    
 stericHindrance(expRates)
 }

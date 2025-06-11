@@ -133,7 +133,7 @@ pauseEscapeEM <- function(
 # model allows both varied pause sites and steric hindrance, EM contains phi
 # estimations
 # functions for EM based on Gaussian distributed k
-mult.RNAP.phi <-
+multRnapPhi <-
     function(alpha, beta, f1, f2) {
         return(
             (1 - f1 - f2) * alpha / (alpha + beta) +
@@ -143,24 +143,24 @@ mult.RNAP.phi <-
         )
     }
 
-phi.polynom <- function(phi, beta, omega, f1, f2) {
+phiPolynom <- function(phi, beta, omega, f1, f2) {
     alpha <- omega / (1 - phi)
 
-    return(mult.RNAP.phi(alpha, beta, f1, f2) - phi)
+    return(multRnapPhi(alpha, beta, f1, f2) - phi)
 }
 
 # find phi corresponding to omega and beta by solving polynomial that results
 # from substituting alpha = omega/(1-phi) into the equation that defines phi in
 # terms of alpha and beta
-mult.RNAP.phi.omega <- function(omega, beta, f1, f2) {
+multRnapPhiOmega <- function(omega, beta, f1, f2) {
     ## set bounds for solution
     lb <- 1e-6
     ub <- 1 - 1e-6
     epsilon <- 1e-3
 
     ## make sure opposite signs at bounds; if not treat as an edge case
-    phi1 <- phi.polynom(lb, beta, omega, f1, f2)
-    phi2 <- phi.polynom(ub, beta, omega, f1, f2)
+    phi1 <- phiPolynom(lb, beta, omega, f1, f2)
+    phi2 <- phiPolynom(ub, beta, omega, f1, f2)
 
     if ((phi1 > 0 & phi2 > 0) | (phi1 < 0 & phi2 < 0)) {
         ## in this case phi is almost certainly close to 0 or 1
@@ -174,22 +174,22 @@ mult.RNAP.phi.omega <- function(omega, beta, f1, f2) {
         }
     }
 
-    try(phi.root <- uniroot(phi.polynom, c(lb, ub), beta, omega, f1, f2),
+    try(phiRoot <- uniroot(phiPolynom, c(lb, ub), beta, omega, f1, f2),
         silent = FALSE
     )
 
-    return(phi.root$root)
+    return(phiRoot$root)
 }
 
 # version of above that uses log parameterization of beta
-beta.ecll.omega.log <- function(args, omega, chi, t, f1, f2) {
+betaEcllOmegaLog <- function(args, omega, chi, t, f1, f2) {
     beta <- exp(args[1])
 
     ## fix Beta prior with a=b=2
     a <- 2
     b <- 2
 
-    phi <- mult.RNAP.phi.omega(omega, beta, f1, f2)
+    phi <- multRnapPhiOmega(omega, beta, f1, f2)
 
     if (phi <= 0 | phi >= 1) {
         retval <- -Inf
@@ -200,18 +200,18 @@ beta.ecll.omega.log <- function(args, omega, chi, t, f1, f2) {
     return(-retval)
 }
 
-beta.M.step.omega <- function(chi, t, f1, f2, oldphi, oldbeta, lambda, zeta) {
+betaMStepOmega <- function(chi, t, f1, f2, oldphi, oldbeta, lambda, zeta) {
     omega <- chi * zeta / lambda 
     ret <- list("par" = NA_integer_)
 
     try(ret <-
-        optim(c(log(oldbeta)), beta.ecll.omega.log,
+        optim(c(log(oldbeta)), betaEcllOmegaLog,
             gr = NULL, omega = omega, chi = chi,
             t = t, f1 = f1, f2 = f2, method = "L-BFGS-B", lower = log(omega)
         ), silent = FALSE)
 
     beta <- exp(ret$par)
-    phi <- mult.RNAP.phi.omega(omega, beta, f1, f2)
+    phi <- multRnapPhiOmega(omega, beta, f1, f2)
 
     return(list("beta" = beta, "phi" = phi))
 }
@@ -238,7 +238,7 @@ stericHindranceMaximization <- function(
         fk <- fk / sum(fk)
     }
 
-    param <- beta.M.step.omega(
+    param <- betaMStepOmega(
         chi = chiHat, t = t, f1 = f1, f2 = f2, oldphi = phi,
         oldbeta = beta, lambda = lambda, zeta = zeta
     )
@@ -258,7 +258,7 @@ calculateF <- function(s, k) {
     return(c("f" = f, "f1" = f1, "f2" = f2))
 }
 
-stericHindranceEm <- function(
+stericHindranceEM <- function(
     Xk, kmin, kmax, f1, f2, fkInt, betaInt, phiInt, chiHat, lambda, zeta,
     maxItr = 100, tor = 1e-3) {
     betas <- list(); likelihoods <- list(); flag <- "normal"
