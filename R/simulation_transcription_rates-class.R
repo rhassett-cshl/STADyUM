@@ -8,33 +8,6 @@ simulationTranscriptionRatesValid <- function(object) {
     if (!is.logical(slot(object, "stericHindrance"))) {
         errors <- c(errors, "stericHindrance must be logical")
     }
-    if (!is.numeric(slot(object, "trial"))) {
-        errors <- c(errors, "trial must be numeric")
-    }
-    if (!is.numeric(slot(object, "chi"))) {
-        errors <- c(errors, "chi must be numeric")
-    }
-    if (!is.numeric(slot(object, "betaOrg"))) {
-        errors <- c(errors, "betaOrg must be numeric")
-    }
-    if (!is.numeric(slot(object, "betaAdp"))) {
-        errors <- c(errors, "betaAdp must be numeric")
-    }
-    if (!is.numeric(slot(object, "phi"))) {
-        errors <- c(errors, "phi must be numeric")
-    }
-    if (!is.list(slot(object, "fk"))) {
-        errors <- c(errors, "fk must be a list")
-    }
-    if (!is.numeric(slot(object, "fkMean"))) {
-        errors <- c(errors, "fkMean must be numeric")
-    }
-    if (!is.numeric(slot(object, "fkVar"))) {
-        errors <- c(errors, "fkVar must be numeric")
-    }
-    if (!is.character(slot(object, "flag"))) {
-        errors <- c(errors, "flag must be character")
-    }
     if (!is.list(slot(object, "rnapN"))) {
         errors <- c(errors, "rnapN must be a list")
     }
@@ -51,6 +24,25 @@ simulationTranscriptionRatesValid <- function(object) {
 #' read depths along the gene body and pause regions, given fixed or varied
 #' pause sites, as well as the landing pad occupancy estimate. These can be
 #' under a model with or without steric hindrance.
+#' 
+#' @slot simpol a \code{\linkS4class{SimulatePolymerase}} object
+#' @slot stericHindrance a logical value to determine whether to infer
+#' landing-pad occupancy or not. Defaults to FALSE.
+#' @slot rates a \code{\link[tibble]{tbl_df}} containing the estimated rates
+#' with columns:
+#' \describe{
+#'   \item{trial}{Numeric. Trial number}
+#'   \item{chi}{Numeric. RNAP density along gene body}
+#'   \item{betaOrg}{Numeric. RNAP density along pause region}
+#'   \item{betaAdp}{Numeric. RNAP density along pause region from adapted model
+#' which allows pause sites to vary across cells}
+#'   \item{fkMean}{Numeric. Mean position of pause sites}
+#'   \item{fkVar}{Numeric. Variance of pause site positions}
+#'   \item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
+#'   enabled)}
+#' }
+#' @slot rnapN a list of \code{\link[GenomicRanges]{GRanges-class}} objects
+#' that hold the RNAP positions
 #'
 #' @name SimulationTranscriptionRates-class
 #' @rdname SimulationTranscriptionRates-class
@@ -72,31 +64,10 @@ methods::setClass("SimulationTranscriptionRates",
     slots = c(
         simpol = "SimulatePolymerase",
         stericHindrance = "logical",
-        trial = "numeric",
-        chi = "numeric",
-        betaOrg = "numeric",
-        betaAdp = "numeric",
-        phi = "numeric",
-        fk = "list",
-        fkMean = "numeric",
-        fkVar = "numeric",
-        flag = "character",
+        rates = "tbl_df",
         rnapN = "list"
     ),
-    prototype = list(
-        simpol = NULL,
-        stericHindrance = FALSE,
-        trial = numeric(0),
-        chi = numeric(0),
-        betaOrg = numeric(0),
-        betaAdp = numeric(0),
-        phi = 0,
-        fk = list(),
-        fkMean = numeric(0),
-        fkVar = numeric(0),
-        flag = character(0),
-        rnapN = list()
-    ),
+
     validity = simulationTranscriptionRatesValid
 )
 
@@ -354,39 +325,7 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
         bwDfs$phi <- map_dbl(emLs, "phi", .default = NA)
     }
 
-    bwDfs$initRate <- bwDfs$R / (bwDfs$Rpause + bwDfs$R)
-    bwDfs$pauseReleaseRate <- bwDfs$Rpause / (bwDfs$Rpause + bwDfs$R)
-
-    if (stericHindrance) {
-        bwDfs$landingPadOccupancy <- bwDfs$rnapProp
-    }
-
     return(bwDfs)
-}
-
-calculateFinalRates <- function(bwDfs, stericHindrance) {
-    print(bwDfs$initRate)
-    print(bwDfs$pauseReleaseRate)
-    initRateMean <- mean(bwDfs$initRate)
-    initRateVar <- var(bwDfs$initRate)
-    pauseReleaseRateMean <- mean(bwDfs$pauseReleaseRate)
-    pauseReleaseRateVar <- var(bwDfs$pauseReleaseRate)
-
-    results <- list(
-        initRate = initRateMean,
-        initRateVar = initRateVar,
-        pauseReleaseRate = pauseReleaseRateMean,
-        pauseReleaseRateVar = pauseReleaseRateVar
-    )
-
-    if (stericHindrance) {
-        landingPadOccupancyMean <- mean(bwDfs$landingPadOccupancy)
-        landingPadOccupancyVar <- var(bwDfs$landingPadOccupancy)
-        results$landingPadOccupancy <- landingPadOccupancyMean
-        results$landingPadOccupancyVar <- landingPadOccupancyVar
-    }
-
-    return(results)
 }
 
 #' @title Estimate transcription rates from simulation data
@@ -444,23 +383,24 @@ function(x, stericHindrance=FALSE, ...) {
     # Process EM results
     bwDfs <- processEmResults(bwDfs, emLs, stericHindrance)
     
-    # Calculate final rates
-    results <- calculateFinalRates(bwDfs, stericHindrance)
+    rates_tibble <- tibble(
+        trial = bwDfs$trial,
+        chi = bwDfs$chi,
+        betaOrg = bwDfs$betaOrg,
+        betaAdp = bwDfs$betaAdp,
+        fkMean = bwDfs$fkMean,
+        fkVar = bwDfs$fkVar
+    )
+    
+    if (stericHindrance && "phi" %in% colnames(bwDfs)) {
+        rates_tibble$phi <- bwDfs$phi
+    }
     
     # Create and return the final object
     new("SimulationTranscriptionRates",
         simpol = simpol, 
         stericHindrance = stericHindrance,
-        trial = params$sampleN, 
-        chi = results$initRate,
-        betaOrg = results$pauseReleaseRate,
-        betaAdp = if (stericHindrance) results$landingPadOccupancy else 0,
-        phi = if (stericHindrance) results$landingPadOccupancy else 0,
-        fk = results, 
-        fkMean = c(results$initRate, results$pauseReleaseRate),
-        fkVar = c(results$initRateVar, results$pauseReleaseRateVar),
-        flag = if (stericHindrance) "withStericHindrance" else 
-            "noStericHindrance",
+        rates = rates_tibble,
         rnapN = if (params$countRnap) rnapData$rnapNls else list()
     )
 })
@@ -502,6 +442,12 @@ setMethod("show", "SimulationTranscriptionRates", function(object) {
     # Print the object information
     cat("A SimulationTranscriptionRates object:\n\n")
     print(df, row.names = FALSE)
+    
+    # Print additional information if steric hindrance is enabled
+    if (stericHindrance(object) && "phi" %in% colnames(rates_df)) {
+        phi_mean <- mean(rates_df$phi, na.rm = TRUE)
+        cat(sprintf("\nLanding Pad Occupancy (mean across trials): %.4f\n", round(phi_mean, 4)))
+    }
 })
 
 #' @rdname SimulationTranscriptionRates-class
@@ -535,23 +481,14 @@ setGeneric("plotTranscriptionRates", function(
 setMethod(
     "plotTranscriptionRates", "SimulationTranscriptionRates",
     function(object, file = NULL, width = 8, height = 6) {
-        # Create data frame for plotting
-        df <- data.frame(
-            trial = trial(object),
-            chi = chi(object),
-            betaOrg = betaOrg(object),
-            betaAdp = betaAdp(object),
-            phi = phi(object),
-            fkMean = fkMean(object),
-            fkVar = fkVar(object)
-        )
-
+        # Get the rates tibble
+        rates_df <- rates(object)
+        
         # Create plot
-        p <- ggplot(df, aes(x = trial)) +
+        p <- ggplot(rates_df, aes(x = trial)) +
             geom_line(aes(y = chi, color = "chi")) +
             geom_line(aes(y = betaOrg, color = "betaOrg")) +
             geom_line(aes(y = betaAdp, color = "betaAdp")) +
-            geom_line(aes(y = phi, color = "phi")) +
             theme_minimal() +
             labs(
                 title = "Transcription Rates Across Trials",
@@ -559,6 +496,11 @@ setMethod(
                 y = "Rate",
                 color = "Rate Type"
             )
+
+        # Add phi line if steric hindrance is enabled
+        if (stericHindrance(object) && "phi" %in% colnames(rates_df)) {
+            p <- p + geom_line(aes(y = phi, color = "phi"))
+        }
 
         if (!is.null(file)) {
             ggsave(file, p, width = width, height = height)
@@ -599,81 +541,22 @@ setGeneric("plotPauseSiteDistribution", function(
 setMethod(
     "plotPauseSiteDistribution", "SimulationTranscriptionRates",
     function(object, file = NULL, width = 8, height = 6) {
-        # Create data frame for plotting
-        df <- data.frame(
-            trial = trial(object),
-            fkMean = fkMean(object),
-            fkVar = fkVar(object)
-        )
+        # Get the rates tibble
+        rates_df <- rates(object)
+        
+        # Check if fkMean and fkVar columns exist
+        if (!all(c("fkMean", "fkVar") %in% colnames(rates_df))) {
+            stop("fkMean and fkVar columns not found in rates tibble")
+        }
 
         # Create plot
-        p <- ggplot(df, aes(x = fkMean, y = fkVar)) +
+        p <- ggplot(rates_df, aes(x = fkMean, y = fkVar)) +
             geom_point() +
             theme_minimal() +
             labs(
                 title = "Pause Site Distribution",
                 x = "Mean Position",
                 y = "Variance"
-            )
-
-        if (!is.null(file)) {
-            ggsave(file, p, width = width, height = height)
-        }
-
-        return(p)
-    }
-)
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Plot RNAP Counts
-#'
-#' @description
-#' Plot the RNAP counts across trials.
-#'
-#' @param object A SimulationTranscriptionRates object
-#' @param file Optional file path to save the plot
-#' @param width Plot width in inches
-#' @param height Plot height in inches
-#' @return A ggplot object showing the RNAP counts
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Plot RNAP counts
-#' plotRnapCounts(estRates)
-#' @export
-setGeneric("plotRnapCounts", function(
-    object, file = NULL, width = 8,
-    height = 6) {
-    standardGeneric("plotRnapCounts")
-})
-setMethod(
-    "plotRnapCounts", "SimulationTranscriptionRates",
-    function(object, file = NULL, width = 8, height = 6) {
-        rnapN <- rnapN(object)
-        if (length(rnapN) == 0) {
-            stop("No RNAP counts available")
-        }
-
-        # Create data frame for plotting
-        df <- data.frame(
-            trial = rep(trial(object), each = length(rnapN[[1]])),
-            rnapCount = unlist(rnapN)
-        )
-
-        # Create plot
-        p <- ggplot(df, aes(x = rnapCount)) +
-            geom_histogram(bins = 30) +
-            theme_minimal() +
-            labs(
-                title = "RNAP Count Distribution",
-                x = "RNAP Count",
-                y = "Frequency"
             )
 
         if (!is.null(file)) {
@@ -739,10 +622,10 @@ setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
 })
 
 #' @rdname SimulationTranscriptionRates-class
-#' @title Accessor for Trial
+#' @title Rates Tibble
 #'
 #' @description
-#' Accessor for the trial number from a
+#' Accessor for the tibble containing the estimated rates from a
 #' SimulationTranscriptionRates object.
 #'
 #' @examples
@@ -754,237 +637,15 @@ setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
 #'     stepsToRecord=1)
 #' # Estimate transcription rates
 #' estRates <- estimateTranscriptionRates(sim)
-#' # Get trial
-#' trial <- trial(estRates)
-#' # Print the trial
-#' print(trial)
+#' # Get rates
+#' rates <- rates(estRates)
+#' # Print the rates
+#' print(rates)
 #' @export
-setGeneric("trial", function(object) standardGeneric("trial"))
+setGeneric("rates", function(object) standardGeneric("rates"))
 setMethod(
-    "trial", "SimulationTranscriptionRates",
-    function(object) slot(object, "trial")
-)
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Accessor for Chi
-#'
-#' @description
-#' Accessor for the maximum likelihood estimate of the average read depth along
-#' the gene body from a SimulationTranscriptionRates object.
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Get chi
-#' chi <- chi(estRates)
-#' # Print the chi
-#' print(chi)
-#' @export
-setGeneric("chi", function(object) standardGeneric("chi"))
-setMethod(
-    "chi", "SimulationTranscriptionRates",
-    function(object) slot(object, "chi")
-)
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Accessor for BetaOrg
-#'
-#' @description
-#' Accessor for the maximum likelihood estimate of the average read depth along
-#' the pause regions from a SimulationTranscriptionRates object given a fixed
-#' pause site.
-#'
-#' @param object a \code{\linkS4class{SimulationTranscriptionRates}} object
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Get betaOrg
-#' betaOrg <- betaOrg(estRates)
-#' # Print the betaOrg
-#' print(betaOrg)
-#' @export
-setGeneric("betaOrg", function(object) standardGeneric("betaOrg"))
-setMethod(
-    "betaOrg", "SimulationTranscriptionRates",
-    function(object) slot(object, "betaOrg")
-)
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Accessor for BetaAdp
-#'
-#' @description
-#' Accessor for the maximum likelihood estimate of the average read depth along
-#' the pause regions from a SimulationTranscriptionRates object given variable
-#' pause sites  
-#'
-#' @param object a \code{\linkS4class{SimulationTranscriptionRates}} object
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Get betaAdp
-#' betaAdp <- betaAdp(estRates)
-#' # Print the betaAdp
-#' print(betaAdp)
-#' @export
-setGeneric("betaAdp", function(object) standardGeneric("betaAdp"))
-setMethod(
-    "betaAdp", "SimulationTranscriptionRates",
-    function(object) slot(object, "betaAdp")
-)
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Accessor for Phi
-#'
-#' @description
-#' Accessor for the landing pad occupancy from a SimulationTranscriptionRates
-#' object.
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Get phi
-#' phi <- phi(estRates)
-#' # Print the phi
-#' print(phi)
-#' @export
-setGeneric("phi", function(object) standardGeneric("phi"))
-setMethod(
-    "phi", "SimulationTranscriptionRates",
-    function(object) slot(object, "phi")
-)
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Accessor for Fk
-#'
-#' @description
-#' Accessor for the numeric vector of pause site distribution for variable pause
-#' sites from a SimulationTranscriptionRates object.
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Get fk
-#' fk <- fk(estRates)
-#' # Print the fk
-#' print(fk)
-#' @export
-setGeneric("fk", function(object) standardGeneric("fk"))
-setMethod(
-    "fk", "SimulationTranscriptionRates",
-    function(object) slot(object, "fk")
-)
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Accessor for FkMean
-#'
-#' @description
-#' Accessor for the mean of the numeric vector of pause site distribution for
-#' variable pause sites from a SimulationTranscriptionRates object.
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Get fkMean
-#' fkMean <- fkMean(estRates)
-#' # Print the fkMean
-#' print(fkMean)
-#' @export
-setGeneric("fkMean", function(object) standardGeneric("fkMean"))
-setMethod(
-    "fkMean", "SimulationTranscriptionRates",
-    function(object) slot(object, "fkMean")
-)
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Accessor for FkVar
-#'
-#' @description
-#' Accessor for the variance of the numeric vector of pause site distribution
-#' for variable pause sites from a SimulationTranscriptionRates object.
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Get fkVar
-#' fkVar <- fkVar(estRates)
-#' # Print the fkVar
-#' print(fkVar)
-#' @export
-setGeneric("fkVar", function(object) standardGeneric("fkVar"))
-setMethod(
-    "fkVar", "SimulationTranscriptionRates",
-    function(object) slot(object, "fkVar")
-)
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Accessor for Flag
-#'
-#' @description
-#' Accessor for the flag indicating whether the steric hindrance model is used
-#' from a SimulationTranscriptionRates object.
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Get flag
-#' flag <- flag(estRates)
-#' # Print the flag
-#' print(flag)
-#' @export
-setGeneric("flag", function(object) standardGeneric("flag"))
-setMethod(
-    "flag", "SimulationTranscriptionRates",
-    function(object) slot(object, "flag")
+    "rates", "SimulationTranscriptionRates",
+    function(object) slot(object, "rates")
 )
 
 #' @rdname SimulationTranscriptionRates-class

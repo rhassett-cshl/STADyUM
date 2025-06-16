@@ -186,8 +186,9 @@ with columns:
 \describe{
 \item{geneId}{Character. Gene identifier}
 \item{chi}{Numeric. RNAP density along gene body}
-\item{betaOrg}{Numeric. Original pause-release rate estimate}
-\item{betaAdp}{Numeric. Adjusted pause-release rate estimate}
+\item{betaOrg}{Numeric. RNAP density along pause region}
+\item{betaAdp}{Numeric. RNAP density along pause region from adapted model
+which allows pause sites to vary across cells}
 \item{fkMean}{Numeric. Mean position of pause sites}
 \item{fkVar}{Numeric. Variance of pause site positions}
 \item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
