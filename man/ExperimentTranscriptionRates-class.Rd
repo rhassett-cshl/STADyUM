@@ -57,10 +57,10 @@ read counts}
 PRO-seq read counts}
 
 \item{pauseRegions}{a \link[GenomicRanges]{GRanges-class} object that must
-contain a geneId}
+contain a gene_id}
 
 \item{geneBodyRegions}{a \link[GenomicRanges]{GRanges-class} object that
-must contain a geneId}
+must contain a gene_id}
 
 \item{stericHindrance}{a logical value to determine whether to infer
 landing-pad occupancy or not. Defaults to FALSE.}

@@ -2,8 +2,8 @@ simulationTranscriptionRatesValid <- function(object) {
     errors <- character()
 
     # Check if required slots are present and have correct types
-    if (!is(slot(object, "simpol"), "simulatePolymerase")) {
-        errors <- c(errors, "simpol must be a simulatePolymerase object")
+    if (!is(slot(object, "simpol"), "SimulatePolymerase")) {
+        errors <- c(errors, "simpol must be a SimulatePolymerase object")
     }
     if (!is.logical(slot(object, "stericHindrance"))) {
         errors <- c(errors, "stericHindrance must be logical")
@@ -57,11 +57,16 @@ simulationTranscriptionRatesValid <- function(object) {
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom GenomicRanges CompressedGRangesList
 #' @importClassesFrom data.table data.table
-#' @importFrom purrr map map_chr map_dbl
+#' @importFrom IRanges IRanges
+#' @importFrom S4Vectors DataFrame
+#' @importFrom tibble tibble
+#' @importFrom Matrix Matrix
+#' @importFrom plyranges group_by_overlaps group_by summarise
+#' @importFrom purrr map map_chr map_dbl map2
 #' @importFrom dplyr mutate
 #' @importFrom methods slot is slot<- validObject
-#' @importFrom stats rpois optim rnorm var dnorm
-#' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
+#' @importFrom stats rpois optim rnorm var dnorm uniroot
+#' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs ggsave
 #' @exportClass SimulationTranscriptionRates
 methods::setClass("SimulationTranscriptionRates",
     slots = c(
@@ -146,7 +151,7 @@ prepareSimulationParameters <- function(simpol) {
 
 createGenomicRegions <- function(params) {
     gnRng <- GRanges(seqnames = rep("chr1", 3),
-        IRanges(start = c(1, params$kmax + 1, 1), 
+        IRanges::IRanges(start = c(1, params$kmax + 1, 1), 
                 end = c(params$kmax, params$geneLen, params$spacing))
     )
 
@@ -190,7 +195,7 @@ generateRnapPositions <- function(params, regions) {
 
         resAll <- rowSums(resPos)
         rnapGrng[[i]] <- GRanges(seqnames = "chr1",
-            IRanges(start = (1 + params$startPoint):
+            IRanges::IRanges(start = (1 + params$startPoint):
                 (params$geneLen + params$startPoint),
                 width = 1), 
             score = resAll,
@@ -264,7 +269,7 @@ calculateInitialRates <- function(bwDfs, regions, params, simpol, rnapGrng) {
 
     bwDfs$chi <- bwDfs$rcGb / regions$len$gb
 
-    if (simpol$ksd == 0) {
+    if (parameters(simpol)$ksd == 0) {
         bwDfs$betaOrg <- bwDfs$chi / map_dbl(bwDfs$Xk, params$k)
     } else {
         bwDfs$betaOrg <- bwDfs$chi / (bwDfs$rcTss / regions$len$tss)
@@ -360,6 +365,8 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
 }
 
 calculateFinalRates <- function(bwDfs, stericHindrance) {
+    print(bwDfs$initRate)
+    print(bwDfs$pauseReleaseRate)
     initRateMean <- mean(bwDfs$initRate)
     initRateVar <- var(bwDfs$initRate)
     pauseReleaseRateMean <- mean(bwDfs$pauseReleaseRate)

@@ -256,12 +256,51 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
     ends <- end(pauseRegions)
 
     ## For each region, extract per-base signal and store position + region ID
-    Xk <- do.call(rbind, lapply(seq_along(pauseRegions), function(i) {
+    # First, identify valid regions
+    validIndices <- sapply(seq_along(pauseRegions), function(i) {
+        chr <- regionsChr[i]
+        regionStart <- starts[i]
+        regionEnd <- ends[i]
+        
+        # Check if chromosome exists in coverage data
+        if (!chr %in% names(bwCov)) {
+            warning(sprintf("Chromosome %s not found in coverage data for gene %s", 
+                          chr, geneIds[i]))
+            return(FALSE)
+        }
+        
+        # Check if region coordinates are valid
+        if (regionStart > regionEnd || regionStart < 1 || 
+            regionEnd > length(bwCov[[chr]])) {
+            warning(sprintf("Invalid region coordinates for gene %s: %s:%d-%d", 
+                          geneIds[i], chr, regionStart, regionEnd))
+            return(FALSE)
+        }
+        
+        signal <- as.numeric(bwCov[[chr]][regionStart:regionEnd])
+        
+        # Check if signal extraction was successful
+        if (length(signal) == 0) {
+            warning(sprintf("No signal data extracted for gene %s", geneIds[i]))
+            return(FALSE)
+        }
+        
+        return(TRUE)
+    })
+    
+    # Check if we have any valid data
+    if (sum(validIndices) == 0) {
+        stop("No valid signal data could be extracted from any regions")
+    }
+    
+    # Process only valid regions
+    Xk <- do.call(rbind, lapply(which(validIndices), function(i) {
         chr <- regionsChr[i]
         regionStart <- starts[i]
         regionEnd <- ends[i]
         regionLen <- regionEnd - regionStart + 1
         signal <- as.numeric(bwCov[[chr]][regionStart:regionEnd])
+        
         if (strands[i] == "-") signal <- rev(signal)
 
         data.frame(
@@ -270,9 +309,8 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
             signal = signal
         )
     }))
-
+    
     Xk <- splitAsList(Xk$signal, Xk$region)
-    names(Xk) <- pauseRegions$gene_id
     
     emRate$Xk <- Xk[emRate$geneId]
     
@@ -394,9 +432,9 @@ setGeneric("estimateTranscriptionRates", function(x, ...) {
 #' @param bigwigMinus the path to a bigwig file from the minus strand recording
 #' PRO-seq read counts
 #' @param pauseRegions a \link[GenomicRanges]{GRanges-class} object that must
-#' contain a geneId
+#' contain a gene_id
 #' @param geneBodyRegions a \link[GenomicRanges]{GRanges-class} object that
-#' must contain a geneId
+#' must contain a gene_id
 #' @param stericHindrance a logical value to determine whether to infer
 #' landing-pad occupancy or not. Defaults to FALSE.
 #' @param omegaScale a numeric value for scaling omega. Defaults to NULL.
@@ -488,7 +526,7 @@ methods::setMethod("show",
     signature = "ExperimentTranscriptionRates",
     function(object) {
         cat("An ExperimentTranscriptionRates object with:\n")
-        cat("  -", length(unique(counts(object)$geneId)), "genes\n")
+        cat("  -", length(unique(counts(object)$gene_id)), "genes\n")
         cat("  -", nrow(rates(object)), "rate estimates\n")
         cat("  - Steric hindrance:", stericHindrance(object), "\n")
         if (stericHindrance(object)) {
