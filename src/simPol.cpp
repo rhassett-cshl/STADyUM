@@ -64,13 +64,33 @@ Rcpp::List simulate_polymerase_cpp(
     int pol_size,
     int add_space,
     double time,
-    int steps_to_record,
+    Rcpp::Nullable<Rcpp::NumericVector> time_points_to_record,
     Rcpp::Nullable<Rcpp::NumericVector> zeta_vec) {
 
     int steric_hindrance = pol_size + add_space;
     double delta_t = 1e-4; 
     const int total_sites = gene_len + 1;
     double steps = time / delta_t;
+
+    // Convert time points to step indices
+    std::vector<int> steps_to_record;
+    std::vector<double> recorded_time_points;
+    
+    if (time_points_to_record.isNotNull()) {
+        Rcpp::NumericVector time_vec = Rcpp::as<Rcpp::NumericVector>(time_points_to_record);
+        for (int i = 0; i < time_vec.length(); i++) {
+            double time_point = time_vec[i];
+            if (time_point >= 0 && time_point <= time) {
+                int step_idx = (int)(time_point / delta_t);
+                steps_to_record.push_back(step_idx);
+                recorded_time_points.push_back(time_point);
+            }
+        }
+        
+        // Sort steps to record in ascending order
+        std::sort(steps_to_record.begin(), steps_to_record.end());
+        std::sort(recorded_time_points.begin(), recorded_time_points.end());
+    }
 
     /* Initialize an array to hold Pol II presence and absence*/
     std::vector<std::vector<int>> pos_matrix;
@@ -176,7 +196,7 @@ Rcpp::List simulate_polymerase_cpp(
             }
         }
         /* Record info for studying steric hindrance */
-        bool record_to_pos_matrix = step >= (steps - steps_to_record);
+        bool record_to_pos_matrix = std::find(steps_to_record.begin(), steps_to_record.end(), step) != steps_to_record.end();
         if (record_to_pos_matrix)
         {
             pos_matrices.push_back(pos_matrix);
@@ -197,13 +217,37 @@ Rcpp::List simulate_polymerase_cpp(
         }
     }
 
-    // Convert position matrix to a format that can be returned to R
-    // Now with sites as rows and cells as columns
-    Rcpp::IntegerMatrix pos_matrix_r(total_sites, cell_num);
+    // Convert the recorded position matrices to a named list
+    // Each element corresponds to a specific time point
+    Rcpp::List pos_matrices_named;
+    for (int step = 0; step < pos_matrices.size(); step++) {
+        // Create a 2D matrix for this time point: [sites, cells]
+        Rcpp::IntegerMatrix pos_matrix_2d(total_sites, cell_num);
+        
+        for (int cell = 0; cell < cell_num; cell++) {
+            std::vector<int> *sites = &pos_matrices[step][cell];
+            for (size_t j = 0; j < sites->size(); j++) {
+                int site_idx = (*sites)[j];
+                if (site_idx < total_sites) {
+                    pos_matrix_2d(site_idx, cell) = 1;
+                }
+            }
+        }
+        
+        // Name the matrix with its corresponding time point
+        std::string time_name = "t_" + std::to_string(recorded_time_points[step]);
+        pos_matrices_named[time_name] = pos_matrix_2d;
+    }
+
+    // Create the final position matrix (last recorded state)
+    Rcpp::IntegerMatrix final_pos_matrix(total_sites, cell_num);
     for (int cell = 0; cell < cell_num; cell++) {
         std::vector<int> *sites = &pos_matrix[cell];
         for (size_t j = 0; j < sites->size(); j++) {
-            pos_matrix_r((*sites)[j], cell) = 1;
+            int site_idx = (*sites)[j];
+            if (site_idx < total_sites) {
+                final_pos_matrix(site_idx, cell) = 1;
+            }
         }
     }
 
@@ -213,6 +257,7 @@ Rcpp::List simulate_polymerase_cpp(
         Rcpp::Named("probabilityVector") = zv,
         Rcpp::Named("pauseSites") = y,
         Rcpp::Named("combinedCellsData") = res_all,
-        Rcpp::Named("positionMatrix") = pos_matrix_r
+        Rcpp::Named("positionMatrices") = pos_matrices_named,
+        Rcpp::Named("finalPositionMatrix") = final_pos_matrix
     );
 }

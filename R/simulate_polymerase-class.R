@@ -1,29 +1,13 @@
 simulatePolymeraseValid <- function(object) {
     errors <- character()
 
-    # Check vector lengths
-    # if (length(object@pause_sites) != object@n) {
-    # errors <- c(errors, "pause_sites length must match n")
-    # }
-    # if (length(object@probability_vector) != object@gene_len + 1) {
-    # errors <- c(errors, "probability_vector length must match gene_len + 1")
-    # }
-    # if (length(object@combined_cells_data) != object@gene_len + 1) {
-    # errors <- c(errors, "combined_cells_data length must match gene_len + 1")
-    # }
-    if (ncol(positionMatrix(object)) != slot(object, "cellNum") ||
-        nrow(positionMatrix(object)) != slot(object, "geneLen") + 1) {
-        errors <- c(errors, "positionMatrix dimensions do not match cellNum
-        and geneLen")
-    }
-
     if (length(errors) == 0) TRUE else errors
 }
 
 validateSimulatePolymeraseParams <- function(
     k, ksd, kMin, kMax, geneLen,
     alpha, beta, zeta, zetaSd, zetaMin, zetaMax, cellNum, polSize,
-    addSpace, time, stepsToRecord) {
+    addSpace, time, timePointsToRecord) {
     errors <- character()
 
     # Check parameter ranges
@@ -60,8 +44,30 @@ validateSimulatePolymeraseParams <- function(
     if (time <= 0) {
         errors <- c(errors, "time must be positive")
     }
-    if (stepsToRecord < 0) {
-        errors <- c(errors, "stepsToRecord must be non-negative")
+    
+    # Memory usage checks for position matrices
+    if (!is.null(timePointsToRecord)) {
+        if (any(timePointsToRecord < 0)) {
+            errors <- c(errors, "timePointsToRecord must contain non-negative values")
+        }
+        if (any(timePointsToRecord > time)) {
+            errors <- c(errors, "timePointsToRecord must not exceed simulation time")
+        }
+        
+        # Check memory usage for position matrices
+        numTimePoints <- length(timePointsToRecord)
+        totalSites <- geneLen + 1
+        estimatedMemoryMB <- (numTimePoints * totalSites * cellNum * 4) / (1024 * 1024)
+        
+        # Warn if memory usage is high (> 1GB)
+        if (estimatedMemoryMB > 1024) {
+            warning(sprintf("Large memory usage estimated: %.1f MB for position matrices. Consider reducing timePointsToRecord or cellNum.", estimatedMemoryMB))
+        }
+        
+        # Hard limit at 4GB to prevent system crashes
+        if (estimatedMemoryMB > 4096) {
+            errors <- c(errors, sprintf("Memory usage too high: %.1f MB. Reduce timePointsToRecord or cellNum. Maximum allowed: 4GB", estimatedMemoryMB))
+        }
     }
 
     if (length(errors) > 0) {
@@ -130,14 +136,16 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
 #' RNAP size.
 #' @slot time a numeric value for the time to simulate.
 #' @slot deltaT a numeric value for the time step size in the simulation.
-#' @slot stepsToRecord an integer value for the number of steps to record in
-#' position matrix.
+#' @slot timePointsToRecord a numeric vector of specific time points to record
+#' position matrices for, or NULL to record no extra position matrices. Final
+#' position matrix is always recorded.
 #' @slot pauseSites a numeric vector of pause sites
 #' @slot probabilityVector a numeric vector representing the probability that
 #' the polymerase move forward or not at each site
 #' @slot combinedCellsData an integer vector representing the total number of
 #' RNAPs at each site across all cells
-#' @slot positionMatrix a matrix of position of polymerase
+#' @slot positionMatrices a list of position matrices
+#' @slot finalPositionMatrix a matrix representing the final position matrix
 #' @slot readCounts a numeric vector for read counts per nucleotide
 #'
 #' @name SimulatePolymerase-class
@@ -157,9 +165,8 @@ methods::setClass("SimulatePolymerase",
         zeta = "numeric", zetaSd = "numeric", zetaMin = "numeric",
         zetaMax = "numeric", zetaVec="character", cellNum = "integer", 
         polSize = "integer", addSpace = "integer", time = "numeric", 
-        deltaT = "numeric", stepsToRecord = "integer", pauseSites = "numeric",
-        probabilityVector = "numeric", combinedCellsData = "integer",
-        positionMatrix = "matrix", readCounts = "ANY"
+        deltaT = "numeric", timePointsToRecord = "numeric", 
+        pauseSites = "numeric", probabilityVector = "numeric", combinedCellsData = "integer", positionMatrices = "list", finalPositionMatrix = "matrix", readCounts = "ANY"
     ),
     validity = simulatePolymeraseValid
 )
@@ -201,8 +208,9 @@ methods::setClass("SimulatePolymerase",
 #' @param addSpace an integer value for the additional space in addition to
 #' RNAP size.
 #' @param time a numeric value for the time to simulate.
-#' @param stepsToRecord an integer value for the number of steps to record in
-#' position matrix.
+#' @param timePointsToRecord a numeric vector of specific time points to record
+#' position matrices for, or NULL to record no extra position matrices. Final
+#' position matrix is always recorded.
 #' @return a \code{SimulatePolymerase} object
 #' @examples
 #' # Create a SimulatePolymerase object
@@ -210,7 +218,7 @@ methods::setClass("SimulatePolymerase",
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Print the object
 #' print(sim)
 #' @export
@@ -218,18 +226,18 @@ simulatePolymerase <- function(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1) {
+    timePointsToRecord=c(1.0)) {
     
     validateSimulatePolymeraseParams(
         k, ksd, kMin, kMax, geneLen, alpha, beta, zeta, zetaSd, zetaMin,
-        zetaMax, cellNum, polSize, addSpace, time, stepsToRecord
+        zetaMax, cellNum, polSize, addSpace, time, timePointsToRecord
     )
     
     zeta_vec <- validateAndLoadZetaVec(zetaVec, geneLen)
     
     result <- .Call("_STADyUM_simulate_polymerase_cpp",
         k, ksd, kMin, kMax, geneLen, alpha, beta, zeta, zetaSd,
-        zetaMin, zetaMax, cellNum, polSize, addSpace, time, stepsToRecord,
+        zetaMin, zetaMax, cellNum, polSize, addSpace, time, timePointsToRecord,
         zeta_vec, PACKAGE = "STADyUM"
     )
     
@@ -238,14 +246,15 @@ simulatePolymerase <- function(
         probabilityVector = result$probabilityVector,
         pauseSites = result$pauseSites,
         combinedCellsData = result$combinedCellsData,
-        positionMatrix = result$positionMatrix,
+        positionMatrices = result$positionMatrices,
+        finalPositionMatrix = result$finalPositionMatrix,
         k = as.integer(k), kMin = as.integer(kMin), kMax = as.integer(kMax),
         ksd = ksd, geneLen = as.integer(geneLen), alpha = alpha, beta = beta,
         zeta = zeta, zetaSd = zetaSd, zetaMax = zetaMax, zetaMin = zetaMin,
         zetaVec = if (is.null(zetaVec)) "" else zetaVec,
         cellNum = as.integer(cellNum), polSize = as.integer(polSize),
         addSpace = as.integer(addSpace), time = time,
-        stepsToRecord = as.integer(stepsToRecord), readCounts = NULL)
+        timePointsToRecord = if (is.null(timePointsToRecord)) numeric(0) else timePointsToRecord, readCounts = NULL)
 
     sampleReadCountsPerNucleotide(obj)
     
@@ -276,7 +285,7 @@ simulatePolymerase <- function(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Sample read counts per nucleotide
 #' readCounts <- sampleReadCountsPerNucleotide(sim)
 #' # Print the read counts per nucleotide
@@ -325,7 +334,7 @@ setMethod("sampleReadCountsPerNucleotide", "SimulatePolymerase", function(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Show the object
 #' show(sim)
 #' @export
@@ -346,7 +355,9 @@ setMethod("show", "SimulatePolymerase", function(object) {
     cat("  - polSize =", slot(object, "polSize"), "\n")
     cat("  - addSpace =", slot(object, "addSpace"), "\n")
     cat("  - time =", slot(object, "time"), "\n")
-    cat("  - stepsToRecord =", slot(object, "stepsToRecord"), "\n")
+    cat("  - timePointsToRecord =", if (length(slot(object, "timePointsToRecord")) == 0) "NULL" else paste(slot(object, "timePointsToRecord"), collapse=", "), "\n")
+    cat("  - availableTimePoints =", if (length(getAvailableTimePoints(object)) == 0) "None recorded" else paste(getAvailableTimePoints(object), collapse=", "), "\n")
+    cat("  - finalPositionMatrix dimensions =", paste(dim(slot(object, "finalPositionMatrix")), collapse=" x "), "\n")
 })
 
 #' @rdname SimulatePolymerase-class
@@ -367,7 +378,7 @@ setMethod("show", "SimulatePolymerase", function(object) {
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Plot polymerase distribution
 #' plotPolymeraseDistribution(sim)
 #' @export
@@ -418,7 +429,7 @@ setMethod(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1) 
+#'     timePointsToRecord=c(0.5, 1.0)) 
 #' # Plot pause site distribution
 #' plotPauseSites(sim)
 #' @export
@@ -468,7 +479,7 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Plot transition probabilities
 #' plotTransitionProbabilities(sim)
 #' @export
@@ -503,57 +514,6 @@ setMethod(
 )
 
 #' @rdname SimulatePolymerase-class
-#' @title Plot Position Matrix Heatmap
-#'
-#' @description
-#' Plot the position matrix as a heatmap.
-#'
-#' @param object A SimulatePolymerase-class object
-#' @param file Optional file path to save the plot
-#' @param width Plot width in inches
-#' @param height Plot height in inches
-#' @return A ggplot object showing the position matrix as a heatmap
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Plot position matrix
-#' plotPositionMatrix(sim)
-#' 
-#' @export
-setGeneric("plotPositionMatrix", function(
-    object, file = NULL, width = 8,
-    height = 6) {
-    standardGeneric("plotPositionMatrix")
-})
-setMethod("plotPositionMatrix", "SimulatePolymerase", function(
-    object,
-    file = NULL, width = 8, height = 6) {
-    df <- reshape2::melt(slot(object, "positionMatrix"))
-    colnames(df) <- c("Cell", "Position", "Value")
-
-    p <- ggplot(df, aes(x = Position, y = Cell, fill = Value)) +
-        geom_tile() +
-        scale_fill_gradient(low = "white", high = "blue") +
-        theme_minimal() +
-        labs(
-            title = "Polymerase Position Matrix",
-            x = "Position",
-            y = "Cell"
-        )
-
-    if (!is.null(file)) {
-        ggsave(file, p, width = width, height = height)
-    }
-
-        return(p)
-    }
-)
-
-#' @rdname SimulatePolymerase-class
 #' @title Save all plots to files
 #'
 #' @description
@@ -570,7 +530,7 @@ setMethod("plotPositionMatrix", "SimulatePolymerase", function(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Save plots
 #' savePlots(sim)
 #' @export
@@ -600,10 +560,6 @@ setMethod("savePlots", "SimulatePolymerase", function(
         dir,
         "transition_probabilities.pdf"
     ), width, height)
-    plotPositionMatrix(
-        object, file.path(dir, "position_matrix.pdf"), width,
-        height
-    )
 })
 
 # Accessor methods
@@ -620,7 +576,7 @@ setMethod("savePlots", "SimulatePolymerase", function(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Get pause sites
 #' pauseSites <- pauseSites(sim)
 #' # Print the pause sites
@@ -644,7 +600,7 @@ setMethod("pauseSites", "SimulatePolymerase", function(object) {
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Get probability vector
 #' probabilityVector <- probabilityVector(sim)
 #' # Print the probability vector
@@ -670,7 +626,7 @@ setMethod("probabilityVector", "SimulatePolymerase", function(object) {
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Get combined cells data
 #' combinedCellsData <- combinedCellsData(sim)
 #' # Print the combined cells data
@@ -684,10 +640,10 @@ setMethod("combinedCellsData", "SimulatePolymerase", function(object) {
 })
 
 #' @rdname SimulatePolymerase-class
-#' @title Accessor for Position Matrix
+#' @title Accessor for Position Matrices
 #'
 #' @description
-#' Accessor for the position matrix from a SimulatePolymerase object.
+#' Accessor for the position matrices from a SimulatePolymerase object.
 #'
 #' @param object a \code{SimulatePolymerase-class} object
 #' @examples
@@ -696,17 +652,44 @@ setMethod("combinedCellsData", "SimulatePolymerase", function(object) {
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
-#' # Get position matrix
-#' positionMatrix <- positionMatrix(sim)
-#' # Print the position matrix
-#' print(positionMatrix)
+#'     timePointsToRecord=c(0.5, 1.0))
+#' # Get position matrices
+#' positionMatrices <- positionMatrices(sim)
+#' # Print the position matrices
+#' print(positionMatrices)
 #' @export
-setGeneric("positionMatrix", function(object) {
-    standardGeneric("positionMatrix")
+setGeneric("positionMatrices", function(object) {
+    standardGeneric("positionMatrices")
 })
-setMethod("positionMatrix", "SimulatePolymerase", function(object) {
-    slot(object, "positionMatrix")
+setMethod("positionMatrices", "SimulatePolymerase", function(object) {
+    slot(object, "positionMatrices")
+})
+
+#' @rdname SimulatePolymerase-class
+#' @title Accessor for Final Position Matrix
+#'
+#' @description
+#' Accessor for the final position matrix from a SimulatePolymerase object.
+#' This represents the last state of the simulation.
+#'
+#' @param object a \code{SimulatePolymerase-class} object
+#' @examples
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     timePointsToRecord=c(0.5, 1.0))
+#' # Get final position matrix
+#' finalMatrix <- finalPositionMatrix(sim)
+#' # Print the final position matrix
+#' print(finalMatrix)
+#' @export
+setGeneric("finalPositionMatrix", function(object) {
+    standardGeneric("finalPositionMatrix")
+})
+setMethod("finalPositionMatrix", "SimulatePolymerase", function(object) {
+    slot(object, "finalPositionMatrix")
 })
 
 #' @rdname SimulatePolymerase-class
@@ -725,7 +708,7 @@ setMethod("positionMatrix", "SimulatePolymerase", function(object) {
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Get parameters
 #' parameters <- parameters(sim)
 #' # Print the parameters
@@ -750,7 +733,7 @@ setMethod("parameters", "SimulatePolymerase", function(object) {
         polSize = slot(object, "polSize"),
         addSpace = slot(object, "addSpace"),
         time = slot(object, "time"),
-        stepsToRecord = slot(object, "stepsToRecord")
+        timePointsToRecord = if (length(slot(object, "timePointsToRecord")) == 0) NULL else slot(object, "timePointsToRecord")
     )
 })
 
@@ -768,7 +751,7 @@ setMethod("parameters", "SimulatePolymerase", function(object) {
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     stepsToRecord=1)
+#'     timePointsToRecord=c(0.5, 1.0))
 #' # Get read counts    
 #' readCounts <- readCounts(sim)
 #' # Print the read counts
@@ -778,3 +761,149 @@ setGeneric("readCounts", function(object) standardGeneric("readCounts"))
 setMethod("readCounts", "SimulatePolymerase", function(object) {
     slot(object, "readCounts")
 })
+
+#' @rdname SimulatePolymerase-class
+#' @title Get Position Matrix for Specific Time Point
+#'
+#' @description
+#' Get the position matrix for a specific time point from a SimulatePolymerase object.
+#'
+#' @param object a \code{SimulatePolymerase-class} object
+#' @param timePoint a numeric value specifying the time point to retrieve
+#' @return A 2D matrix of polymerase positions for the specified time point
+#' @examples
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     timePointsToRecord=c(0.5, 1.0))
+#' # Get position matrix for time 0.5
+#' posMatrix <- getPositionMatrixAtTime(sim, 0.5)
+#' # Print the position matrix
+#' print(posMatrix)
+#' @export
+setGeneric("getPositionMatrixAtTime", function(object, timePoint) {
+    standardGeneric("getPositionMatrixAtTime")
+})
+setMethod("getPositionMatrixAtTime", "SimulatePolymerase", function(object, timePoint) {
+    matrices <- slot(object, "positionMatrices")
+    if (length(matrices) == 0) {
+        stop("No extra position matrices were recorded. Use finalPositionMatrix() to get the final state.")
+    }
+    
+    # Extract available time points as numbers
+    available_times <- as.numeric(gsub("t_", "", names(matrices)))
+    
+    # Find the closest time point within a small tolerance
+    tolerance <- 1e-10  # Very small tolerance for floating point comparison
+    closest_idx <- which(abs(available_times - timePoint) < tolerance)
+    
+    if (length(closest_idx) > 0) {
+        # Use the first match if multiple (shouldn't happen with proper tolerance)
+        time_name <- names(matrices)[closest_idx[1]]
+        return(matrices[[time_name]])
+    } else {
+        stop(sprintf("Time point %f not found. Available time points: %s", 
+                    timePoint, paste(available_times, collapse=", ")))
+    }
+})
+
+#' @rdname SimulatePolymerase-class
+#' @title Get Available Time Points
+#'
+#' @description
+#' Get all available time points from a SimulatePolymerase object.
+#'
+#' @param object a \code{SimulatePolymerase-class} object
+#' @return A numeric vector of available time points
+#' @examples
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     timePointsToRecord=c(0.5, 1.0))
+#' # Get available time points
+#' availableTimes <- getAvailableTimePoints(sim)
+#' # Print the available time points
+#' print(availableTimes)
+#' @export
+setGeneric("getAvailableTimePoints", function(object) {
+    standardGeneric("getAvailableTimePoints")
+})
+setMethod("getAvailableTimePoints", "SimulatePolymerase", function(object) {
+    matrices <- slot(object, "positionMatrices")
+    if (length(matrices) == 0) {
+        return(numeric(0))
+    }
+    available_times <- as.numeric(gsub("t_", "", names(matrices)))
+    return(sort(available_times))
+})
+
+#' @rdname SimulatePolymerase-class
+#' @title Plot Position Matrix
+#'
+#' @description
+#' Plot the position matrix as a heatmap showing polymerase positions across
+#' sites and cells.
+#'
+#' @param object A SimulatePolymerase-class object
+#' @param timePoint Optional time point to plot (if NULL, plots the first available time point)
+#' @param file Optional file path to save the plot
+#' @param width Plot width in inches
+#' @param height Plot height in inches
+#' @return A ggplot object showing the position matrix as a heatmap
+#' @examples
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     timePointsToRecord=c(0.5, 1.0))
+#' # Plot position matrix
+#' plotPositionMatrix(sim)
+#' @export
+setGeneric("plotPositionMatrix", function(
+    object, timePoint = NULL, file = NULL, width = 8, height = 6) {
+    standardGeneric("plotPositionMatrix")
+})
+setMethod(
+    "plotPositionMatrix", "SimulatePolymerase",
+    function(object, timePoint = NULL, file = NULL, width = 8, height = 6) {
+        matrices <- slot(object, "positionMatrices")
+        
+        if (length(matrices) == 0) {
+            stop("No extra position matrices were recorded. Use finalPositionMatrix() to access the final state.")
+        }
+        
+        if (is.null(timePoint)) {
+            # Use the first available time point
+            timePoint <- as.numeric(gsub("t_", "", names(matrices)[1]))
+        }
+        
+        pos_matrix <- getPositionMatrixAtTime(object, timePoint)
+        
+        # Convert to long format for plotting
+        df <- reshape2::melt(pos_matrix)
+        colnames(df) <- c("Site", "Cell", "Value")
+        
+        p <- ggplot(df, aes(x = Cell, y = Site, fill = factor(Value))) +
+            geom_tile() +
+            scale_fill_manual(values = c("0" = "white", "1" = "red")) +
+            theme_minimal() +
+            labs(
+                title = sprintf("Polymerase Positions at Time %.2f", timePoint),
+                x = "Cell",
+                y = "Site",
+                fill = "Polymerase Present"
+            ) +
+            theme(legend.position = "none")
+        
+        if (!is.null(file)) {
+            ggsave(file, p, width = width, height = height)
+        }
+        
+        return(p)
+    }
+)

@@ -112,8 +112,7 @@ that hold the RNAP positions}
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Print the estimated rates
@@ -123,8 +122,7 @@ print(estRates)
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Show the object
@@ -133,8 +131,7 @@ show(estRates)
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Plot transcription rates
@@ -143,8 +140,7 @@ plotTranscriptionRates(estRates)
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Plot pause site distribution
@@ -153,8 +149,7 @@ plotPauseSiteDistribution(estRates)
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Get simpol
@@ -165,8 +160,7 @@ print(simpol)
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Get steric hindrance
@@ -177,8 +171,7 @@ print(stericHindrance)
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Get rates
@@ -189,8 +182,7 @@ print(rates)
 sim <- simulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    stepsToRecord=1)
+    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Get rnapN

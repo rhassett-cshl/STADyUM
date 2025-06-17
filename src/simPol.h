@@ -13,7 +13,7 @@ Rcpp::List simulate_polymerase_cpp(
     int gene_len, double alpha, double beta, 
     double zeta, double zeta_sd, double zeta_min, 
     double zeta_max, int cell_num, int pol_size, 
-    int add_space, double time, int steps_to_record,
+    int add_space, double time, Rcpp::Nullable<Rcpp::NumericVector> time_points_to_record,
     Rcpp::Nullable<Rcpp::NumericVector> zeta_vec = R_NilValue);
 
 #endif // SIMPOL_H 
