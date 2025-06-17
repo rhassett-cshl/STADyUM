@@ -1,8 +1,65 @@
-simulatePolymeraseValid <- function(object) {
-    errors <- character()
-
-    if (length(errors) == 0) TRUE else errors
-}
+#' @title Constructor for SimulatePolymerase object
+#'
+#' @description
+#' Class \code{SimulatePolymerase} tracks the movement of RNAPs along the DNA
+#' templates. It contains the parameters for the simulator as well as the
+#' simulator results including the position of RNAPs for the last step, the
+#' pause sites, a probability vector containing probability RNAPs move forward
+#' or not, and a combined cells data vector containing the total number of
+#' RNAPs at each site across all cells
+#'
+#' @slot k an integer value for the mean of pause sites across cells.
+#' @slot ksd a numeric value for the standard deviation of pause sites across
+#' cells.
+#' @slot kMin an integer value for the upper bound of pause sites allowed.
+#' @slot kMax an integer value for the lower bound of pause sites allowed.
+#' @slot geneLen an integer value for the length of the gene.
+#' @slot alpha a numeric value for the initiation rate.
+#' @slot beta a numeric value for the pause release rate.
+#' @slot zeta a numeric value for the mean elongation rate across sites.
+#' @slot zetaSd a numeric value for the standard deviation of pause sites
+#' across sites.
+#' @slot zetaMin a numeric value for the minimum elongation rate.
+#' @slot zetaMax a numeric value for the maximum elongation rate.
+#' @slot zetaVec a character value for the path to the zetaVec file.
+#' @slot cellNum an integer value for the number of cells to simulate.
+#' @slot polSize an integer value for the polymerase II size.
+#' @slot addSpace an integer value for the additional space in addition to
+#' RNAP size.
+#' @slot time a numeric value for the time to simulate.
+#' @slot deltaT a numeric value for the time step size in the simulation.
+#' @slot timePointsToRecord a numeric vector of specific time points to record
+#' position matrices for, or NULL to record no extra position matrices. Final
+#' position matrix is always recorded.
+#' @slot pauseSites a numeric vector of pause sites
+#' @slot probabilityVector a numeric vector representing the probability that
+#' the polymerase move forward or not at each site
+#' @slot combinedCellsData an integer vector representing the total number of
+#' RNAPs at each site across all cells
+#' @slot positionMatrices a list of position matrices
+#' @slot finalPositionMatrix a matrix representing the final position matrix
+#' @slot readCounts a numeric vector for read counts per nucleotide
+#'
+#' @name SimulatePolymerase-class
+#' @rdname SimulatePolymerase-class
+#' @importClassesFrom GenomicRanges GRanges
+#' @importClassesFrom tibble tbl_df
+#' @importFrom methods slot new is slot<- validObject
+#' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
+#' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave geom_histogram
+#' @importFrom reshape2 melt
+#' @importFrom readr read_csv
+#' @exportClass SimulatePolymerase
+methods::setClass("SimulatePolymerase",
+    slots = c(
+        k = "integer", ksd = "numeric", kMin = "integer", kMax = "integer",
+        geneLen = "integer", alpha = "numeric", beta = "numeric",
+        zeta = "numeric", zetaSd = "numeric", zetaMin = "numeric",
+        zetaMax = "numeric", zetaVec="character", cellNum = "integer", 
+        polSize = "integer", addSpace = "integer", time = "numeric", 
+        deltaT = "numeric", timePointsToRecord = "numeric", 
+        pauseSites = "numeric", probabilityVector = "numeric", combinedCellsData = "integer", positionMatrices = "list", finalPositionMatrix = "matrix", readCounts = "ANY"
+    ))
 
 validateSimulatePolymeraseParams <- function(
     k, ksd, kMin, kMax, geneLen,
@@ -105,71 +162,6 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
     
     return(zeta_vec)
 }
-
-#' @title Constructor for SimulatePolymerase object
-#'
-#' @description
-#' Class \code{SimulatePolymerase} tracks the movement of RNAPs along the DNA
-#' templates. It contains the parameters for the simulator as well as the
-#' simulator results including the position of RNAPs for the last step, the
-#' pause sites, a probability vector containing probability RNAPs move forward
-#' or not, and a combined cells data vector containing the total number of
-#' RNAPs at each site across all cells
-#'
-#' @slot k an integer value for the mean of pause sites across cells.
-#' @slot ksd a numeric value for the standard deviation of pause sites across
-#' cells.
-#' @slot kMin an integer value for the upper bound of pause sites allowed.
-#' @slot kMax an integer value for the lower bound of pause sites allowed.
-#' @slot geneLen an integer value for the length of the gene.
-#' @slot alpha a numeric value for the initiation rate.
-#' @slot beta a numeric value for the pause release rate.
-#' @slot zeta a numeric value for the mean elongation rate across sites.
-#' @slot zetaSd a numeric value for the standard deviation of pause sites
-#' across sites.
-#' @slot zetaMin a numeric value for the minimum elongation rate.
-#' @slot zetaMax a numeric value for the maximum elongation rate.
-#' @slot zetaVec a character value for the path to the zetaVec file.
-#' @slot cellNum an integer value for the number of cells to simulate.
-#' @slot polSize an integer value for the polymerase II size.
-#' @slot addSpace an integer value for the additional space in addition to
-#' RNAP size.
-#' @slot time a numeric value for the time to simulate.
-#' @slot deltaT a numeric value for the time step size in the simulation.
-#' @slot timePointsToRecord a numeric vector of specific time points to record
-#' position matrices for, or NULL to record no extra position matrices. Final
-#' position matrix is always recorded.
-#' @slot pauseSites a numeric vector of pause sites
-#' @slot probabilityVector a numeric vector representing the probability that
-#' the polymerase move forward or not at each site
-#' @slot combinedCellsData an integer vector representing the total number of
-#' RNAPs at each site across all cells
-#' @slot positionMatrices a list of position matrices
-#' @slot finalPositionMatrix a matrix representing the final position matrix
-#' @slot readCounts a numeric vector for read counts per nucleotide
-#'
-#' @name SimulatePolymerase-class
-#' @rdname SimulatePolymerase-class
-#' @importClassesFrom GenomicRanges GRanges
-#' @importClassesFrom tibble tbl_df
-#' @importFrom methods slot new is slot<- validObject
-#' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
-#' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave geom_histogram
-#' @importFrom reshape2 melt
-#' @importFrom readr read_csv
-#' @exportClass SimulatePolymerase
-methods::setClass("SimulatePolymerase",
-    slots = c(
-        k = "integer", ksd = "numeric", kMin = "integer", kMax = "integer",
-        geneLen = "integer", alpha = "numeric", beta = "numeric",
-        zeta = "numeric", zetaSd = "numeric", zetaMin = "numeric",
-        zetaMax = "numeric", zetaVec="character", cellNum = "integer", 
-        polSize = "integer", addSpace = "integer", time = "numeric", 
-        deltaT = "numeric", timePointsToRecord = "numeric", 
-        pauseSites = "numeric", probabilityVector = "numeric", combinedCellsData = "integer", positionMatrices = "list", finalPositionMatrix = "matrix", readCounts = "ANY"
-    ),
-    validity = simulatePolymeraseValid
-)
 
 #' @title Simulator for Tracking RNAP Movement
 #'

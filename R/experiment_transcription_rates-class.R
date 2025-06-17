@@ -1,85 +1,3 @@
-experimentTranscriptionRatesValid <- function(object) {
-    errors <- c(
-        validateCounts(object),
-        validateBigwigFiles(object),
-        validateRegions(object),
-        validateStericHindrance(object),
-        validateRates(object)
-    )
-
-    if (length(errors) == 0) TRUE else errors
-}
-
-validateCounts <- function(object) {
-    errors <- character()
-    if (!is.data.frame(counts(object))) {
-        errors <- c(errors, "counts must be a data.frame")
-    }
-
-    return(errors)
-}
-
-validateBigwigFiles <- function(object) {
-    #errors <- character()
-    #if (!file.exists(bigwigPlus(object))) {
-    #    errors <- c(errors, "bigwigPlus file does not exist")
-    #}
-    #if (!file.exists(bigwigMinus(object))) {
-    #    errors <- c(errors, "bigwigMinus file does not exist")
-    #}
-    #return(errors)
-    return(character())
-}
-
-validateRegions <- function(object) {
-    errors <- character()
-    if (!inherits(pauseRegions(object), "GRanges")) {
-        errors <- c(errors, "pauseRegions must be a GRanges object")
-    }
-    if (!inherits(geneBodyRegions(object), "GRanges")) {
-        errors <- c(errors, "geneBodyRegions must be a GRanges object")
-    }
-    return(errors)
-}
-
-validateStericHindrance <- function(object) {
-    errors <- character()
-    if (!is.logical(stericHindrance(object)) ||
-        length(stericHindrance(object)) != 1) {
-        errors <- c(errors, "stericHindrance must be a single logical value")
-    }
-
-    if (stericHindrance(object)) {
-        if (!is.numeric(omegaScale(object)) ||
-            length(omegaScale(object)) != 1 ||
-            omegaScale(object) <= 0) {
-            errors <- c(errors, "omegaScale must be a single positive numeric
-            value")
-        }
-    }
-    return(errors)
-}
-
-validateRates <- function(object) {
-    errors <- character()
-    if (!inherits(rates(object), "tbl_df")) {
-        errors <- c(errors, "rates must be a tibble")
-    }
-
-    #required_cols <- c("gene_id", "initiation_rate", "pause_release_rate")
-    #if (steric_hindrance(object)) {
-    #    required_cols <- c(required_cols, "landing_pad_occupancy")
-    #}
-    #missing_cols <- setdiff(required_cols, colnames(rates(object)))
-    #if (length(missing_cols) > 0) {
-    #    errors <- c(errors, paste(
-    #        "Missing required columns in rates:",
-    #        paste(missing_cols, collapse = ", ")
-    #    ))
-    #}
-    return(errors)
-}
-
 #' @title Constructor for ExperimentTranscriptionRates object
 #'
 #' @description
@@ -144,9 +62,7 @@ methods::setClass("ExperimentTranscriptionRates",
         stericHindrance = "logical",
         omegaScale = "ANY",
         rates = "tbl_df"
-    ),  
-    validity = experimentTranscriptionRatesValid
-)
+    ))
 
 inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
     geneBodyRegions, stericHindrance, omegaScale) {

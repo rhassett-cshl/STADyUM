@@ -1,20 +1,3 @@
-simulationTranscriptionRatesValid <- function(object) {
-    errors <- character()
-
-    # Check if required slots are present and have correct types
-    if (!is(slot(object, "simpol"), "SimulatePolymerase")) {
-        errors <- c(errors, "simpol must be a SimulatePolymerase object")
-    }
-    if (!is.logical(slot(object, "stericHindrance"))) {
-        errors <- c(errors, "stericHindrance must be logical")
-    }
-    if (!is.list(slot(object, "rnapN"))) {
-        errors <- c(errors, "rnapN must be a list")
-    }
-
-    if (length(errors) == 0) TRUE else errors
-}
-
 #' @title Constructor for SimulationTranscriptionRates object
 #'
 #' @description
@@ -66,10 +49,7 @@ methods::setClass("SimulationTranscriptionRates",
         stericHindrance = "logical",
         rates = "tbl_df",
         rnapN = "list"
-    ),
-
-    validity = simulationTranscriptionRatesValid
-)
+    ))
 
 summariseSimulationBw <- function(bw, grng, regionNames) {
     rc <- grng %>%
