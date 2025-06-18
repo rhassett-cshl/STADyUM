@@ -181,6 +181,17 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
     # Convert to numeric vector and ensure correct length
     zeta_vec <- as.numeric(zeta_data[[1]])
     
+    # Validate that all values are greater than 0 and non-negative
+    if (any(is.na(zeta_vec)) || any(zeta_vec <= 0)) {
+        stop("zetaVec file must contain only positive values")
+    }
+    
+    # Check that the zeta_vec length matches geneLen
+    if (length(zeta_vec) != geneLen) {
+        stop(sprintf("zetaVec file length (%d) does not match geneLen (%d)", 
+                    length(zeta_vec), geneLen))
+    }
+    
     return(zeta_vec)
 }
 
