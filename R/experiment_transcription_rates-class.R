@@ -51,6 +51,7 @@
 #' @importFrom S4Vectors DataFrame splitAsList
 #' @importFrom tibble as_tibble
 #' @importFrom rtracklayer import.bw
+#' @importFrom GenomeInfoDb seqnames
 #' @exportClass ExperimentTranscriptionRates
 methods::setClass("ExperimentTranscriptionRates",
     slots = c(
@@ -97,6 +98,20 @@ inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
         stop("One or more gene names are duplicated in gene body region, gene
         names must be unique")
     }
+    
+    # Check for overlapping coordinates in GRanges objects
+    # This could indicate multiple isoforms that need to be handled separately
+    pauseOverlaps <- findOverlaps(pauseRegions, drop.self = TRUE)
+    if (length(pauseOverlaps) > 0) {
+        stop("Overlapping coordinates detected in pauseRegions. This may indicate multiple isoforms. Please handle multiple isoforms by selecting a single representative isoform per gene or by providing non-overlapping regions.")
+    }
+    
+    geneBodyOverlaps <- findOverlaps(geneBodyRegions, drop.self = TRUE)
+    if (length(geneBodyOverlaps) > 0) {
+        stop("Overlapping coordinates detected in geneBodyRegions. This may 
+        indicate multiple isoforms. Please handle multiple isoforms by selecting a single representative isoform per gene or by providing non-overlapping regions.")
+    }
+    
     if (stericHindrance && (is.null(omegaScale) || !is.numeric(omegaScale) ||
         omegaScale <= 0)) {
         stop("For steric hindrance case, omegaScale parameter must be set to
@@ -119,6 +134,21 @@ prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
     if (sum(bwp1P3$score) == 0 || sum(bwm1P3$score) == 0) {
         stop("No reads found in plus or minus strand bigwig file")
     }
+    # Check chromosome name compatibility between bigwig files and GRanges
+    bigwigChrs <- unique(c(
+        as.character(seqnames(bwp1P3)),
+        as.character(seqnames(bwm1P3))
+    ))
+    grangesChrs <- unique(c(
+        as.character(seqnames(pauseRegions)),
+        as.character(seqnames(geneBodyRegions))
+    ))
+    missingChrs <- setdiff(grangesChrs, bigwigChrs)
+    if (length(missingChrs) > 0) {
+        stop("The following chromosomes in GRanges objects are not found in 
+        bigwig files: ", paste(missingChrs, collapse = ", "))
+    }
+    
     pb$tick()
 
     message("\nProcessing plus and minus strands bigwig...")

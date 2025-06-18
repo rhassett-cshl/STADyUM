@@ -30,7 +30,7 @@
 #' @slot deltaT a numeric value for the time step size in the simulation.
 #' @slot timePointsToRecord a numeric vector of specific time points to record
 #' position matrices for, or NULL to record no extra position matrices. Final
-#' position matrix is always recorded.
+#' position matrix is always recorded. Default is NULL.
 #' @slot pauseSites a numeric vector of pause sites
 #' @slot probabilityVector a numeric vector representing the probability that
 #' the polymerase move forward or not at each site
@@ -57,7 +57,7 @@ methods::setClass("SimulatePolymerase",
         zeta = "numeric", zetaSd = "numeric", zetaMin = "numeric",
         zetaMax = "numeric", zetaVec="character", cellNum = "integer", 
         polSize = "integer", addSpace = "integer", time = "numeric", 
-        deltaT = "numeric", timePointsToRecord = "numeric", 
+        deltaT = "numeric", timePointsToRecord = "ANY", 
         pauseSites = "numeric", probabilityVector = "numeric", combinedCellsData = "integer", positionMatrices = "list", finalPositionMatrix = "matrix", readCounts = "ANY"
     ))
 
@@ -68,38 +68,59 @@ validateSimulatePolymeraseParams <- function(
     errors <- character()
 
     # Check parameter ranges
-    if (kMin > kMax) {
-        errors <- c(errors, "kMin must be less than kMax")
+    if(!is.numeric(k) || k <= 0 || k %% 1 != 0 || k < kMin || k > kMax) {
+        errors <- c(errors, "k must be a positive integer between kMin and kMax")
     }
-    if (k < kMin || k > kMax) {
-        errors <- c(errors, "k must be between kMin and kMax")
+    if(!is.numeric(ksd) || ksd < 0 || ksd %% 1 != 0) {
+        errors <- c(errors, "ksd must be a non-negative integer")
     }
-    if (zetaMin > zetaMax) {
-        errors <- c(errors, "zetaMin must be less than zetaMax")
+    if(!is.numeric(kMin) || kMin <= 0 || kMin %% 1 != 0) {
+        errors <- c(errors, "kMin must be a positive integer")
     }
-    if (zeta < zetaMin || zeta > zetaMax) {
-        errors <- c(errors, "zeta must be between zetaMin and zetaMax")
+    if(!is.numeric(kMax) || kMax <= 0 || kMax %% 1 != 0) {
+        errors <- c(errors, "kMax must be a positive integer")
     }
-    if (ksd <= 0) {
-        errors <- c(errors, "ksd must be positive")
+    if (kMin >= kMax) {
+        errors <- c(errors, "kMin must be less than or equal to kMax")
     }
-    if (zetaSd <= 0) {
-        errors <- c(errors, "zetaSd must be positive")
+    if (k <= kMin || k >= kMax) {
+        errors <- c(errors, "k must be between kMin and kMax (inclusive)")
     }
-    if (geneLen <= 0) {
-        errors <- c(errors, "geneLen must be positive")
+    if(!is.numeric(alpha) || alpha <= 0) {
+        errors <- c(errors, "alpha must be a positive number")
     }
-    if (cellNum <= 0) {
-        errors <- c(errors, "cellNum must be positive")
+    if(!is.numeric(beta) || beta <= 0) {
+        errors <- c(errors, "beta must be a positive number")
     }
-    if (polSize <= 0) {
-        errors <- c(errors, "polSize must be positive")
+    if(!is.numeric(zeta) || zeta <= 0 || zeta < zetaMin || zeta > zetaMax) {
+        errors <- c(errors, "zeta must be a positive number between zetaMin and zetaMax")
     }
-    if (addSpace < 0) {
-        errors <- c(errors, "addSpace must be non-negative")
+    if(!is.numeric(zetaSd) || zetaSd < 0) {
+        errors <- c(errors, "zetaSd must be a non-negative number")
     }
-    if (time <= 0) {
-        errors <- c(errors, "time must be positive")
+    if(!is.numeric(zetaMin) || zetaMin <= 0 || zetaMin > zetaMax) {
+        errors <- c(errors, "zetaMin must be a positive number less than or equal to zetaMax")
+    }
+    if(!is.numeric(zetaMax) || zetaMax <= 0) {
+        errors <- c(errors, "zetaMax must be a positive number")
+    }
+    if(!is.numeric(geneLen) || geneLen <= 0 || geneLen %% 1 != 0 || geneLen < kMax) {
+        errors <- c(errors, "geneLen must be a positive integer greater than kMax")
+    }
+    if(!is.numeric(cellNum) || cellNum <= 0 || cellNum %% 1 != 0) {
+        errors <- c(errors, "cellNum must be a positive integer")
+    }
+    if(!is.numeric(polSize) || polSize <= 0 || polSize %% 1 != 0) {
+        errors <- c(errors, "polSize must be a positive integer")
+    }
+    if(!is.numeric(addSpace) || addSpace < 0 || addSpace %% 1 != 0) {
+        errors <- c(errors, "addSpace must be a non-negative integer")
+    }
+    if (!is.numeric(time) || time <= 0) {
+        errors <- c(errors, "time must be a positive number")
+    }
+    if(!is.numeric(deltaT) || deltaT <= 0 || deltaT >= time) {
+        errors <- c(errors, "deltaT must be a positive number less than time")
     }
     
     # Memory usage checks for position matrices
@@ -202,7 +223,7 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
 #' @param time a numeric value for the time to simulate.
 #' @param timePointsToRecord a numeric vector of specific time points to record
 #' position matrices for, or NULL to record no extra position matrices. Final
-#' position matrix is always recorded.
+#' position matrix is always recorded. Default is NULL.
 #' @return a \code{SimulatePolymerase} object
 #' @examples
 #' # Create a SimulatePolymerase object
@@ -210,15 +231,19 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     timePointsToRecord=NULL)
+#' # Create a SimulatePolymerase object with specific time points recorded
+#' sim2 <- SimulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     timePointsToRecord=c(0.5, 1.0))
-#' # Print the object
-#' print(sim)
 #' @export
 simulatePolymerase <- function(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=c(1.0)) {
+    timePointsToRecord=NULL) {
     
     validateSimulatePolymeraseParams(
         k, ksd, kMin, kMax, geneLen, alpha, beta, zeta, zetaSd, zetaMin,
@@ -246,7 +271,7 @@ simulatePolymerase <- function(
         zetaVec = if (is.null(zetaVec)) "" else zetaVec,
         cellNum = as.integer(cellNum), polSize = as.integer(polSize),
         addSpace = as.integer(addSpace), time = time,
-        timePointsToRecord = if (is.null(timePointsToRecord)) numeric(0) else timePointsToRecord, readCounts = NULL)
+        timePointsToRecord = timePointsToRecord, readCounts = NULL)
 
     sampleReadCountsPerNucleotide(obj)
     
@@ -277,7 +302,7 @@ simulatePolymerase <- function(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     timePointsToRecord=c(0.5, 1.0))
+#'     timePointsToRecord=NULL)
 #' # Sample read counts per nucleotide
 #' readCounts <- sampleReadCountsPerNucleotide(sim)
 #' # Print the read counts per nucleotide
@@ -347,7 +372,7 @@ setMethod("show", "SimulatePolymerase", function(object) {
     cat("  - polSize =", slot(object, "polSize"), "\n")
     cat("  - addSpace =", slot(object, "addSpace"), "\n")
     cat("  - time =", slot(object, "time"), "\n")
-    cat("  - timePointsToRecord =", if (length(slot(object, "timePointsToRecord")) == 0) "NULL" else paste(slot(object, "timePointsToRecord"), collapse=", "), "\n")
+    cat("  - timePointsToRecord =", if (is.null(slot(object, "timePointsToRecord"))) "NULL" else if (length(slot(object, "timePointsToRecord")) == 0) "NULL" else paste(slot(object, "timePointsToRecord"), collapse=", "), "\n")
     cat("  - availableTimePoints =", if (length(getAvailableTimePoints(object)) == 0) "None recorded" else paste(getAvailableTimePoints(object), collapse=", "), "\n")
     cat("  - finalPositionMatrix dimensions =", paste(dim(slot(object, "finalPositionMatrix")), collapse=" x "), "\n")
 })
@@ -421,7 +446,7 @@ setMethod(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     timePointsToRecord=c(0.5, 1.0)) 
+#'     timePointsToRecord=NULL) 
 #' # Plot pause site distribution
 #' plotPauseSites(sim)
 #' @export
@@ -471,7 +496,7 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     timePointsToRecord=c(0.5, 1.0))
+#'     timePointsToRecord=NULL)
 #' # Plot transition probabilities
 #' plotTransitionProbabilities(sim)
 #' @export
@@ -568,7 +593,7 @@ setMethod("savePlots", "SimulatePolymerase", function(
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     timePointsToRecord=c(0.5, 1.0))
+#'     timePointsToRecord=NULL)
 #' # Get pause sites
 #' pauseSites <- pauseSites(sim)
 #' # Print the pause sites
@@ -592,7 +617,7 @@ setMethod("pauseSites", "SimulatePolymerase", function(object) {
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     timePointsToRecord=c(0.5, 1.0))
+#'     timePointsToRecord=NULL)
 #' # Get probability vector
 #' probabilityVector <- probabilityVector(sim)
 #' # Print the probability vector
@@ -618,7 +643,7 @@ setMethod("probabilityVector", "SimulatePolymerase", function(object) {
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     timePointsToRecord=c(0.5, 1.0))
+#'     timePointsToRecord=NULL)
 #' # Get combined cells data
 #' combinedCellsData <- combinedCellsData(sim)
 #' # Print the combined cells data
@@ -725,7 +750,7 @@ setMethod("parameters", "SimulatePolymerase", function(object) {
         polSize = slot(object, "polSize"),
         addSpace = slot(object, "addSpace"),
         time = slot(object, "time"),
-        timePointsToRecord = if (length(slot(object, "timePointsToRecord")) == 0) NULL else slot(object, "timePointsToRecord")
+        timePointsToRecord = if (is.null(slot(object, "timePointsToRecord"))) NULL else if (length(slot(object, "timePointsToRecord")) == 0) NULL else slot(object, "timePointsToRecord")
     )
 })
 
@@ -743,7 +768,7 @@ setMethod("parameters", "SimulatePolymerase", function(object) {
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     timePointsToRecord=c(0.5, 1.0))
+#'     timePointsToRecord=NULL)
 #' # Get read counts    
 #' readCounts <- readCounts(sim)
 #' # Print the read counts
@@ -815,7 +840,7 @@ setMethod("getPositionMatrixAtTime", "SimulatePolymerase", function(object, time
 #'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     timePointsToRecord=c(0.5, 1.0))
+#'     timePointsToRecord=NULL)
 #' # Get available time points
 #' availableTimes <- getAvailableTimePoints(sim)
 #' # Print the available time points
