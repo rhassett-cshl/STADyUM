@@ -235,6 +235,12 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #' print(lrts)
 #' @export
 likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
+    if (!is(expData1, "ExperimentTranscriptionRates")) {
+        stop("expData1 must be an ExperimentTranscriptionRates object")
+    }
+    if (!is(expData2, "ExperimentTranscriptionRates")) {
+        stop("expData2 must be an ExperimentTranscriptionRates object")
+    }
     k <- 50; kmin <- 1; kmax <- 200; rnapSize <- 50; zeta <- 2000; 
     sigP <- 0.05; lfc1 <- 0; lfc2 <- 0; maxItr <- 500; tor <- 1e-6
     rc1 <- rates(expData1); rc2 <- rates(expData2)

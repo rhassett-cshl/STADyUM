@@ -67,15 +67,23 @@ methods::setClass("ExperimentTranscriptionRates",
 
 inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
     geneBodyRegions, stericHindrance, omegaScale) {
-    if (!file.exists(bigwigPlus) || !file.exists(bigwigMinus)) {
-        stop("bigwigPlus or bigwigMinus file does not exist")
+    if (!file.exists(bigwigPlus) || !file.access(bigwigPlus, 4) == 0) {
+        stop("bigwigPlus file does not exist or is not readable")
     }
-    if (!file.access(bigwigPlus, 4) == 0 ||
-        !file.access(bigwigMinus, 4) == 0) {
-        stop("bigwigPlus or bigwigMinus file is not readable")
+    if (!file.exists(bigwigMinus) || !file.access(bigwigMinus, 4) == 0) {
+        stop("bigwigMinus file does not exist or is not readable")
     }
-    if (length(pauseRegions) == 0 || length(geneBodyRegions) == 0) {
-        stop("pauseRegions or geneBodyRegions is empty")
+    if(!methods::is(pauseRegions, "GRanges") || length(pauseRegions) == 0) {
+        stop("pauseRegions must be a GRanges object with at least one region")
+    }
+    if(!methods::is(geneBodyRegions, "GRanges") || length(geneBodyRegions) == 0) {
+        stop("geneBodyRegions must be a GRanges object with at least one region")
+    }
+    if (!is.logical(stericHindrance)) {
+        stop("stericHindrance must be a single logical value")
+    }
+    if (!is.null(omegaScale) && !is.numeric(omegaScale)) {
+        stop("omegaScale must be NULL or a numeric value")
     }
     if (!"gene_id" %in%
         colnames(S4Vectors::elementMetadata(pauseRegions)) ||

@@ -338,6 +338,13 @@ setMethod("estimateTranscriptionRates", "SimulatePolymerase",
 function(x, stericHindrance=FALSE, ...) {
     
     simpol <- x  # x is the SimulatePolymerase object
+
+    if (!is(simpol, "SimulatePolymerase")) {
+        stop("simpol parameter must be a SimulatePolymerase object")
+    }
+    if (!is.logical(stericHindrance)) {
+        stop("stericHindrance parameter must be a logical value")
+    }
     
     # Prepare parameters and regions
     params <- prepareSimulationParameters(simpol)
