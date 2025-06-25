@@ -21,7 +21,7 @@ methods::setClass("TranscriptionRatesLRT",
         spikeInScalingFactor = "character",
         omegaTbl = "tbl_df",
         betaTbl = "tbl_df"
-    ))
+))
 
 computeOmegaLRT <- function(lambda1, lambda2, rc1, rc2) {
     tao1 <- lambda1 / (lambda1 + lambda2)

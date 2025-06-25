@@ -4,14 +4,14 @@
 \name{SimulatePolymerase-class}
 \alias{SimulatePolymerase-class}
 \alias{simulatePolymerase}
-\alias{sampleReadCountsPerNucleotide}
+\alias{sampleReadCounts}
 \alias{show,SimulatePolymerase-method}
 \alias{plotPolymeraseDistribution}
 \alias{plotPauseSites}
 \alias{plotTransitionProbabilities}
 \alias{savePlots}
 \alias{pauseSites}
-\alias{probabilityVector}
+\alias{siteProbabilities}
 \alias{combinedCellsData}
 \alias{positionMatrices}
 \alias{finalPositionMatrix}
@@ -42,7 +42,7 @@ simulatePolymerase(
   timePointsToRecord = NULL
 )
 
-sampleReadCountsPerNucleotide(object, readDensity = 0.0489)
+sampleReadCounts(object, readDensity = 0.0489)
 
 \S4method{show}{SimulatePolymerase}(object)
 
@@ -56,7 +56,7 @@ savePlots(object, dir = "results", width = 8, height = 6)
 
 pauseSites(object)
 
-probabilityVector(object)
+siteProbabilities(object)
 
 combinedCellsData(object)
 
@@ -138,7 +138,8 @@ position matrix is always recorded. Default is NULL.}
 \value{
 a \code{SimulatePolymerase} object
 
-The read count per nucleotide value
+The SimulatePolymerase object with read counts sampled given the
+readDensity parameter used
 
 A ggplot object showing the distribution of polymerases across the
 gene
@@ -263,15 +264,13 @@ RNAP size.}
 
 \item{\code{time}}{a numeric value for the time to simulate.}
 
-\item{\code{deltaT}}{a numeric value for the time step size in the simulation.}
-
 \item{\code{timePointsToRecord}}{a numeric vector of specific time points to record
 position matrices for, or NULL to record no extra position matrices. Final
 position matrix is always recorded. Default is NULL.}
 
 \item{\code{pauseSites}}{a numeric vector of pause sites}
 
-\item{\code{probabilityVector}}{a numeric vector representing the probability that
+\item{\code{siteProbabilities}}{a numeric vector representing the probability that
 the polymerase move forward or not at each site}
 
 \item{\code{combinedCellsData}}{an integer vector representing the total number of
@@ -304,9 +303,9 @@ sim <- SimulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     timePointsToRecord=NULL)
 # Sample read counts per nucleotide
-readCounts <- sampleReadCountsPerNucleotide(sim)
+sim <- sampleReadCounts(sim)
 # Print the read counts per nucleotide
-print(readCounts)
+print(readCounts(sim))
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
@@ -364,9 +363,9 @@ sim <- SimulatePolymerase(
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     timePointsToRecord=NULL)
 # Get probability vector
-probabilityVector <- probabilityVector(sim)
+siteProbabilities <- siteProbabilities(sim)
 # Print the probability vector
-print(probabilityVector)
+print(siteProbabilities)
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,

@@ -49,7 +49,9 @@ methods::setClass("SimulationTranscriptionRates",
         stericHindrance = "logical",
         rates = "tbl_df",
         rnapN = "list"
-    ))
+    ),
+    contains = "TranscriptionRates"
+)
 
 summariseSimulationBw <- function(bw, grng, regionNames) {
     rc <- grng %>%
@@ -71,15 +73,16 @@ prepareSimulationParameters <- function(simpol) {
     kmin <- 1
     kmax <- 200
     matchedGbLen <- matchedLen - kmax
-    countRnap <- FALSE
 
     spacing <- slot(simpol, "polSize") + slot(simpol, "addSpace")
     k <- slot(simpol, "k")
+    alpha <- slot(simpol, "alpha")
+    beta <- slot(simpol, "beta")
+    prob <- siteProbabilities(simpol)
     startPoint <- 0.99 * 1e6
     lambda <- 102.1  # from Dukler et al. 2017
 
-    # Get RNAP positions from the simulation
-    rnapPos <- getPositionMatrixAtTime(simpol, getAvailableTimePoints(simpol)[1])
+    rnapPos <- finalPositionMatrix(simpol)
     totalCell <- NCOL(rnapPos)
     geneLen <- NROW(rnapPos) - 1
 
@@ -90,14 +93,16 @@ prepareSimulationParameters <- function(simpol) {
         kmin = kmin,
         kmax = kmax,
         matchedGbLen = matchedGbLen,
-        countRnap = countRnap,
         spacing = spacing,
         k = k,
         startPoint = startPoint,
         lambda = lambda,
         rnapPos = rnapPos,
         totalCell = totalCell,
-        geneLen = geneLen
+        geneLen = geneLen,
+        alpha = alpha,
+        beta = beta,
+        prob = prob
     ))
 }
 
@@ -127,25 +132,32 @@ generateRnapPositions <- function(params, regions) {
     rnapGrng <- list()
     rnapNls <- list()
 
+    beta_prob <- params$prob[1, 1] / params$alpha * params$beta
+    # get pause position for every cell
+    idx <- which(params$prob == beta_prob, arr.ind = TRUE)
+    idx <- idx[idx[, 1] != 1, ]
+
     for (i in seq_len(params$sampleN)) {
+        set.seed(seeds[i])
         selCells <- sample(seq_len(params$totalCell), 
             size = params$sampleCell, replace = TRUE)
         resPos <- params$rnapPos[, selCells]
         resPos <- resPos[-1, ]
 
-        if (params$countRnap) {
-            pauseSite <- idx[selCells, 1] - 1
-            resShape <- dim(resPos)
-            afterPauseLen <- resShape[1] - pauseSite
-            maskMx <- map2(pauseSite, afterPauseLen,
-                function(x, y) c(rep(TRUE, x), rep(FALSE, y))
-            )
-            maskMx <- Matrix::Matrix(unlist(maskMx), 
-                nrow = resShape[1], ncol = resShape[2])
-            rnapNls[[i]] <- colSums(resPos * maskMx)
-        }
+        pauseSite <- idx[selCells, 1] - 1
+        resShape <- dim(resPos)
+        afterPauseLen <- resShape[1] - pauseSite
+        maskMx <- map2(pauseSite, afterPauseLen,
+            function(x, y) c(rep(TRUE, x), rep(FALSE, y))
+        )
+        maskMx <- Matrix::Matrix(unlist(maskMx), 
+            nrow = resShape[1], ncol = resShape[2])
+        # calculate rnap number before pause site for every cell
+        rnapNls[[i]] <- colSums(resPos * maskMx)
 
+        # calculate rnap positions across all cells
         resAll <- rowSums(resPos)
+        # generate bigwigs for positive strand
         rnapGrng[[i]] <- GRanges(seqnames = "chr1",
             IRanges::IRanges(start = (1 + params$startPoint):
                 (params$geneLen + params$startPoint),
@@ -369,6 +381,7 @@ function(x, stericHindrance=FALSE, ...) {
     
     # Process EM results
     bwDfs <- processEmResults(bwDfs, emLs, stericHindrance)
+    print(bwDfs)
     
     rates_tibble <- tibble(
         trial = bwDfs$trial,
@@ -387,8 +400,7 @@ function(x, stericHindrance=FALSE, ...) {
     new("SimulationTranscriptionRates",
         simpol = simpol, 
         stericHindrance = stericHindrance,
-        rates = rates_tibble,
-        rnapN = if (params$countRnap) rnapData$rnapNls else list()
+        rates = rates_tibble
     )
 })
 
@@ -411,29 +423,30 @@ function(x, stericHindrance=FALSE, ...) {
 #' show(estRates)
 #' @export
 setMethod("show", "SimulationTranscriptionRates", function(object) {
-    # Create a data frame for display
-    df <- data.frame(
-        Parameter = c(
-            "Number of Trials", "Initiation Rate",
-            "Pause Release Rate", "Steric Hindrance"
-        ),
-        Value = c(
-            trial(object),
-            round(chi(object), 4),
-            round(betaOrg(object), 4),
-            stericHindrance(object)
-        )
-    )
+    cat("A SimulationTranscriptionRates object with:\n")
+    cat("  - Steric hindrance:", stericHindrance(object), "\n")
+    cat("  - number of trials:", nrow(rates(object)), "\n")
 
-    # Print the object information
-    cat("A SimulationTranscriptionRates object:\n\n")
-    print(df, row.names = FALSE)
-    
-    # Print additional information if steric hindrance is enabled
-    if (stericHindrance(object) && "phi" %in% colnames(rates_df)) {
-        phi_mean <- mean(rates_df$phi, na.rm = TRUE)
-        cat(sprintf("\nLanding Pad Occupancy (mean across trials): %.4f\n", round(phi_mean, 4)))
+    ratesData <- rates(object)
+    numericCols <- sapply(ratesData, is.numeric)
+    excludeCols <- c("trial")
+    if (!stericHindrance(object)) {
+        excludeCols <- c(excludeCols, "phi")
     }
+    validCols <- names(ratesData)[numericCols & !(names(ratesData) %in% excludeCols)]
+    
+    if (length(validCols) > 0) {
+        cat("\nSummary statistics for rate estimates:\n")
+        for (col in validCols) {
+            values <- ratesData[[col]]
+            values <- values[!is.na(values)]
+            if (length(values) > 0) {
+                meanVal <- mean(values, na.rm = TRUE)
+                cat(sprintf("  - %s: %.4f (mean)\n", col, meanVal))
+            }
+        }
+    }
+    
 })
 
 #' @rdname SimulationTranscriptionRates-class
@@ -623,11 +636,9 @@ setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
 #' # Print the rates
 #' print(rates)
 #' @export
-setGeneric("rates", function(object) standardGeneric("rates"))
-setMethod(
-    "rates", "SimulationTranscriptionRates",
-    function(object) slot(object, "rates")
-)
+setMethod("rates", "SimulationTranscriptionRates", function(object) {
+    slot(object, "rates")
+})
 
 #' @rdname SimulationTranscriptionRates-class
 #' @title Accessor for RnapN

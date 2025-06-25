@@ -4,9 +4,8 @@
 \name{ExperimentTranscriptionRates-class}
 \alias{ExperimentTranscriptionRates-class}
 \alias{estimateTranscriptionRates,character-method}
-\alias{show,ExperimentTranscriptionRates-method}
 \alias{plotRates}
-\alias{rates}
+\alias{rates,ExperimentTranscriptionRates-method}
 \alias{counts}
 \alias{pauseRegions}
 \alias{geneBodyRegions}
@@ -24,8 +23,6 @@
   ...
 )
 
-\S4method{show}{ExperimentTranscriptionRates}(object)
-
 plotRates(
   object,
   type = "scatter",
@@ -37,7 +34,7 @@ plotRates(
   ...
 )
 
-rates(object)
+\S4method{rates}{ExperimentTranscriptionRates}(object)
 
 counts(object)
 
@@ -89,8 +86,6 @@ saved to this location.}
 \value{
 an \code{\link{ExperimentTranscriptionRates-class}} object
 
-NULL (invisibly)
-
 A ggplot object
 
 a \code{DataFrame} with the following columns:
@@ -137,9 +132,6 @@ the landing pad occupancy. Estimated from experimental data, such as nascent
 RNA sequencing read counts and genomic coordinates, and contructs an object
 that holds these rates. Considers models where pause sites are fixed or
 varied. Considers models where steric hindrance is enabled or disabled.
-
-Custom display of \code{\link{ExperimentTranscriptionRates-class}} objects
-showing summary statistics
 
 Plots the transcription rates using ggplot2.
 
@@ -211,16 +203,6 @@ expRates <- estimateTranscriptionRates(
     geneBodyRegions = GRanges("chr1:1-2000"),
 )
 
-# Create an ExperimentTranscriptionRates object
-expRates <- estimateTranscriptionRates(
-    "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-)
-
-# Show the object
-show(expRates)
 # Create an ExperimentTranscriptionRates object
 expRates <- estimateTranscriptionRates(
     "path/to/plus.bw",

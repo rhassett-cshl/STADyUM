@@ -61,9 +61,10 @@ methods::setClass("ExperimentTranscriptionRates",
         pauseRegions = "GRanges",
         geneBodyRegions = "GRanges",
         stericHindrance = "logical",
-        omegaScale = "ANY",
-        rates = "tbl_df"
-    ))
+        omegaScale = "ANY"
+    ),
+    contains = "TranscriptionRates"
+)
 
 inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
     geneBodyRegions, stericHindrance, omegaScale) {
@@ -457,38 +458,41 @@ function(x, bigwigMinus, pauseRegions, geneBodyRegions, stericHindrance=FALSE, o
     ))
 })
 
-#' @title Show method for ExperimentTranscriptionRates
+#' @title Show method for ExperimentTranscriptionRates objects
+#'
 #' @description
-#' Custom display of \code{\link{ExperimentTranscriptionRates-class}} objects
-#' showing summary statistics
-#' 
+#' Enhanced show method for ExperimentTranscriptionRates objects that displays
+#' summary statistics and provides guidance on data access
+#'
 #' @param object An ExperimentTranscriptionRates object
 #' @return NULL (invisibly)
-#' @rdname ExperimentTranscriptionRates-class
 #' @export
-#' @examples
-#' # Create an ExperimentTranscriptionRates object
-#' expRates <- estimateTranscriptionRates(
-#'     "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#' )
-#'
-#' # Show the object
-#' show(expRates)
-methods::setMethod("show",
-    signature = "ExperimentTranscriptionRates",
-    function(object) {
-        cat("An ExperimentTranscriptionRates object with:\n")
-        cat("  -", length(unique(counts(object)$gene_id)), "genes\n")
-        cat("  -", nrow(rates(object)), "rate estimates\n")
-        cat("  - Steric hindrance:", stericHindrance(object), "\n")
-        if (stericHindrance(object)) {
-            cat("  - Omega scale:", omegaScale(object), "\n")
+methods::setMethod("show", "ExperimentTranscriptionRates", function(object) {
+    cat("An ExperimentTranscriptionRates object with:\n")
+    cat("  -", length(unique(counts(object)$gene_id)), "genes\n")
+    cat("  -", nrow(rates(object)), "rate estimates\n")
+    cat("  - Steric hindrance:", stericHindrance(object), "\n")
+    if (stericHindrance(object)) {
+        cat("  - Omega scale:", omegaScale(object), "\n")
+    }
+    
+    ratesData <- rates(object)
+    
+    numericCols <- sapply(ratesData, is.numeric)
+    if (any(numericCols)) {
+        cat("\nSummary statistics for rate estimates:\n")
+        for (col in names(ratesData)[numericCols]) {
+            values <- ratesData[[col]]
+            values <- values[!is.na(values)]
+            if (length(values) > 0) {
+                meanVal <- mean(values, na.rm = TRUE)
+                cat(sprintf("  - %s: %.4f (mean)\n", col, meanVal))
+            }
         }
     }
-)
+    
+    cat("\nTo access the full rates data, use: rates(object)\n")
+})
 
 createScatterPlot <- function(data, rateType) {
     ggplot2::ggplot(data, ggplot2::aes(
@@ -618,7 +622,6 @@ setMethod("plotRates", "ExperimentTranscriptionRates", function(
 #' \item{alphaZeta}{a numeric vector of the potential initiation rate}
 #' \item{omega}{a numeric vector of the effective initiation rate}
 #' \item{omegaZeta}{a numeric vector of the effective initiation rate}
-#' @export
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
 #' expRates <- estimateTranscriptionRates(
@@ -630,7 +633,7 @@ setMethod("plotRates", "ExperimentTranscriptionRates", function(
 #' 
 #' # Get the rates from the object
 #' rates(expRates)
-setGeneric("rates", function(object) standardGeneric("rates"))
+#' @export
 setMethod("rates", "ExperimentTranscriptionRates", function(object) {
     slot(object, "rates")
 })

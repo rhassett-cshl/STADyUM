@@ -239,7 +239,6 @@ Rcpp::List simulate_polymerase_cpp(
         pos_matrices_named[time_name] = pos_matrix_2d;
     }
 
-    // Create the final position matrix (last recorded state)
     Rcpp::IntegerMatrix final_pos_matrix(total_sites, cell_num);
     for (int cell = 0; cell < cell_num; cell++) {
         std::vector<int> *sites = &pos_matrix[cell];

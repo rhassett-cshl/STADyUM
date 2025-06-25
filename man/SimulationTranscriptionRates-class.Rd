@@ -9,7 +9,7 @@
 \alias{plotPauseSiteDistribution}
 \alias{simpol}
 \alias{stericHindrance,SimulationTranscriptionRates-method}
-\alias{rates}
+\alias{rates,SimulationTranscriptionRates-method}
 \alias{rnapN}
 \title{Constructor for SimulationTranscriptionRates object}
 \usage{
@@ -25,7 +25,7 @@ simpol(object)
 
 \S4method{stericHindrance}{SimulationTranscriptionRates}(object)
 
-rates(object)
+\S4method{rates}{SimulationTranscriptionRates}(object)
 
 rnapN(object)
 }

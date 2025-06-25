@@ -27,12 +27,11 @@
 #' @slot addSpace an integer value for the additional space in addition to
 #' RNAP size.
 #' @slot time a numeric value for the time to simulate.
-#' @slot deltaT a numeric value for the time step size in the simulation.
 #' @slot timePointsToRecord a numeric vector of specific time points to record
 #' position matrices for, or NULL to record no extra position matrices. Final
 #' position matrix is always recorded. Default is NULL.
 #' @slot pauseSites a numeric vector of pause sites
-#' @slot probabilityVector a numeric vector representing the probability that
+#' @slot siteProbabilities a numeric vector representing the probability that
 #' the polymerase move forward or not at each site
 #' @slot combinedCellsData an integer vector representing the total number of
 #' RNAPs at each site across all cells
@@ -44,7 +43,7 @@
 #' @rdname SimulatePolymerase-class
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom tibble tbl_df
-#' @importFrom methods slot new is slot<- validObject
+#' @importFrom methods slot new is slot<-
 #' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
 #' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave geom_histogram
 #' @importFrom reshape2 melt
@@ -57,9 +56,10 @@ methods::setClass("SimulatePolymerase",
         zeta = "numeric", zetaSd = "numeric", zetaMin = "numeric",
         zetaMax = "numeric", zetaVec="character", cellNum = "integer", 
         polSize = "integer", addSpace = "integer", time = "numeric", 
-        deltaT = "numeric", timePointsToRecord = "ANY", 
-        pauseSites = "numeric", probabilityVector = "numeric", combinedCellsData = "integer", positionMatrices = "list", finalPositionMatrix = "matrix", readCounts = "ANY"
-    ))
+        timePointsToRecord = "ANY", pauseSites = "numeric", 
+        siteProbabilities = "numeric", combinedCellsData = "integer", positionMatrices = "list", finalPositionMatrix = "matrix", 
+        readCounts = "ANY"
+))
 
 validateSimulatePolymeraseParams <- function(
     k, ksd, kMin, kMax, geneLen,
@@ -116,11 +116,8 @@ validateSimulatePolymeraseParams <- function(
     if(!is.numeric(addSpace) || addSpace < 0 || addSpace %% 1 != 0) {
         errors <- c(errors, "addSpace must be a non-negative integer")
     }
-    if (!is.numeric(time) || time <= 0) {
-        errors <- c(errors, "time must be a positive number")
-    }
-    if(!is.numeric(deltaT) || deltaT <= 0 || deltaT >= time) {
-        errors <- c(errors, "deltaT must be a positive number less than time")
+    if (!is.numeric(time) || time < 1e-4) {
+        errors <- c(errors, "time must be a positive number greater than 1e-4")
     }
     
     # Memory usage checks for position matrices
@@ -267,11 +264,10 @@ simulatePolymerase <- function(
         k, ksd, kMin, kMax, geneLen, alpha, beta, zeta, zetaSd,
         zetaMin, zetaMax, cellNum, polSize, addSpace, time, timePointsToRecord,
         zeta_vec, PACKAGE = "STADyUM"
-    )
-    
-    # Create and return a SimulatePolymerase object
+    )    
+
     obj <- new("SimulatePolymerase",
-        probabilityVector = result$probabilityVector,
+        siteProbabilities = result$probabilityVector,
         pauseSites = result$pauseSites,
         combinedCellsData = result$combinedCellsData,
         positionMatrices = result$positionMatrices,
@@ -284,10 +280,8 @@ simulatePolymerase <- function(
         addSpace = as.integer(addSpace), time = time,
         timePointsToRecord = timePointsToRecord, readCounts = NULL)
 
-    sampleReadCountsPerNucleotide(obj)
-    
-    validObject(obj)
-    
+    obj <- sampleReadCounts(obj)
+        
     return(obj)
 }
 
@@ -306,7 +300,8 @@ simulatePolymerase <- function(
 #' @param object A SimulatePolymerase object
 #' @param readDensity A numeric value for the read density within gene body in
 #' _Dukler et al._ (2017) for genes with median expression (i.e., 0.0489).
-#' @return The read count per nucleotide value
+#' @return The SimulatePolymerase object with read counts sampled given the
+#' readDensity parameter used
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- SimulatePolymerase(
@@ -315,16 +310,16 @@ simulatePolymerase <- function(
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     timePointsToRecord=NULL)
 #' # Sample read counts per nucleotide
-#' readCounts <- sampleReadCountsPerNucleotide(sim)
+#' sim <- sampleReadCounts(sim)
 #' # Print the read counts per nucleotide
-#' print(readCounts)
+#' print(readCounts(sim))
 #' @export
-setGeneric("sampleReadCountsPerNucleotide", function(
+setGeneric("sampleReadCounts", function(
     object,
     readDensity = 0.0489) {
-    standardGeneric("sampleReadCountsPerNucleotide")
+    standardGeneric("sampleReadCounts")
 })
-setMethod("sampleReadCountsPerNucleotide", "SimulatePolymerase", function(
+setMethod("sampleReadCounts", "SimulatePolymerase", function(
     object, readDensity = 0.0489) {
     cellNum <- slot(object, "cellNum")
     kMax <- slot(object, "kMax")
@@ -338,14 +333,9 @@ setMethod("sampleReadCountsPerNucleotide", "SimulatePolymerase", function(
 
     rc <- rpois(N, totalRnap / cellNum * lambda)
 
-    gbRc <- sum(rc[(kMax + 1):N])
+    slot(object, "readCounts") <- rc
 
-    ## read count per nucleotide
-    rcPerNt <- gbRc / L
-
-    slot(object, "readCounts") <- rcPerNt
-
-    return(rcPerNt)
+    return(object)
 })
 
 #' @rdname SimulatePolymerase-class
@@ -368,24 +358,52 @@ setMethod("sampleReadCountsPerNucleotide", "SimulatePolymerase", function(
 #' @export
 setMethod("show", "SimulatePolymerase", function(object) {
     cat("A SimulatePolymerase object with:\n")
-    cat("  - k =", slot(object, "k"), "\n")
-    cat("  - ksd =", slot(object, "ksd"), "\n")
-    cat("  - kMin =", slot(object, "kMin"), "\n")
-    cat("  - kMax =", slot(object, "kMax"), "\n")
-    cat("  - geneLen =", slot(object, "geneLen"), "\n")
-    cat("  - alpha =", slot(object, "alpha"), "\n")
-    cat("  - beta =", slot(object, "beta"), "\n")
-    cat("  - zeta =", slot(object, "zeta"), "\n")
-    cat("  - zetaSd =", slot(object, "zetaSd"), "\n")
-    cat("  - zetaMin =", slot(object, "zetaMin"), "\n")
-    cat("  - zetaMax =", slot(object, "zetaMax"), "\n")
-    cat("  - cellNum =", slot(object, "cellNum"), "\n")
-    cat("  - polSize =", slot(object, "polSize"), "\n")
-    cat("  - addSpace =", slot(object, "addSpace"), "\n")
-    cat("  - time =", slot(object, "time"), "\n")
-    cat("  - timePointsToRecord =", if (is.null(slot(object, "timePointsToRecord"))) "NULL" else if (length(slot(object, "timePointsToRecord")) == 0) "NULL" else paste(slot(object, "timePointsToRecord"), collapse=", "), "\n")
-    cat("  - availableTimePoints =", if (length(getAvailableTimePoints(object)) == 0) "None recorded" else paste(getAvailableTimePoints(object), collapse=", "), "\n")
-    cat("  - finalPositionMatrix dimensions =", paste(dim(slot(object, "finalPositionMatrix")), collapse=" x "), "\n")
+    cat("  - gene length =", slot(object, "geneLen"), "\n")
+    cat("  - number of cells =", slot(object, "cellNum"), "\n")
+        
+    pauseSites <- slot(object, "pauseSites")
+    if (length(pauseSites) > 0) {
+        pauseMean <- mean(pauseSites)
+        pauseSd <- sd(pauseSites)
+        cat("  - pause sites mean =", round(pauseMean, 2), "\n")
+        cat("  - pause sites std dev =", round(pauseSd, 2), "\n")
+    }
+
+    combinedData <- slot(object, "combinedCellsData")
+    if (length(combinedData) > 0) {
+        siteData <- data.frame(
+            position = 0:(length(combinedData) - 1),
+            count = combinedData
+        )
+        topSites <- siteData[order(siteData$count, decreasing = TRUE), ]
+        top10 <- head(topSites, 10)
+        
+        cat("  - top 10 most occupied sites across all cells:\n")
+        for (i in 1:nrow(top10)) {
+            cat(sprintf("    position %4d: %d polymerases\n", 
+                       top10$position[i], top10$count[i]))
+        }
+    }
+    readCounts <- slot(object, "readCounts")
+    kMax <- slot(object, "kMax")
+    N <- length(combinedData)
+    L <- N - kMax
+
+    gbRc <- sum(readCounts[(kMax + 1):N])
+    gbAvgRc <- gbRc / L
+    pauseRc <- sum(readCounts[1:kMax])
+    pauseAvgRc <- pauseRc / kMax
+
+    cat("  - gene body average read counts =", round(gbAvgRc, 2), "\n")
+    cat("  - pause region average read counts =", round(pauseAvgRc, 2), "\n")
+    
+    # Calculate fraction of nucleotides with zero reads to indicate sparsity
+    zeroReadsFraction <- sum(readCounts == 0) / length(readCounts)
+    cat("  - percent of nucleotides with zero reads =", 
+        round(zeroReadsFraction * 100, 1), "%\n")
+
+    cat("\nTo access the full simulation parameters, use: parameters(object)\n")
+    cat("\nTo access the all sampled read counts, use: readCounts(object)\n")
 })
 
 #' @rdname SimulatePolymerase-class
@@ -521,7 +539,7 @@ setMethod(
     function(object, file = NULL, width = 8, height = 6) {
         df <- data.frame(
             position = 0:slot(object, "geneLen"),
-            probability = slot(object, "probabilityVector")
+            probability = slot(object, "siteProbabilities")
         )
 
         p <- ggplot(df, aes(x = position, y = probability)) +
@@ -630,15 +648,15 @@ setMethod("pauseSites", "SimulatePolymerase", function(object) {
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     timePointsToRecord=NULL)
 #' # Get probability vector
-#' probabilityVector <- probabilityVector(sim)
+#' siteProbabilities <- siteProbabilities(sim)
 #' # Print the probability vector
-#' print(probabilityVector)
+#' print(siteProbabilities)
 #' @export
-setGeneric("probabilityVector", function(object) {
-    standardGeneric("probabilityVector")
+setGeneric("siteProbabilities", function(object) {
+    standardGeneric("siteProbabilities")
 })
-setMethod("probabilityVector", "SimulatePolymerase", function(object) {
-    slot(object, "probabilityVector")
+setMethod("siteProbabilities", "SimulatePolymerase", function(object) {
+    slot(object, "siteProbabilities")
 })
 
 #' @rdname SimulatePolymerase-class
