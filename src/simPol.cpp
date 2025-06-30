@@ -110,32 +110,46 @@ Rcpp::List simulate_polymerase_cpp(
     /* A matrix of probabilities to control transition from state to state
      * cols are cells, rows are positions
      */
-    std::vector<double> zv;
+    Rcpp::NumericMatrix zv;
     if (zeta_vec.isNull()) {
-        zv = NormalDistrubtionGenerator(zeta, zeta_sd, zeta_min, zeta_max, 
-                                      total_sites, false, delta_t);
+        // Generate different zv values for each cell
+        zv = Rcpp::NumericMatrix(total_sites, cell_num);
+        for (int cell = 0; cell < cell_num; cell++) {
+            std::vector<double> cell_zv = NormalDistrubtionGenerator(zeta, zeta_sd, 
+                                                                   zeta_min, zeta_max, 
+                                                                   total_sites, false, 
+                                                                   delta_t);
+            for (int site = 0; site < total_sites; site++) {
+                zv(site, cell) = cell_zv[site];
+            }
+        }
     } else {
-        // Convert Rcpp::NumericVector to std::vector<double>
-        zv = Rcpp::as<std::vector<double>>(zeta_vec);
+        // Convert Rcpp::NumericVector to std::vector<double> and copy across all cells
+        std::vector<double> zeta_vec_values = Rcpp::as<std::vector<double>>(zeta_vec);
         
         // Ensure correct length
-        if ((int)zv.size() > total_sites) {
-            zv.resize(total_sites);
+        if ((int)zeta_vec_values.size() > total_sites) {
+            zeta_vec_values.resize(total_sites);
         }
-        else if((int)zv.size() == total_sites - 1)
+        else if((int)zeta_vec_values.size() == total_sites - 1)
         {
-            double mean = std::accumulate(zv.begin(), zv.end(), 0.0) / zv.size();
-            zv.insert(zv.begin(), mean);
+            double mean = std::accumulate(zeta_vec_values.begin(), 
+                                        zeta_vec_values.end(), 0.0) / zeta_vec_values.size();
+            zeta_vec_values.insert(zeta_vec_values.begin(), mean);
         }
-        else {
+        else if ((int)zeta_vec_values.size() != total_sites) {
             Rcpp::Rcout << "Vector for scaling zeta is too short, check total length of the vector!";
-            return -1;
+            return Rcpp::List::create();
         }
+        
+        // Copy the vector values across all cells
+        zv = Rcpp::NumericMatrix(total_sites, cell_num);
         double transform_val = zeta * delta_t;
-        std::transform(zv.begin(), zv.end(), zv.begin(), 
-                      [transform_val](double c) -> double {
-                          return c * transform_val;
-                      });
+        for (int site = 0; site < total_sites; site++) {
+            for (int cell = 0; cell < cell_num; cell++) {
+                zv(site, cell) = zeta_vec_values[site] * transform_val;
+            }
+        }
     }
 
     GetRNGstate();  // Initialize R's random number generator
@@ -162,7 +176,7 @@ Rcpp::List simulate_polymerase_cpp(
                 int site_idx = (*sites)[i];
                 double prob = site_idx == 0            ? alpha * delta_t
                               : site_idx == y.at(cell) ? beta * delta_t
-                                                  : zv.at(site_idx);
+                                                  : zv(site_idx, cell);
                 double draw = R::runif(0.0, 1.0);  // Using R's uniform random number generator
                 if (prob > draw)
                 {

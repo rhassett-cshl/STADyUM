@@ -31,8 +31,8 @@
 #' position matrices for, or NULL to record no extra position matrices. Final
 #' position matrix is always recorded. Default is NULL.
 #' @slot pauseSites a numeric vector of pause sites
-#' @slot siteProbabilities a numeric vector representing the probability that
-#' the polymerase move forward or not at each site
+#' @slot siteProbabilities a numeric matrix representing the probability that
+#' the polymerase move forward or not at each site for each cell (sites x cells)
 #' @slot combinedCellsData an integer vector representing the total number of
 #' RNAPs at each site across all cells
 #' @slot positionMatrices a list of position matrices
@@ -57,7 +57,7 @@ methods::setClass("SimulatePolymerase",
         zetaMax = "numeric", zetaVec="character", cellNum = "integer", 
         polSize = "integer", addSpace = "integer", time = "numeric", 
         timePointsToRecord = "ANY", pauseSites = "numeric", 
-        siteProbabilities = "numeric", combinedCellsData = "integer", positionMatrices = "list", finalPositionMatrix = "matrix", 
+        siteProbabilities = "matrix", combinedCellsData = "integer", positionMatrices = "list", finalPositionMatrix = "matrix", 
         readCounts = "ANY"
 ))
 
@@ -537,16 +537,21 @@ setGeneric("plotTransitionProbabilities", function(
 setMethod(
     "plotTransitionProbabilities", "SimulatePolymerase",
     function(object, file = NULL, width = 8, height = 6) {
+        prob_matrix <- slot(object, "siteProbabilities")
+        
+        # Calculate mean probabilities across cells for each site
+        mean_probabilities <- rowMeans(prob_matrix)
+        
         df <- data.frame(
-            position = 0:slot(object, "geneLen"),
-            probability = slot(object, "siteProbabilities")
+            position = 0:(length(mean_probabilities) - 1),
+            probability = mean_probabilities
         )
 
         p <- ggplot(df, aes(x = position, y = probability)) +
             geom_line() +
             theme_minimal() +
             labs(
-                title = "Transition Probabilities Across Gene",
+                title = "Transition Probabilities Across Gene (Mean Across Cells)",
                 x = "Position",
                 y = "Transition Probability"
             )
@@ -634,10 +639,12 @@ setMethod("pauseSites", "SimulatePolymerase", function(object) {
 })
 
 #' @rdname SimulatePolymerase-class
-#' @title Accessor for Probability Vector 
+#' @title Accessor for Probability Matrix 
 #'
 #' @description
-#' Accessor for the probability numeric vector from a SimulatePolymerase object.
+#' Accessor for the probability numeric matrix from a SimulatePolymerase object.
+#' The matrix has dimensions (sites x cells) where each element represents the
+#' transition probability for a specific site and cell.
 #'
 #' @param object a \code{SimulatePolymerase-class} object
 #' @examples
@@ -647,10 +654,10 @@ setMethod("pauseSites", "SimulatePolymerase", function(object) {
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     timePointsToRecord=NULL)
-#' # Get probability vector
+#' # Get probability matrix
 #' siteProbabilities <- siteProbabilities(sim)
-#' # Print the probability vector
-#' print(siteProbabilities)
+#' # Print the probability matrix dimensions
+#' print(dim(siteProbabilities))
 #' @export
 setGeneric("siteProbabilities", function(object) {
     standardGeneric("siteProbabilities")

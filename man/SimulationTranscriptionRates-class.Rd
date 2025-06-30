@@ -10,7 +10,6 @@
 \alias{simpol}
 \alias{stericHindrance,SimulationTranscriptionRates-method}
 \alias{rates,SimulationTranscriptionRates-method}
-\alias{rnapN}
 \title{Constructor for SimulationTranscriptionRates object}
 \usage{
 \S4method{estimateTranscriptionRates}{SimulatePolymerase}(x, stericHindrance = FALSE, ...)
@@ -26,8 +25,6 @@ simpol(object)
 \S4method{stericHindrance}{SimulationTranscriptionRates}(object)
 
 \S4method{rates}{SimulationTranscriptionRates}(object)
-
-rnapN(object)
 }
 \arguments{
 \item{stericHindrance}{a logical value to determine whether to infer
@@ -78,8 +75,6 @@ SimulationTranscriptionRates object.
 
 Accessor for the tibble containing the estimated rates from a
 SimulationTranscriptionRates object.
-
-Accessor for the number of RNAPs from a SimulationTranscriptionRates object.
 }
 \section{Slots}{
 
@@ -178,15 +173,4 @@ estRates <- estimateTranscriptionRates(sim)
 rates <- rates(estRates)
 # Print the rates
 print(rates)
-# Create a SimulatePolymerase object
-sim <- simulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
-# Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim)
-# Get rnapN
-rnapN <- rnapN(estRates)
-# Print the rnapN
-print(rnapN)
 }

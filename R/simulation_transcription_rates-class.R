@@ -130,12 +130,27 @@ createGenomicRegions <- function(params) {
 generateRnapPositions <- function(params, regions) {
     seeds <- seq(from = 2013, by = 1, length.out = params$sampleN)
     rnapGrng <- list()
-    rnapNls <- list()
+
 
     beta_prob <- params$prob[1, 1] / params$alpha * params$beta
-    # get pause position for every cell
-    idx <- which(params$prob == beta_prob, arr.ind = TRUE)
-    idx <- idx[idx[, 1] != 1, ]
+    
+    # Find pause sites for each cell by looking for the beta_prob value in each column
+    pauseSitesPerCell <- numeric(params$totalCell)
+    for (cell in 1:params$totalCell) {
+        # Find where beta_prob occurs in this cell's probability vector
+        cell_probs <- params$prob[, cell]
+        pause_indices <- which(cell_probs == beta_prob)
+        # Remove the first position (position 0) as it's not a pause site
+        pause_indices <- pause_indices[pause_indices != 1]
+        
+        if (length(pause_indices) > 0) {
+            # Take the first pause site found
+            pauseSitesPerCell[cell] <- pause_indices[1] - 1
+        } else {
+            # If no pause site found, use a default value (e.g., k)
+            pauseSitesPerCell[cell] <- params$k
+        }
+    }
 
     for (i in seq_len(params$sampleN)) {
         set.seed(seeds[i])
@@ -144,16 +159,19 @@ generateRnapPositions <- function(params, regions) {
         resPos <- params$rnapPos[, selCells]
         resPos <- resPos[-1, ]
 
-        pauseSite <- idx[selCells, 1] - 1
+
+        # Use the pre-calculated pause sites for the selected cells
+        pauseSite <- pauseSitesPerCell[selCells]
         resShape <- dim(resPos)
         afterPauseLen <- resShape[1] - pauseSite
+
+        
         maskMx <- map2(pauseSite, afterPauseLen,
             function(x, y) c(rep(TRUE, x), rep(FALSE, y))
         )
-        maskMx <- Matrix::Matrix(unlist(maskMx), 
+        maskMx <- matrix(unlist(maskMx), 
             nrow = resShape[1], ncol = resShape[2])
-        # calculate rnap number before pause site for every cell
-        rnapNls[[i]] <- colSums(resPos * maskMx)
+        
 
         # calculate rnap positions across all cells
         resAll <- rowSums(resPos)
@@ -170,10 +188,10 @@ generateRnapPositions <- function(params, regions) {
         rm(resPos, resAll)
     }
 
-    return(list(rnapGrng = rnapGrng, rnapNls = rnapNls))
+    return(rnapGrng)
 }
 
-calculateReadCounts <- function(rnapData, regions, params) {
+calculateReadCounts <- function(rnapGrng, regions, params) {
     bwDfs <- tibble(
         trial = seq_len(params$sampleN),
         rcRegion = vector("list", params$sampleN),
@@ -185,7 +203,7 @@ calculateReadCounts <- function(rnapData, regions, params) {
         rnapProp = numeric(params$sampleN)
     )
 
-    bwDfs$rcRegion <- map(rnapData$rnapGrng, 
+    bwDfs$rcRegion <- map(rnapGrng, 
         ~ summariseSimulationBw(.x, regions$gnRng, regions$regionNames))
 
     bwDfs$rcTss <- map_dbl(bwDfs$rcRegion, "tss")
@@ -199,9 +217,9 @@ calculateReadCounts <- function(rnapData, regions, params) {
     return(bwDfs)
 }
 
-adjustReadCoverage <- function(rnapData, regions, params, bwDfs) {
+adjustReadCoverage <- function(rnapGrng, regions, params, bwDfs) {
     if (!is.null(params$lambda)) {
-        rnapGrng <- map(rnapData$rnapGrng, function(grng) {
+        rnapGrng <- map(rnapGrng, function(grng) {
             grng$score[params$kmin:params$kmax] <- rpois(
                 length(params$kmin:params$kmax),
                 grng$score[params$kmin:params$kmax] / 
@@ -363,13 +381,13 @@ function(x, stericHindrance=FALSE, ...) {
     regions <- createGenomicRegions(params)
 
     # Generate RNAP positions
-    rnapData <- generateRnapPositions(params, regions)
+    rnapGrng <- generateRnapPositions(params, regions)
 
     # Calculate initial read counts
-    bwDfs <- calculateReadCounts(rnapData, regions, params)
+    bwDfs <- calculateReadCounts(rnapGrng, regions, params)
 
     # Adjust read coverage if needed
-    adjustedData <- adjustReadCoverage(rnapData, regions, params, bwDfs)
+    adjustedData <- adjustReadCoverage(rnapGrng, regions, params, bwDfs)
     bwDfs <- adjustedData$bwDfs
     rnapGrng <- adjustedData$rnapGrng
     
@@ -389,7 +407,13 @@ function(x, stericHindrance=FALSE, ...) {
         betaOrg = bwDfs$betaOrg,
         betaAdp = bwDfs$betaAdp,
         fkMean = bwDfs$fkMean,
-        fkVar = bwDfs$fkVar
+        fkVar = bwDfs$fkVar,
+        rcTss = bwDfs$rcTss,
+        rcGb = bwDfs$rcGb,
+        rcLanding = bwDfs$rcLanding,
+        R = bwDfs$R,
+        Rpause = bwDfs$Rpause,
+        rnapProp = bwDfs$rnapProp
     )
     
     if (stericHindrance && "phi" %in% colnames(bwDfs)) {
@@ -639,31 +663,6 @@ setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
 setMethod("rates", "SimulationTranscriptionRates", function(object) {
     slot(object, "rates")
 })
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Accessor for RnapN
-#'
-#' @description
-#' Accessor for the number of RNAPs from a SimulationTranscriptionRates object.
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Get rnapN
-#' rnapN <- rnapN(estRates)
-#' # Print the rnapN
-#' print(rnapN)
-#' @export
-setGeneric("rnapN", function(object) standardGeneric("rnapN"))
-setMethod(
-    "rnapN", "SimulationTranscriptionRates",
-    function(object) slot(object, "rnapN")
-)
 
 #' @examples
 #' # Create a SimulationTranscriptionRates object

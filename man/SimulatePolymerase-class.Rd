@@ -204,7 +204,9 @@ Save all plots to files.
 
 Accessor for the pause sites numeric vector from a SimulatePolymerase object.
 
-Accessor for the probability numeric vector from a SimulatePolymerase object.
+Accessor for the probability numeric matrix from a SimulatePolymerase object.
+The matrix has dimensions (sites x cells) where each element represents the
+transition probability for a specific site and cell.
 
 Accessor for the combined cells data numeric vector from a
 SimulatePolymerase object.
@@ -270,8 +272,8 @@ position matrix is always recorded. Default is NULL.}
 
 \item{\code{pauseSites}}{a numeric vector of pause sites}
 
-\item{\code{siteProbabilities}}{a numeric vector representing the probability that
-the polymerase move forward or not at each site}
+\item{\code{siteProbabilities}}{a numeric matrix representing the probability that
+the polymerase move forward or not at each site for each cell (sites x cells)}
 
 \item{\code{combinedCellsData}}{an integer vector representing the total number of
 RNAPs at each site across all cells}
@@ -362,10 +364,10 @@ sim <- SimulatePolymerase(
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
     timePointsToRecord=NULL)
-# Get probability vector
+# Get probability matrix
 siteProbabilities <- siteProbabilities(sim)
-# Print the probability vector
-print(siteProbabilities)
+# Print the probability matrix dimensions
+print(dim(siteProbabilities))
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
