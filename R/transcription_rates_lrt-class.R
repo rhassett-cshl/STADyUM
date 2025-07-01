@@ -219,15 +219,13 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
+#'     geneBodyRegions = GRanges("chr1:1-2000")
 #' )
 #' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
+#'     geneBodyRegions = GRanges("chr1:1-2000")
 #' )
 #' spikeInScalingFactor <- "path/to/scale.csv"
 #' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
@@ -288,15 +286,13 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
+#'     geneBodyRegions = GRanges("chr1:1-2000")
 #' )
 #' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
+#'     geneBodyRegions = GRanges("chr1:1-2000")
 #' )
 #' lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
 #' expData1(lrts)
@@ -320,15 +316,13 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
+#'     geneBodyRegions = GRanges("chr1:1-2000")
 #' )
 #' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
+#'     geneBodyRegions = GRanges("chr1:1-2000")
 #' )
 #' lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
 #' expData2(lrts)
@@ -352,15 +346,13 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
+#'     geneBodyRegions = GRanges("chr1:1-2000")
 #' )
 #' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = "path/to/plus.bw",
 #'     bigwigMinus = "path/to/minus.bw",
 #'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#'     geneNameColumn = "gene_id"
+#'     geneBodyRegions = GRanges("chr1:1-2000")
 #' )
 #' lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
 #' spikeInScalingFactor(lrts)
