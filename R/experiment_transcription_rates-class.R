@@ -24,10 +24,14 @@
 #' with columns:
 #' \describe{
 #'   \item{geneId}{Character. Gene identifier}
-#'   \item{chi}{Numeric. RNAP density along gene body}
-#'   \item{betaOrg}{Numeric. RNAP density along pause region}
-#'   \item{betaAdp}{Numeric. RNAP density along pause region from adapted model
-#' which allows pause sites to vary across cells}
+#'   \item{chi}{Numeric. RNAP density along gene body given as estimate for the
+#'   gene body elongation rate [RNAPs/bp]}
+#'   \item{betaOrg}{Numeric. Ratio of gene body RNAP density to pause region
+#'   RNAP density with fixed pause sites given as an estimate for the
+#'   pause-escape rate}
+#'   \item{betaAdp}{Numeric. Ratio of gene body RNAP density to pause region
+#'   RNAP density from adapted model which allows pause sites to vary across
+#'   cells given as an estimate for the pause-escape rate}
 #'   \item{fkMean}{Numeric. Mean position of pause sites}
 #'   \item{fkVar}{Numeric. Variance of pause site positions}
 #'   \item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
@@ -475,21 +479,24 @@ methods::setMethod("show", "ExperimentTranscriptionRates", function(object) {
     if (stericHindrance(object)) {
         cat("  - Omega scale:", omegaScale(object), "\n")
     }
-    
+
+    cat("\nSummary statistics for rate estimates across all genes/features:\n")
     ratesData <- rates(object)
     
-    numericCols <- sapply(ratesData, is.numeric)
-    if (any(numericCols)) {
-        cat("\nSummary statistics for rate estimates:\n")
-        for (col in names(ratesData)[numericCols]) {
-            values <- ratesData[[col]]
-            values <- values[!is.na(values)]
-            if (length(values) > 0) {
-                meanVal <- mean(values, na.rm = TRUE)
-                cat(sprintf("  - %s: %.4f (mean)\n", col, meanVal))
-            }
-        }
-    }
+    chi_mean <- mean(ratesData$chi, na.rm = TRUE)
+    cat(sprintf("  - chi (gene body RNAP density): %.2f RNAPs/bp\n", chi_mean))
+    
+    betaOrg_mean <- mean(ratesData$betaOrg, na.rm = TRUE)
+    cat(sprintf("  - betaOrg (ratio of gene body RNAP density to pause region RNAP density, fixed sites): %.4f\n", betaOrg_mean))
+    
+    betaAdp_mean <- mean(ratesData$betaAdp, na.rm = TRUE)
+    cat(sprintf("  - betaAdp (ratio of gene body RNAP density to pause region RNAP density, adapted model): %.4f\n", betaAdp_mean))
+    
+    fkMean_mean <- mean(ratesData$fkMean, na.rm = TRUE)
+    cat(sprintf("  - fkMean (mean position of pause sites): ~ %.0f bp\n", fkMean_mean))
+    
+    fkVar_mean <- mean(ratesData$fkVar, na.rm = TRUE)
+    cat(sprintf("  - fkVar (variance of pause site positions): %.2f bp^2\n", fkVar_mean))
     
     cat("\nTo access the full rates data, use: rates(object)\n")
 })

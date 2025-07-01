@@ -14,18 +14,41 @@
 #' @slot rates a \code{\link[tibble]{tbl_df}} containing the estimated rates
 #' with columns:
 #' \describe{
-#'   \item{trial}{Numeric. Trial number}
-#'   \item{chi}{Numeric. RNAP density along gene body}
-#'   \item{betaOrg}{Numeric. RNAP density along pause region}
-#'   \item{betaAdp}{Numeric. RNAP density along pause region from adapted model
-#' which allows pause sites to vary across cells}
-#'   \item{fkMean}{Numeric. Mean position of pause sites}
-#'   \item{fkVar}{Numeric. Variance of pause site positions}
+#'   \item{trial}{Numeric. Trial number, each trial samples 5000 cells}
+#'   \item{chi}{Numeric. RNAP density along gene body given as estimate for the
+#'   gene body elongation rate [RNAPs/bp]}
+#'   \item{betaOrg}{Numeric. Ratio of gene body RNAP density to pause region
+#'   RNAP density with fixed pause sites given as an estimate for the
+#'   pause-escape rate}
+#'   \item{betaAdp}{Numeric. Ratio of gene body RNAP density to pause region
+#'   RNAP density from adapted model which allows pause sites to vary across
+#'   cells given as an estimate for the pause-escape rate}
 #'   \item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
 #'   enabled)}
+#'   \item{fk}{list. Likelihood of pausing at each pause region position}
+#'   \item{fkMean}{Numeric. Mean position of pause sites}
+#'   \item{fkVar}{Numeric. Variance of pause site positions}
+#'   \item{totalTssRc}{Numeric. Total RNAP read counts in the TSS region (across
+#'   all cells)}
+#'   \item{totalGbRc}{Numeric. Total RNAP read counts in the gene body region
+#'   (across all cells)}
+#'   \item{totalLandingRc}{Numeric. Total RNAP read counts in the landing pad
+#'   region (across all cells)}
+#'   \item{avgRcPerCell}{Numeric. Average number of RNAPs per cell for gene
+#'   body and TSS regions}
+#'   \item{avgTssRcPerCell}{Numeric. Average number of RNAPs per cell for
+#'   pause regions (across all cells)}
+#'   \item{avgLandingRcPerCell}{Numeric. Average number of RNAPs per cell for
+#'   landing pad regions (across all cells)}
+#'   \item{simulatedPauseSiteCounts}{list. Simulated pause site counts for each
+#'    cell}
+#'   \item{expectedPauseSiteCounts}{list. Expected pause site counts for each
+#'    cell estimated from the EM algorithm}
+#'   \item{expectationMaximizationStatus}{character. Status of the expectation
+#'   maximization algorithm. "normal": converged normally, "single_site":
+#'   converged to single pause site, "max_iterations": reached maximum
+#'   iterations without convergence. Note max # of iterations is 500.}
 #' }
-#' @slot rnapN a list of \code{\link[GenomicRanges]{GRanges-class}} objects
-#' that hold the RNAP positions
 #'
 #' @name SimulationTranscriptionRates-class
 #' @rdname SimulationTranscriptionRates-class
@@ -76,6 +99,7 @@ prepareSimulationParameters <- function(simpol) {
 
     spacing <- slot(simpol, "polSize") + slot(simpol, "addSpace")
     k <- slot(simpol, "k")
+    ksd <- slot(simpol, "ksd")
     alpha <- slot(simpol, "alpha")
     beta <- slot(simpol, "beta")
     prob <- siteProbabilities(simpol)
@@ -95,6 +119,7 @@ prepareSimulationParameters <- function(simpol) {
         matchedGbLen = matchedGbLen,
         spacing = spacing,
         k = k,
+        ksd = ksd,
         startPoint = startPoint,
         lambda = lambda,
         rnapPos = rnapPos,
@@ -251,7 +276,7 @@ calculateInitialRates <- function(bwDfs, regions, params, simpol, rnapGrng) {
 
     bwDfs$chi <- bwDfs$rcGb / regions$len$gb
 
-    if (parameters(simpol)$ksd == 0) {
+    if (params$ksd == 0) {
         bwDfs$betaOrg <- bwDfs$chi / map_dbl(bwDfs$Xk, params$k)
     } else {
         bwDfs$betaOrg <- bwDfs$chi / (bwDfs$rcTss / regions$len$tss)
@@ -399,28 +424,30 @@ function(x, stericHindrance=FALSE, ...) {
     
     # Process EM results
     bwDfs <- processEmResults(bwDfs, emLs, stericHindrance)
-    print(bwDfs)
     
     rates_tibble <- tibble(
         trial = bwDfs$trial,
         chi = bwDfs$chi,
         betaOrg = bwDfs$betaOrg,
         betaAdp = bwDfs$betaAdp,
+        fk = bwDfs$fk,
         fkMean = bwDfs$fkMean,
         fkVar = bwDfs$fkVar,
-        rcTss = bwDfs$rcTss,
-        rcGb = bwDfs$rcGb,
-        rcLanding = bwDfs$rcLanding,
-        R = bwDfs$R,
-        Rpause = bwDfs$Rpause,
-        rnapProp = bwDfs$rnapProp
+        totalTssRc = bwDfs$rcTss,
+        totalGbRc = bwDfs$rcGb,
+        totalLandingRc = bwDfs$rcLanding,
+        avgRcPerCell = bwDfs$R,
+        avgTssRcPerCell = bwDfs$Rpause,
+        avgLandingRcPerCell = bwDfs$rnapProp,
+        simulatedPauseSiteCounts = bwDfs$Xk,
+        expectedPauseSiteCounts = bwDfs$Yk,
+        expectationMaximizationStatus = bwDfs$flag
     )
     
     if (stericHindrance && "phi" %in% colnames(bwDfs)) {
         rates_tibble$phi <- bwDfs$phi
     }
     
-    # Create and return the final object
     new("SimulationTranscriptionRates",
         simpol = simpol, 
         stericHindrance = stericHindrance,
@@ -449,27 +476,49 @@ function(x, stericHindrance=FALSE, ...) {
 setMethod("show", "SimulationTranscriptionRates", function(object) {
     cat("A SimulationTranscriptionRates object with:\n")
     cat("  - Steric hindrance:", stericHindrance(object), "\n")
-    cat("  - number of trials:", nrow(rates(object)), "\n")
-
-    ratesData <- rates(object)
-    numericCols <- sapply(ratesData, is.numeric)
-    excludeCols <- c("trial")
-    if (!stericHindrance(object)) {
-        excludeCols <- c(excludeCols, "phi")
-    }
-    validCols <- names(ratesData)[numericCols & !(names(ratesData) %in% excludeCols)]
+    cat("  - Number of Trials with 5000 cells:", nrow(rates(object)), "\n")
+    cat("\nSummary statistics for rate estimates:\n")
     
-    if (length(validCols) > 0) {
-        cat("\nSummary statistics for rate estimates:\n")
-        for (col in validCols) {
-            values <- ratesData[[col]]
-            values <- values[!is.na(values)]
-            if (length(values) > 0) {
-                meanVal <- mean(values, na.rm = TRUE)
-                cat(sprintf("  - %s: %.4f (mean)\n", col, meanVal))
-            }
-        }
+    ratesData <- rates(object)
+    
+    cat("\nSummary statistics for rate estimates:\n")
+    
+    chi_mean <- mean(ratesData$chi, na.rm = TRUE)
+    cat(sprintf("  - chi (gene body RNAP density): %.2f RNAPs/bp\n", chi_mean))
+    
+    betaOrg_mean <- mean(ratesData$betaOrg, na.rm = TRUE)
+    cat(sprintf("  - betaOrg (ratio of gene body RNAP density to pause region RNAP density, fixed sites): %.4f\n", betaOrg_mean))
+    
+    betaAdp_mean <- mean(ratesData$betaAdp, na.rm = TRUE)
+    cat(sprintf("  - betaAdp (ratio of gene body RNAP density to pause region RNAP density, adapted model): %.4f\n", betaAdp_mean))
+    
+    rcTssTrialMean <- mean(ratesData$totalTssRc, na.rm = TRUE)
+    cat(sprintf("  - TSS Read Counts Averaged Across Trials: ~ %.0f read counts\n", rcTssTrialMean))
+
+    rcGbTrialMean <- mean(ratesData$totalGbRc, na.rm = TRUE)
+    cat(sprintf("  - Gene Body Read Counts Averaged Across Trials: ~ %.0f read counts\n", rcGbTrialMean))
+
+    rcLandingTrialMean <- mean(ratesData$totalLandingRc, na.rm = TRUE)
+    cat(sprintf("  - Landing Pad Read Counts Averaged Across Trials: ~ %.0f read counts\n", rcLandingTrialMean))
+    
+    # Add steric hindrance parameter if enabled
+    if (stericHindrance(object) && "phi" %in% colnames(ratesData)) {
+        phi_mean <- mean(ratesData$phi, na.rm = TRUE)
+        cat(sprintf("  - phi (landing pad occupancy): %.2f\n", phi_mean))
     }
+    
+    em_status <- ratesData$expectationMaximizationStatus
+    total_trials <- length(em_status)
+    max_iter_count <- sum(em_status == "max_iterations", na.rm = TRUE)
+    normal_count <- sum(em_status == "normal", na.rm = TRUE)
+    single_site_count <- sum(em_status == "single_site", na.rm = TRUE)
+        
+    cat("\nEM Algorithm Convergence:\n")
+    cat(sprintf("  - Trials converged normally: %d/%d (%.1f%%)\n", 
+    normal_count, total_trials, (normal_count/total_trials)*100))
+    cat(sprintf("  - Trials converged to single site: %d/%d (%.1f%%)\n", 
+    single_site_count, total_trials, (single_site_count/total_trials)*100))
+    cat(sprintf("  - Trials reached max iterations without convergence: %d/%d (%.1f%%)\n", max_iter_count, total_trials, (max_iter_count/total_trials)*100))
     
 })
 
