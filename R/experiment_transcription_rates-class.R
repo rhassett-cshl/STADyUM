@@ -42,6 +42,10 @@
 #'   hindrance is enabled)}
 #'   \item{omegaZeta}{Numeric. Effective initiation rate (only if steric
 #'   hindrance is enabled)}
+#'   \item{totalGbRc}{Numeric. Total gene body read counts}
+#'   \item{gbLength}{Numeric. Gene body length}
+#'   \item{Yk}{Numeric. Expected pause site counts}
+#'   \item{Xk}{Numeric. Observed pause site counts}
 #' }
 #'
 #' @name ExperimentTranscriptionRates-class
@@ -201,11 +205,11 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
                             stericHindrance, omegaScale, zeta) {
     emRate <- DataFrame(
         geneId = rc1$gene_id, 
-        s = rc1$summarizedGbCounts, 
-        N = rc1$gbLength
+        totalGbRc = rc1$summarizedGbCounts, 
+        gbLength = rc1$gbLength
     )
     
-    emRate$chi <- emRate$s / emRate$N
+    emRate$chi <- emRate$totalGbRc / emRate$gbLength
 
     bwCov <- coverage(bw1P3, weight = "score")
 
@@ -224,12 +228,10 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
         
         # Check if chromosome exists in coverage data
         if (!chr %in% names(bwCov)) {
-            warning(sprintf("Chromosome %s not found in coverage data for gene %s", 
-                          chr, geneIds[i]))
+            warning(sprintf("Chromosome %s not found in coverage data for gene %s", chr, geneIds[i]))
             return(FALSE)
         }
         
-        # Check if region coordinates are valid
         if (regionStart > regionEnd || regionStart < 1 || 
             regionEnd > length(bwCov[[chr]])) {
             warning(sprintf("Invalid region coordinates for gene %s: %s:%d-%d", 
@@ -318,6 +320,7 @@ experimentProcessEmResults <- function(emRate, emLs, stericHindrance, zeta) {
     
     emRate$t <- vapply(emRate$Yk, sum, numeric(1))
     emRate$proportionYk <- emRate$t / vapply(emRate$Xk, sum, numeric(1))
+    emRate$likelihood <- map_dbl(emLs, ~ .x$likelihoods[[length(.x$likelihoods)]])
     
     ## Convert to tibble and handle steric hindrance
     emRate <- as_tibble(emRate)
@@ -346,15 +349,16 @@ estimateEmRates <- function(rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
 
 prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
     emRate <- emRate %>% left_join(analyticalRateTbl, by = "geneId")
+    print(emRate)
 
     if (!stericHindrance) {
         emRate <- emRate %>%
-            select(geneId, chi, betaOrg, betaAdp, fkMean, fkVar)
+            select(geneId, chi, betaOrg, betaAdp, fkMean, fkVar, totalGbRc, gbLength, Yk, Xk, likelihood)
     } else {
         emRate <- emRate %>%
             select(
                 geneId, chi, betaOrg, betaAdp, fkMean, fkVar, phi,
-                omegaZeta, betaZeta, alphaZeta
+                omegaZeta, betaZeta, alphaZeta, totalGbRc, gbLength, Yk, Xk, likelihood
             )
     }
 

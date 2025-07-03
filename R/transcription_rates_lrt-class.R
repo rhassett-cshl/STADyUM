@@ -1,6 +1,6 @@
 #' @importFrom dplyr mutate bind_rows bind_cols
 #' @importFrom tibble tibble
-#' @importFrom purrr map2 pmap
+#' @importFrom purrr map2 pmap map_dbl
 #' @importFrom stats pchisq p.adjust
 #' @importFrom methods slot is slot<- validObject
 #' @importFrom readr read_csv
@@ -37,7 +37,7 @@ computeOmegaLRT <- function(lambda1, lambda2, rc1, rc2) {
         )
 
     omegaTbl <- omegaTbl %>%
-        bind_cols(bind_rows(map2(rc1$s, rc2$s, omegaLRT,
+        bind_cols(bind_rows(map2(rc1$totalGbRc, rc2$totalGbRc, omegaLRT,
             tao1 = tao1, tao2 = tao2
         )))
 
@@ -48,9 +48,9 @@ computeOmegaLRT <- function(lambda1, lambda2, rc1, rc2) {
 computeBetaLRTParams <- function(rc1, rc2, kmin, kmax) {
     fkInt <- dnorm(kmin:kmax, mean = 50, sd = 100)
     fkInt <- fkInt / sum(fkInt)
-    s1 <- rc1$s; s2 <- rc2$s
+    s1 <- rc1$totalGbRc; s2 <- rc2$totalGbRc
     t1H1 <- map_dbl(rc1$Yk, sum); t2H1 <- map_dbl(rc2$Yk, sum)
-    Xk1 <- rc1$Xk; Xk2 <- rc2$Xk; M <- rc1$N
+    Xk1 <- rc1$Xk; Xk2 <- rc2$Xk; M <- rc1$gbLength
     chiHat <- (s1 + s2) / M
     betaInt <- chiHat / (map_dbl(rc1$Xk, sum) + map_dbl(rc2$Xk, sum))
     chiHat1 <- rc1$chi; chiHat2 <- rc2$chi
@@ -71,13 +71,13 @@ runEMH0BetaLRT <- function(params, kmin, kmax, maxItr, tor) {
         ),
         function(x, y, z, k, m, n) {
             tryCatch(
-                mainEMH0(
+                mainExpectationMaximizationH0(
                     params$fkInt, Xk1 = x, Xk2 = y, kmin, kmax,
                     betaInt = z, chiHat = k, chiHat1 = m, chiHat2 = n,
                     maxItr = maxItr, tor = tor
                 ),
                 error = function(err) {
-                    list("beta" = NA, "Yk1" = NA, "Yk2" = NA)
+                    list("beta" = NA, "Yk1" = NA, "Yk2" = NA, "likelihoods" = list(NA))
                 }
             )
         }
@@ -107,7 +107,7 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
                 error = function(err) {
                     list(
                         "beta" = NA, "Yk" = NA, "fkMean" = NA, "fkVar" = NA,
-                        "likelihoods" = NA
+                        "likelihoods" = list(NA)
                     )
                 }
             )
@@ -125,7 +125,7 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
                 error = function(err) {
                     list(
                         "beta" = NA, "Yk" = NA, "fkMean" = NA, "fkVar" = NA,
-                        "likelihoods" = NA
+                        "likelihoods" = list(NA)
                     )
                 }
             )
@@ -251,13 +251,22 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
     ## Poisson-based Likelihood Ratio Tests
     ## Use # of spike-in or total # of mappable reads as scaling factor
     scaleTbl <- read_csv(spikeInScalingFactor, show_col_types = FALSE)
-    scaleTbl <- scaleTbl[str_detect(rc2$geneId, scaleTbl$sample), ]
+    
+    # Validate that scaleTbl has the required columns
+    required_cols <- c("control_1", "control_2", "treated_1", "treated_2")
+    missing_cols <- setdiff(required_cols, colnames(scaleTbl))
+    if (length(missing_cols) > 0) {
+        stop("scaleTbl is missing required columns: ", 
+             paste(missing_cols, collapse = ", "), 
+             "\nExpected columns: ", paste(required_cols, collapse = ", "))
+    }
+    
     ## Cancel out M and zeta since they are the same between conditions
-    lambda1 <- scaleTbl$control1 + ifelse(is.na(scaleTbl$control2), 0,
-        scaleTbl$control2
+    lambda1 <- scaleTbl$control_1 + ifelse(is.na(scaleTbl$control_2), 0,
+        scaleTbl$control_2
     )
-    lambda2 <- scaleTbl$treated1 + ifelse(is.na(scaleTbl$treated2), 0,
-        scaleTbl$treated2
+    lambda2 <- scaleTbl$treated_1 + ifelse(is.na(scaleTbl$treated_2), 0,
+        scaleTbl$treated_2
     )
 
     omegaTbl <- computeOmegaLRT(lambda1, lambda2, rc1, rc2)
