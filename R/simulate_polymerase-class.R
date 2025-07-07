@@ -1510,3 +1510,49 @@ setMethod(
     return(p)
 })
 
+setGeneric("plotReadCountsLollipop", function(object) {
+  standardGeneric("plotReadCountsLollipop")
+})
+setMethod(
+  "plotReadCountsLollipop", "SimulatePolymerase",
+  function(object) {
+    rc <- readCounts(object)
+    nonzero_idx <- which(rc > 0)
+    if (length(nonzero_idx) == 0) {
+      stop("No nonzero read counts to plot.")
+    }
+    df <- data.frame(
+      position = nonzero_idx,
+      count = rc[nonzero_idx]
+    )
+    df$hover <- paste0(
+      "Position: ", df$position, "<br>Read Count: ", df$count
+    )
+    p <- plot_ly(
+      data = df,
+      x = ~position,
+      y = ~count,
+      type = 'scatter',
+      mode = 'lines+markers',
+      line = list(color = 'grey', width = 2),
+      marker = list(color = 'red', size = 7, line = list(color = 'black', width = 1)),
+      text = ~hover,
+      hoverinfo = 'text'
+    ) %>%
+      add_segments(
+        x = ~position, xend = ~position,
+        y = 0, yend = ~count,
+        line = list(color = 'grey', width = 2),
+        showlegend = FALSE
+      ) %>%
+      layout(
+        title = 'Interactive Lollipop Plot of Nonzero Read Counts',
+        xaxis = list(title = 'Position'),
+        yaxis = list(title = 'Read Count'),
+        plot_bgcolor = 'white',
+        paper_bgcolor = 'white'
+      )
+    return(p)
+  }
+)
+
