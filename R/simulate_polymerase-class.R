@@ -1482,3 +1482,31 @@ plotPolymerasePCAInteractive <- function(x, timePoint = NULL, colorBy = NULL) {
     )
   return(p)
 }
+
+setGeneric("plotReadCountsHistogram", function(
+    object) {
+  standardGeneric("plotReadCountsHistogram")
+})
+setMethod(
+  "plotReadCountsHistogram", "SimulatePolymerase",
+  function(object) {
+    rc <- readCounts(object)  
+    df <- data.frame(count = rc)
+    
+    p <- ggplot(df, aes(x = count)) +
+      geom_histogram(binwidth = 1, fill = "steelblue", color = "black") +
+      scale_y_log10() +
+      labs(
+        title = "Histogram of Read Counts (Log Y)",
+        x = "Read Count",
+        y = "Frequency (log10)"
+      ) +
+      theme_minimal()
+    
+    if (!is.null(file)) {
+      ggsave(file, p, width = width, height = height)
+    }
+    
+    return(p)
+})
+
