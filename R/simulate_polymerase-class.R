@@ -1215,14 +1215,14 @@ setMethod(
 #' # Plot final position heatmap
 #' plotFinalPositionHeatmap(sim, maxCells=100)
 #' # Plot specific time point
-#' plotFinalPositionHeatmap(sim, timePoint=0.5, maxCells=100)
+#' plotPositionHeatmap(sim, timePoint=0.5, maxCells=100)
 #' @export
-setGeneric("plotFinalPositionHeatmap", function(
+setGeneric("plotPositionHeatmap", function(
     object, timePoint = NULL, maxCells = NULL, addPauseSites = TRUE, addGeneBody = TRUE) {
-  standardGeneric("plotFinalPositionHeatmap")
+  standardGeneric("plotPositionHeatmap")
 })
 setMethod(
-  "plotFinalPositionHeatmap", "SimulatePolymerase",
+  "plotPositionHeatmap", "SimulatePolymerase",
   function(object, timePoint = NULL, maxCells = NULL, addPauseSites = TRUE, addGeneBody = TRUE) {
     # Get the appropriate matrix based on timePoint
     if (is.null(timePoint)) {
@@ -1407,7 +1407,8 @@ plotPolymerasePositionHistogram <- function(x, timePoint = NULL, bins = 50, file
 #' @description
 #' Create an interactive plotly PCA plot of the polymerase position matrix
 #' (sites x cells, 0/1), showing the first two principal components for each cell.
-#' Useful for exploring heterogeneity and clustering among cells interactively.
+#' Useful for exploring heterogeneity and clustering among cells interactively. Useful for exploring
+#' the site occupancy patterns for each cell
 #'
 #' @param x Either a matrix (sites x cells, 0/1) or a SimulatePolymerase object
 #' @param timePoint Optional time point if x is a SimulatePolymerase object
