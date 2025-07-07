@@ -764,3 +764,147 @@ setMethod("stericHindrance", "ExperimentTranscriptionRates", function(object) {
     slot(object, "stericHindrance")
 })
 
+## plotting utilities
+setGeneric("plotMeanPauseDistrib", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
+  standardGeneric("plotMeanPauseDistrib"))
+
+setMethod("plotMeanPauseDistrib", "ExperimentTranscriptionRates", 
+  function(object, file = NULL, width = 8, height = 6, dpi = 300) {
+    
+    cr <- rates(object)
+    p <- ggplot(cr, aes(x = fkMean)) +
+      geom_histogram(bins = nclass.Sturges(cr$fkMean), 
+                     fill = "#56B4E9", alpha = 0.8, 
+                     color = "white", size = 0.1) +
+      labs(x = "Mean Pause Site Position (bp)", 
+           y = "Count",
+           title = "Distribution of Mean Pause Site Positions",
+           subtitle = paste("n =", nrow(cr), "genes")) +
+      theme_classic() +
+      theme(
+        plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+        plot.subtitle = element_text(size = 10, color = "gray50", hjust = 0.5),
+        axis.title = element_text(size = 11, face = "bold"),
+        axis.text = element_text(size = 10),
+        axis.line = element_line(color = "black", size = 0.5)
+      )
+    
+    if (!is.null(file)) {
+      ggsave(file, p, width = width, height = height, dpi = dpi)
+    }
+    
+    return(p)
+  }
+)
+
+setGeneric("plotPauseSiteCounts", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
+  standardGeneric("plotPauseSiteCounts"))
+
+setMethod("plotPauseSiteCounts", "ExperimentTranscriptionRates", 
+  function(object, file = NULL, width = 8, height = 6, dpi = 300) {
+    cr <- rates(object)
+    
+    # Aggregate all Xk and Yk values
+    all_data <- data.frame(
+      observed = unlist(cr$Xk),
+      expected = unlist(cr$Yk)
+    )
+    
+    r_squared <- cor(all_data$observed, all_data$expected)^2
+    r2_text <- paste("R² =", round(r_squared, 3))
+    
+    p <- ggplot(all_data, aes(x = observed, y = expected)) +
+      geom_point(alpha = 0.6, size = 0.8) +
+      geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
+      annotate("text", x = max(all_data$observed) * 0.05, 
+               y = max(all_data$expected) * 0.95, 
+               label = paste("R² =", round(r_squared, 3)), 
+               size = 4, fontface = "bold", hjust = 0) +
+      labs(x = "Observed Pause Site Counts (Xk)", 
+           y = "Expected Pause Site Counts (Yk)",
+           title = "Model Fit: Observed vs Expected") +
+      theme_bw()
+    
+    if (!is.null(file)) ggsave(file, p, width = width, height = height, dpi = dpi)
+    return(p)
+    }
+)
+
+setGeneric("plotChiDistrib", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
+  standardGeneric("plotChiDistrib"))
+
+setMethod("plotChiDistrib", "ExperimentTranscriptionRates", 
+  function(object, file = NULL, width = 8, height = 6, dpi = 300) {
+    cr <- rates(object)
+    
+    p <- ggplot(cr, aes(x = chi)) +
+      geom_density(fill = "#56B4E9", alpha = 0.7) +
+      labs(x = "RNAP Density (chi)", 
+           y = "Density",
+           title = "Distribution of Gene Body RNAP Density") +
+      theme_classic()
+    
+    if (!is.null(file)) ggsave(file, p, width = width, height = height, dpi = dpi)
+    return(p)
+  }
+)
+
+setGeneric("plotBetaVsChi", function(object, beta_type = "betaAdp", file = NULL, width = 8, height = 6, dpi = 300) 
+  standardGeneric("plotBetaVsChi"))
+
+setMethod("plotBetaVsChi", "ExperimentTranscriptionRates", 
+  plotChiVsBeta <- function(object, beta_type = "betaAdp", file = NULL, width = 8, height = 6, dpi = 300) {
+    cr <- rates(object)
+    
+    # Validate beta_type parameter
+    if (!beta_type %in% c("betaAdp", "betaOrg")) {
+      stop("beta_type must be either 'betaAdp' or 'betaOrg'")
+    }
+    
+    # Set y-axis label based on beta type
+    y_label <- if (beta_type == "betaAdp") {
+      "Pause Escape Rate (betaAdp)"
+    } else {
+      "Pause Escape Rate (betaOrg)"
+    }
+    
+    # Set title based on beta type
+    title_text <- if (beta_type == "betaAdp") {
+      "Gene Activity vs Pause Escape Rate (Adapted Model)"
+    } else {
+      "Gene Activity vs Pause Escape Rate (Single Pause Site)"
+    }
+    
+    p <- ggplot(cr, aes(x = chi, y = !!sym(beta_type))) +
+      geom_point(alpha = 0.7, color = "#CC79A7") +
+      geom_smooth(method = "loess", se = TRUE, color = "red") +
+      labs(x = "Gene Body RNAP Density (chi)", 
+           y = y_label,
+           title = title_text) +
+      theme_bw()
+    
+    if (!is.null(file)) ggsave(file, p, width = width, height = height, dpi = dpi)
+    return(p)
+  }
+)
+
+setGeneric("plotPauseSiteContourMap", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
+  standardGeneric("plotBetaVsChi"))
+
+setMethod("plotPauseSiteContourMap", "ExperimentTranscriptionRates", 
+  plotChiVsBeta <- function(object, file = NULL, width = 8, height = 6, dpi = 300) {
+    cr <- rates(object)
+    
+    p <- ggplot(cr, aes(x = fkMean, y = fkVar)) +
+      geom_density_2d(color = "blue", size = 0.8) +  # Shows clustering patterns
+      geom_point(alpha = 0.6, size = 1.5, color = "#E69F00") +  # Shows individual genes
+      labs(x = "Mean Pause Site Position (bp)", 
+           y = "Pause Site Variance (bp²)",
+           title = "Pause Site Mean vs Variance Distribution") +
+      theme_bw()
+    
+    if (!is.null(file)) ggsave(file, p, width = width, height = height, dpi = dpi)
+    return(p)
+})
+
+          
