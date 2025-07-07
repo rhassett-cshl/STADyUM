@@ -531,15 +531,14 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
 #' @description
 #' Plot combined cells data as an interactive plotly visualization. 
 #' This provides zoom, pan, and hover capabilities for exploring polymerase 
-#' occupancy patterns. Can accept either a SimulatePolymerase object or a 
-#' numeric vector of polymerase counts.
+#' occupancy patterns. For SimulatePolymerase objects, can plot data from 
+#' specific time points by calculating combined cells data from position matrices.
 #'
-#' @param object Either a SimulatePolymerase-class object or a numeric vector 
-#' of polymerase counts per position
+#' @param object A SimulatePolymerase-class object
 #' @param start Integer, starting position for plotting (default: NULL, uses full range)
 #' @param end Integer, ending position for plotting (default: NULL, uses full range)
 #' @param pauseSites Optional numeric vector of pause sites for annotation 
-#' (only used when object is a vector)
+#' (if NULL, uses pause sites from the SimulatePolymerase object)
 #' @param title Optional title for the plot (default: "Polymerase Occupancy (Interactive)")
 #' @param timePoint Optional numeric value specifying the time point being plotted 
 #' (used for automatic title generation and documentation)
@@ -551,14 +550,13 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     timePointsToRecord=NULL)
-#' # Plot interactive with SimulatePolymerase object
+#' # Plot final combined cells data
 #' plotCombinedCells(sim)
-#' # Plot interactive with vector data
-#' data <- combinedCellsData(sim)
-#' plotCombinedCells(data, pauseSites=pauseSites(sim))
 #' # Plot specific time point data
-#' timeData <- getCombinedCellsDataAtTime(sim, timePoint=0.5)
-#' plotCombinedCells(timeData, timePoint=0.5, title="Polymerase Occupancy at t=0.5")
+#' plotCombinedCells(sim, timePoint=0.5)
+#' # Plot with custom range and title
+#' plotCombinedCells(sim, timePoint=0.5, start=100, end=500, 
+#'                   title="Gene Body Occupancy at t=0.5")
 #' @export
 setGeneric("plotCombinedCells", function(
     object, start = NULL, end = NULL, pauseSites = NULL, title = NULL, timePoint = NULL) {
@@ -567,9 +565,17 @@ setGeneric("plotCombinedCells", function(
 setMethod(
   "plotCombinedCells", "SimulatePolymerase",
   function(object, start = NULL, end = NULL, pauseSites = NULL, title = NULL, timePoint = NULL) {
-    data <- slot(object, "combinedCellsData")
+    # Calculate combined cells data from the specified time point
+    if (is.null(timePoint)) {
+      data <- slot(object, "combinedCellsData")
+    } else {
+      # Get position matrix for the specified time point and calculate combined data
+      pos_matrix <- getPositionMatrixAtTime(object, timePoint)
+      data <- rowSums(pos_matrix)
+    }
+    
     if (length(data) == 0) {
-      stop("combinedCellsData is empty. Run the simulation first.")
+      stop("No data available for plotting.")
     }
     
     # Use pause sites from object if not provided
@@ -640,7 +646,7 @@ setMethod(
                      size = 1) +
           # Add pause site label
           annotate("text", x = pause_mean, y = Inf,
-                   label = sprintf("Pause Site\nMean: %.0f ± %.0f", 
+                   label = sprintf("Pause Site<br>Mean: %.0f ± %.0f", 
                                    pause_mean, pause_sd),
                    vjust = 2, hjust = 0.5, color = "red",
                    fontface = "bold", size = 3)
@@ -661,97 +667,7 @@ setMethod(
   }
 )
 
-setMethod(
-  "plotCombinedCells", "numeric",
-  function(object, start = NULL, end = NULL, pauseSites = NULL, title = NULL, timePoint = NULL) {
-    data <- object
-    if (length(data) == 0) {
-      stop("Data vector is empty.")
-    }
-    
-    # Use default title if not provided
-    if (is.null(title)) {
-      if (!is.null(timePoint)) {
-        title <- sprintf("Polymerase Occupancy at Time %.2f", timePoint)
-      } else {
-        title <- "Polymerase Occupancy (Interactive)"
-      }
-    }
-    
-    if (!is.null(start) || !is.null(end)) {
-      # Use explicit start/end if provided
-      plot_start <- if (!is.null(start)) start + 1 else 1
-      plot_end <- if (!is.null(end)) end else length(data)
-      
-      # Validate range
-      if (plot_start < 1 || plot_start > length(data)) {
-        stop(sprintf("start must be between 0 and %d", length(data) - 1))
-      }
-      if (plot_end < plot_start || plot_end > length(data)) {
-        stop(sprintf("end must be between %d and %d", plot_start, length(data)))
-      }
-      
-      df <- data.frame(
-        position = plot_start:plot_end,
-        count = data[plot_start:plot_end]
-      )
-    } else {
-      # Use full range
-      df <- data.frame(
-        position = 1:length(data),
-        count = data
-      )
-    }
-    
-    p <- ggplot(df, aes(x = position, y = count)) +
-      geom_line(color = "steelblue", size = 1) +
-      geom_point(color = "darkblue", size = 0.8, alpha = 0.7) +
-      theme_minimal() +
-      labs(
-        title = title,
-        x = "Position",
-        y = "Number of Polymerases"
-      ) +
-      theme(
-        plot.background = element_rect(fill = "white"),
-        panel.background = element_rect(fill = "white")
-      )
-    
-    # Add pause site annotations if provided
-    if (!is.null(pauseSites) && length(pauseSites) > 0) {
-      # Calculate pause site statistics
-      pause_mean <- mean(pauseSites)
-      pause_sd <- sd(pauseSites)
-      
-      # Only add pause site annotations if they fall within the plotted range
-      if (pause_mean >= min(df$position) && pause_mean <= max(df$position)) {
-        p <- p + 
-          # Add vertical line for mean pause site
-          geom_vline(xintercept = pause_mean, 
-                     color = "red", linetype = "dashed", 
-                     size = 1) +
-          # Add pause site label
-          annotate("text", x = pause_mean, y = Inf,
-                   label = sprintf("Pause Site\nMean: %.0f ± %.0f", 
-                                   pause_mean, pause_sd),
-                   vjust = 2, hjust = 0.5, color = "red",
-                   fontface = "bold", size = 3)
-      }
-    }
-    
-    # Convert to plotly
-    plotly_p <- ggplotly(p, tooltip = c("x", "y")) %>%
-      layout(
-        xaxis = list(title = "Position"),
-        yaxis = list(title = "Number of Polymerases"),
-        hovermode = "x unified"
-      ) %>%
-      config(displayModeBar = TRUE, 
-             modeBarButtonsToRemove = c("pan2d", "select2d", "lasso2d"))
-    
-    return(plotly_p)
-  }
-)
+
 
 
 # Accessor methods
@@ -1379,7 +1295,8 @@ setMethod(
           add_annotations(
             x = ncol(matrix) * 0.5,
             y = pause_mean,
-            text = sprintf("Pause Site<br>Mean: %.0f ± %.0f", pause_mean, pause_sd),
+            text = sprintf("Pause Site<br>Mean: %.0f ± %.0f", 
+                                   pause_mean, pause_sd),
             showarrow = FALSE,
             font = list(color = "blue", size = 12),
             bgcolor = "rgba(255,255,255,0.8)",
@@ -1410,3 +1327,157 @@ setMethod(
     return(p)
   }
 )
+
+#' @rdname SimulatePolymerase-class
+#' @title Plot Histogram of Polymerase Positions
+#'
+#' @description
+#' Plot a histogram of all polymerase positions pooled across all cells from a
+#' position matrix (sites x cells, 0/1). Useful for visualizing where polymerases
+#' are most likely to be found along the gene.
+#'
+#' @param x Either a matrix (sites x cells, 0/1) or a SimulatePolymerase object
+#' @param timePoint Optional time point if x is a SimulatePolymerase object
+#' @param bins Number of bins for the histogram (default: 50)
+#' @param file Optional file path to save the plot
+#' @param width Plot width in inches
+#' @param height Plot height in inches
+#' @return A ggplot object showing the histogram of polymerase positions
+#' @examples
+#' # Using a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     timePointsToRecord=c(0.5, 1.0))
+#' plotPolymerasePositionHistogram(sim, timePoint=0.5)
+#' # Using a matrix directly
+#' mat <- getPositionMatrixAtTime(sim, 0.5)
+#' plotPolymerasePositionHistogram(mat)
+#' @export
+plotPolymerasePositionHistogram <- function(x, timePoint = NULL, bins = 50, file = NULL, width = 8, height = 6) {
+  # Get matrix from SimulatePolymerase or use directly
+  if (inherits(x, "SimulatePolymerase")) {
+    if (is.null(timePoint)) {
+      mat <- slot(x, "finalPositionMatrix")
+    } else {
+      mat <- getPositionMatrixAtTime(x, timePoint)
+    }
+  } else if (is.matrix(x)) {
+    mat <- x
+  } else {
+    stop("x must be a matrix or SimulatePolymerase object")
+  }
+  
+  # Pool all positions where polymerase is present
+  positions <- which(mat == 1, arr.ind = TRUE)[, 1]  # site indices
+  
+  if (length(positions) == 0) {
+    stop("No polymerase positions found in the matrix.")
+  }
+  
+  mean_pos <- mean(positions)
+  median_pos <- median(positions)
+  
+  df <- data.frame(position = positions)
+  
+  p <- ggplot(df, aes(x = position)) +
+    geom_histogram(bins = bins, fill = "steelblue", color = "black", alpha = 0.7) +
+    geom_vline(xintercept = mean_pos, color = "red", linetype = "dashed", size = 1) +
+    geom_vline(xintercept = median_pos, color = "orange", linetype = "dotted", size = 1) +
+    annotate("text", x = mean_pos, y = Inf, label = sprintf("Mean: %.1f", mean_pos), vjust = 2, hjust = -0.1, color = "red", fontface = "bold") +
+    annotate("text", x = median_pos, y = Inf, label = sprintf("Median: %.1f", median_pos), vjust = 4, hjust = -0.1, color = "orange", fontface = "bold") +
+    theme_minimal() +
+    labs(
+      title = "Histogram of Polymerase Positions (Pooled Across Cells)",
+      x = "Site Position",
+      y = "Polymerase Count"
+    )
+  
+  if (!is.null(file)) {
+    ggsave(file, p, width = width, height = height)
+  }
+  
+  return(p)
+}
+
+#' @rdname SimulatePolymerase-class
+#' @title Interactive PCA Plot of Polymerase Position Matrix
+#'
+#' @description
+#' Create an interactive plotly PCA plot of the polymerase position matrix
+#' (sites x cells, 0/1), showing the first two principal components for each cell.
+#' Useful for exploring heterogeneity and clustering among cells interactively.
+#'
+#' @param x Either a matrix (sites x cells, 0/1) or a SimulatePolymerase object
+#' @param timePoint Optional time point if x is a SimulatePolymerase object
+#' @param colorBy Optional: a vector to color points by (e.g., total polymerase count per cell)
+#' @return A plotly object showing the interactive PCA plot of cells
+#' @examples
+#' # Using a SimulatePolymerase object
+#' plotPolymerasePCAInteractive(sim, timePoint=0.5)
+#' # Using a matrix directly
+#' mat <- getPositionMatrixAtTime(sim, 0.5)
+#' plotPolymerasePCAInteractive(mat)
+#' @export
+plotPolymerasePCAInteractive <- function(x, timePoint = NULL, colorBy = NULL) {
+  # Get matrix from SimulatePolymerase or use directly
+  if (inherits(x, "SimulatePolymerase")) {
+    if (is.null(timePoint)) {
+      mat <- slot(x, "finalPositionMatrix")
+    } else {
+      mat <- getPositionMatrixAtTime(x, timePoint)
+    }
+  } else if (is.matrix(x)) {
+    mat <- x
+  } else {
+    stop("x must be a matrix or SimulatePolymerase object")
+  }
+  
+  if (ncol(mat) < 2) stop("Need at least 2 cells (columns) for PCA.")
+  if (nrow(mat) < 2) stop("Need at least 2 sites (rows) for PCA.")
+  
+  # Transpose: cells as rows, sites as features
+  pca <- prcomp(t(mat), center = TRUE, scale. = FALSE)
+  df <- data.frame(
+    PC1 = pca$x[, 1],
+    PC2 = pca$x[, 2],
+    Cell = factor(1:ncol(mat)),
+    PolymeraseCount = colSums(mat)
+  )
+  # Optionally color by user-supplied vector
+  if (!is.null(colorBy)) {
+    if (length(colorBy) != ncol(mat)) {
+      stop("colorBy must be NULL or a vector of length equal to number of cells.")
+    }
+    df$ColorBy <- colorBy
+    color_col <- "ColorBy"
+  } else {
+    color_col <- "PolymeraseCount"
+  }
+  
+  # Hover text
+  df$hover <- paste0(
+    "Cell: ", df$Cell,
+    "<br>PC1: ", round(df$PC1, 2),
+    "<br>PC2: ", round(df$PC2, 2),
+    "<br>Polymerase Count: ", df$PolymeraseCount
+  )
+  
+  p <- plot_ly(
+    data = df,
+    x = ~PC1, y = ~PC2,
+    type = 'scatter', mode = 'markers',
+    color = df[[color_col]],
+    text = ~hover,
+    hoverinfo = 'text',
+    marker = list(size = 8, opacity = 0.8)
+  ) %>%
+    layout(
+      title = 'Interactive PCA of Polymerase Position Matrix (Cells)',
+      xaxis = list(title = 'PC1'),
+      yaxis = list(title = 'PC2'),
+      legend = list(title = list(text = color_col))
+    )
+  return(p)
+}
