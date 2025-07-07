@@ -529,14 +529,20 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
 #' @title Plot Combined Cells Data (Interactive Plotly)
 #'
 #' @description
-#' Plot the combined cells data as an interactive plotly visualization, 
-#' excluding the first site. This provides zoom, pan, and hover capabilities 
-#' for exploring polymerase occupancy patterns. Red dashed line represents mean pause site position
-#' across all cells calculated from pause site vector
+#' Plot combined cells data as an interactive plotly visualization. 
+#' This provides zoom, pan, and hover capabilities for exploring polymerase 
+#' occupancy patterns. Can accept either a SimulatePolymerase object or a 
+#' numeric vector of polymerase counts.
 #'
-#' @param object A SimulatePolymerase-class object
-#' @param start Integer, starting position for plotting (default: NULL, uses excludeFirstSite logic)
+#' @param object Either a SimulatePolymerase-class object or a numeric vector 
+#' of polymerase counts per position
+#' @param start Integer, starting position for plotting (default: NULL, uses full range)
 #' @param end Integer, ending position for plotting (default: NULL, uses full range)
+#' @param pauseSites Optional numeric vector of pause sites for annotation 
+#' (only used when object is a vector)
+#' @param title Optional title for the plot (default: "Polymerase Occupancy (Interactive)")
+#' @param timePoint Optional numeric value specifying the time point being plotted 
+#' (used for automatic title generation and documentation)
 #' @return A plotly object showing interactive polymerase occupancy
 #' @examples
 #' # Create a SimulatePolymerase object
@@ -545,29 +551,49 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     timePointsToRecord=NULL)
-#' # Plot interactive
+#' # Plot interactive with SimulatePolymerase object
 #' plotCombinedCells(sim)
+#' # Plot interactive with vector data
+#' data <- combinedCellsData(sim)
+#' plotCombinedCells(data, pauseSites=pauseSites(sim))
+#' # Plot specific time point data
+#' timeData <- getCombinedCellsDataAtTime(sim, timePoint=0.5)
+#' plotCombinedCells(timeData, timePoint=0.5, title="Polymerase Occupancy at t=0.5")
 #' @export
 setGeneric("plotCombinedCells", function(
-    object, start = NULL, end = NULL) {
+    object, start = NULL, end = NULL, pauseSites = NULL, title = NULL, timePoint = NULL) {
   standardGeneric("plotCombinedCells")
 })
 setMethod(
   "plotCombinedCells", "SimulatePolymerase",
-  function(object, start = NULL, end = NULL) {
+  function(object, start = NULL, end = NULL, pauseSites = NULL, title = NULL, timePoint = NULL) {
     data <- slot(object, "combinedCellsData")
     if (length(data) == 0) {
       stop("combinedCellsData is empty. Run the simulation first.")
     }
     
+    # Use pause sites from object if not provided
+    if (is.null(pauseSites)) {
+      pauseSites <- slot(object, "pauseSites")
+    }
+    
+    # Use default title if not provided
+    if (is.null(title)) {
+      if (!is.null(timePoint)) {
+        title <- sprintf("Polymerase Occupancy at Time %.2f", timePoint)
+      } else {
+        title <- "Polymerase Occupancy (Interactive)"
+      }
+    }
+    
     if (!is.null(start) || !is.null(end)) {
       # Use explicit start/end if provided
-      plot_start <- if (!is.null(start)) start + 1 else 2
+      plot_start <- if (!is.null(start)) start + 1 else 1
       plot_end <- if (!is.null(end)) end else length(data)
       
       # Validate range
-      if (plot_start < 1 || plot_start > length(data) - 1) {
-        stop(sprintf("start must be between 1 and %d", length(data) - 1))
+      if (plot_start < 1 || plot_start > length(data)) {
+        stop(sprintf("start must be between 0 and %d", length(data) - 1))
       }
       if (plot_end < plot_start || plot_end > length(data)) {
         stop(sprintf("end must be between %d and %d", plot_start, length(data)))
@@ -577,6 +603,12 @@ setMethod(
         position = plot_start:plot_end,
         count = data[plot_start:plot_end]
       )
+    } else {
+      # Use full range
+      df <- data.frame(
+        position = 1:length(data),
+        count = data
+      )
     }
     
     p <- ggplot(df, aes(x = position, y = count)) +
@@ -584,7 +616,7 @@ setMethod(
       geom_point(color = "darkblue", size = 0.8, alpha = 0.7) +
       theme_minimal() +
       labs(
-        title = "Polymerase Occupancy (Interactive)",
+        title = title,
         x = "Position",
         y = "Number of Polymerases"
       ) +
@@ -593,11 +625,103 @@ setMethod(
         panel.background = element_rect(fill = "white")
       )
     
-    pause_sites <- slot(object, "pauseSites")
-    if (length(pause_sites) > 0) {
+    # Add pause site annotations if provided
+    if (!is.null(pauseSites) && length(pauseSites) > 0) {
       # Calculate pause site statistics
-      pause_mean <- mean(pause_sites)
-      pause_sd <- sd(pause_sites)
+      pause_mean <- mean(pauseSites)
+      pause_sd <- sd(pauseSites)
+      
+      # Only add pause site annotations if they fall within the plotted range
+      if (pause_mean >= min(df$position) && pause_mean <= max(df$position)) {
+        p <- p + 
+          # Add vertical line for mean pause site
+          geom_vline(xintercept = pause_mean, 
+                     color = "red", linetype = "dashed", 
+                     size = 1) +
+          # Add pause site label
+          annotate("text", x = pause_mean, y = Inf,
+                   label = sprintf("Pause Site\nMean: %.0f ± %.0f", 
+                                   pause_mean, pause_sd),
+                   vjust = 2, hjust = 0.5, color = "red",
+                   fontface = "bold", size = 3)
+      }
+    }
+    
+    # Convert to plotly
+    plotly_p <- ggplotly(p, tooltip = c("x", "y")) %>%
+      layout(
+        xaxis = list(title = "Position"),
+        yaxis = list(title = "Number of Polymerases"),
+        hovermode = "x unified"
+      ) %>%
+      config(displayModeBar = TRUE, 
+             modeBarButtonsToRemove = c("pan2d", "select2d", "lasso2d"))
+    
+    return(plotly_p)
+  }
+)
+
+setMethod(
+  "plotCombinedCells", "numeric",
+  function(object, start = NULL, end = NULL, pauseSites = NULL, title = NULL, timePoint = NULL) {
+    data <- object
+    if (length(data) == 0) {
+      stop("Data vector is empty.")
+    }
+    
+    # Use default title if not provided
+    if (is.null(title)) {
+      if (!is.null(timePoint)) {
+        title <- sprintf("Polymerase Occupancy at Time %.2f", timePoint)
+      } else {
+        title <- "Polymerase Occupancy (Interactive)"
+      }
+    }
+    
+    if (!is.null(start) || !is.null(end)) {
+      # Use explicit start/end if provided
+      plot_start <- if (!is.null(start)) start + 1 else 1
+      plot_end <- if (!is.null(end)) end else length(data)
+      
+      # Validate range
+      if (plot_start < 1 || plot_start > length(data)) {
+        stop(sprintf("start must be between 0 and %d", length(data) - 1))
+      }
+      if (plot_end < plot_start || plot_end > length(data)) {
+        stop(sprintf("end must be between %d and %d", plot_start, length(data)))
+      }
+      
+      df <- data.frame(
+        position = plot_start:plot_end,
+        count = data[plot_start:plot_end]
+      )
+    } else {
+      # Use full range
+      df <- data.frame(
+        position = 1:length(data),
+        count = data
+      )
+    }
+    
+    p <- ggplot(df, aes(x = position, y = count)) +
+      geom_line(color = "steelblue", size = 1) +
+      geom_point(color = "darkblue", size = 0.8, alpha = 0.7) +
+      theme_minimal() +
+      labs(
+        title = title,
+        x = "Position",
+        y = "Number of Polymerases"
+      ) +
+      theme(
+        plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white")
+      )
+    
+    # Add pause site annotations if provided
+    if (!is.null(pauseSites) && length(pauseSites) > 0) {
+      # Calculate pause site statistics
+      pause_mean <- mean(pauseSites)
+      pause_sd <- sd(pauseSites)
       
       # Only add pause site annotations if they fall within the plotted range
       if (pause_mean >= min(df$position) && pause_mean <= max(df$position)) {
@@ -909,6 +1033,52 @@ setMethod("getAvailableTimePoints", "SimulatePolymerase", function(object) {
     }
     available_times <- as.numeric(gsub("t_", "", names(matrices)))
     return(sort(available_times))
+})
+
+#' @rdname SimulatePolymerase-class
+#' @title Get Combined Cells Data for Specific Time Point
+#'
+#' @description
+#' Get the combined cells data vector for a specific time point from a 
+#' SimulatePolymerase object. This function calculates the total number of 
+#' polymerases at each site across all cells for the specified time point,
+#' similar to the final combinedCellsData but for intermediate time points.
+#'
+#' @param object a \code{SimulatePolymerase-class} object
+#' @param timePoint a numeric value specifying the time point to retrieve. 
+#' If NULL, returns the final combinedCellsData.
+#' @return An integer vector representing the total number of polymerases at 
+#' each site across all cells for the specified time point
+#' @examples
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     timePointsToRecord=c(0.5, 1.0))
+#' # Get combined cells data for final state
+#' finalData <- getCombinedCellsDataAtTime(sim)
+#' # Get combined cells data for specific time point
+#' timeData <- getCombinedCellsDataAtTime(sim, timePoint=0.5)
+#' # Print the data
+#' print(head(timeData))
+#' @export
+setGeneric("getCombinedCellsDataAtTime", function(object, timePoint = NULL) {
+    standardGeneric("getCombinedCellsDataAtTime")
+})
+setMethod("getCombinedCellsDataAtTime", "SimulatePolymerase", function(object, timePoint = NULL) {
+    if (is.null(timePoint)) {
+        # Return the final combined cells data
+        return(slot(object, "combinedCellsData"))
+    } else {
+        # Get position matrix for the specified time point
+        pos_matrix <- getPositionMatrixAtTime(object, timePoint)
+        
+        # Calculate combined cells data by summing across cells for each site
+        combined_data <- rowSums(pos_matrix)
+        
+        return(combined_data)
+    }
 })
 
 #' @rdname SimulatePolymerase-class
