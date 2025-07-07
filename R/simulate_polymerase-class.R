@@ -48,6 +48,7 @@
 #' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave geom_histogram
 #' @importFrom reshape2 melt
 #' @importFrom readr read_csv
+#' @importFrom plotly plot_ly layout add_segments add_annotations
 #' @exportClass SimulatePolymerase
 methods::setClass("SimulatePolymerase",
     slots = c(
@@ -1098,20 +1099,26 @@ setMethod(
 
 
 #' @rdname SimulatePolymerase-class
-#' @title Plot Final Position Matrix (Interactive Heatmap)
+#' @title Plot Position Matrix Heatmap (Interactive)
 #'
 #' @description
-#' Plot the final position matrix as an interactive plotly heatmap showing 
-#' the final state of all polymerases across all cells. Each cell in the 
-#' heatmap represents whether a polymerase is present (1) or absent (0) 
-#' at a specific site in a specific cell.
+#' Plot position matrices as an interactive plotly heatmap showing 
+#' polymerase positions across all cells at specific time points. Each cell in
+#' the heatmap represents whether a polymerase is present (1) or absent (0) 
+#' at a specific site in a specific cell. By default, shows the final position matrix.
+#' 
+#' The heatmap is interactive, allowing users to hover over cells to see the
+#' exact polymerase positions. Users can also zoom in and out, pan, and click
+#' on cells to get more detailed information.
 #'
 #' @param object A SimulatePolymerase-class object
+#' @param timePoint Optional time point to plot. If NULL, plots the final
+#' position matrix.
 #' @param maxCells Maximum number of cells to display (for performance with 
 #' large datasets). If NULL, shows all cells.
 #' @param addPauseSites Logical, whether to add pause site annotations
 #' @param addGeneBody Logical, whether to add gene body annotation
-#' @return A plotly object showing interactive heatmap of final polymerase positions
+#' @return A plotly object showing interactive heatmap of polymerase positions
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- SimulatePolymerase(
@@ -1121,18 +1128,29 @@ setMethod(
 #'     timePointsToRecord=NULL)
 #' # Plot final position heatmap
 #' plotFinalPositionHeatmap(sim, maxCells=100)
+#' # Plot specific time point
+#' plotFinalPositionHeatmap(sim, timePoint=0.5, maxCells=100)
 #' @export
 setGeneric("plotFinalPositionHeatmap", function(
-    object, maxCells = NULL, addPauseSites = TRUE, addGeneBody = TRUE) {
+    object, timePoint = NULL, maxCells = NULL, addPauseSites = TRUE, addGeneBody = TRUE) {
   standardGeneric("plotFinalPositionHeatmap")
 })
 setMethod(
   "plotFinalPositionHeatmap", "SimulatePolymerase",
-  function(object, maxCells = NULL, addPauseSites = TRUE, addGeneBody = TRUE) {
-    matrix <- slot(object, "finalPositionMatrix")
+  function(object, timePoint = NULL, maxCells = NULL, addPauseSites = TRUE, addGeneBody = TRUE) {
+    # Get the appropriate matrix based on timePoint
+    if (is.null(timePoint)) {
+      # Use final position matrix
+      matrix <- slot(object, "finalPositionMatrix")
+      plot_title <- "Final Polymerase Positions Heatmap"
+    } else {
+      # Use position matrix for specific time point
+      matrix <- getPositionMatrixAtTime(object, timePoint)
+      plot_title <- sprintf("Polymerase Positions Heatmap at Time %.2f", timePoint)
+    }
     
     if (nrow(matrix) == 0 || ncol(matrix) == 0) {
-      stop("finalPositionMatrix is empty. Run the simulation first.")
+      stop("Position matrix is empty. Run the simulation first.")
     }
     
     # Limit cells for visualization if specified
@@ -1159,7 +1177,7 @@ setMethod(
     ) %>%
       layout(
         title = list(
-          text = "Final Polymerase Positions Heatmap",
+          text = plot_title,
           font = list(size = 16)
         ),
         xaxis = list(
