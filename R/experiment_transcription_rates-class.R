@@ -765,6 +765,7 @@ setMethod("stericHindrance", "ExperimentTranscriptionRates", function(object) {
 })
 
 ## plotting utilities
+#' @export
 setGeneric("plotMeanPauseDistrib", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
   standardGeneric("plotMeanPauseDistrib"))
 
@@ -797,6 +798,7 @@ setMethod("plotMeanPauseDistrib", "ExperimentTranscriptionRates",
   }
 )
 
+#' @export
 setGeneric("plotPauseSiteCounts", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
   standardGeneric("plotPauseSiteCounts"))
 
@@ -830,6 +832,7 @@ setMethod("plotPauseSiteCounts", "ExperimentTranscriptionRates",
     }
 )
 
+#' @export
 setGeneric("plotChiDistrib", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
   standardGeneric("plotChiDistrib"))
 
@@ -849,6 +852,7 @@ setMethod("plotChiDistrib", "ExperimentTranscriptionRates",
   }
 )
 
+#' @export
 setGeneric("plotBetaVsChi", function(object, beta_type = "betaAdp", file = NULL, width = 8, height = 6, dpi = 300) 
   standardGeneric("plotBetaVsChi"))
 
@@ -888,11 +892,12 @@ setMethod("plotBetaVsChi", "ExperimentTranscriptionRates",
   }
 )
 
+#' @export
 setGeneric("plotPauseSiteContourMap", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
-  standardGeneric("plotBetaVsChi"))
+  standardGeneric("plotPauseSiteContourMap"))
 
 setMethod("plotPauseSiteContourMap", "ExperimentTranscriptionRates", 
-  plotChiVsBeta <- function(object, file = NULL, width = 8, height = 6, dpi = 300) {
+          plotPauseSiteContourMap <- function(object, file = NULL, width = 8, height = 6, dpi = 300) {
     cr <- rates(object)
     
     p <- ggplot(cr, aes(x = fkMean, y = fkVar)) +

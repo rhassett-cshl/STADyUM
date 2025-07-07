@@ -487,38 +487,56 @@ setGeneric("plotPauseSites", function(
 setMethod("plotPauseSites", "SimulatePolymerase", function(
     object,
     file = NULL, width = 8, height = 6) {
-    df <- data.frame(
-        cell = seq_len(slot(object, "cellNum")),
-        pauseSite = slot(object, "pauseSites")
+  df <- data.frame(
+    cell = seq_len(slot(object, "cellNum")),
+    pauseSite = slot(object, "pauseSites")
+  )
+  
+  # Calculate mean and standard deviation
+  pause_mean <- mean(df$pauseSite)
+  pause_sd <- sd(df$pauseSite)
+  
+  p <- ggplot(df, aes(x = pauseSite)) +
+    geom_histogram(bins = 30, alpha = 0.7, fill = "steelblue", 
+                   color = "black") +
+    # Add vertical line for mean
+    geom_vline(xintercept = pause_mean, color = "red", 
+               linetype = "dashed", size = 1) +
+    # Add vertical lines for mean ± 1 SD
+    geom_vline(xintercept = pause_mean + pause_sd, color = "orange", 
+               linetype = "dotted", size = 0.8) +
+    geom_vline(xintercept = pause_mean - pause_sd, color = "orange", 
+               linetype = "dotted", size = 0.8) +
+    theme_minimal() +
+    labs(
+      title = "Distribution of Pause Sites",
+      subtitle = sprintf("Mean: %.1f, SD: %.1f", pause_mean, pause_sd),
+      x = "Pause Site Position",
+      y = "Count"
     )
-
-    p <- ggplot(df, aes(x = pauseSite)) +
-        geom_histogram(bins = 30) +
-        theme_minimal() +
-        labs(
-            title = "Distribution of Pause Sites",
-            x = "Pause Site Position",
-            y = "Count"
-        )
-
-    if (!is.null(file)) {
-        ggsave(file, p, width = width, height = height)
-    }
-
-    return(p)
+  
+  if (!is.null(file)) {
+    ggsave(file, p, width = width, height = height)
+  }
+  
+  return(p)
 })
 
+
+
 #' @rdname SimulatePolymerase-class
-#' @title Plot Transition Probabilities
+#' @title Plot Combined Cells Data (Interactive Plotly)
 #'
 #' @description
-#' Plot the transition probabilities across the gene.
+#' Plot the combined cells data as an interactive plotly visualization, 
+#' excluding the first site. This provides zoom, pan, and hover capabilities 
+#' for exploring polymerase occupancy patterns. Red dashed line represents mean pause site position
+#' across all cells calculated from pause site vector
 #'
 #' @param object A SimulatePolymerase-class object
-#' @param file Optional file path to save the plot
-#' @param width Plot width in inches
-#' @param height Plot height in inches
-#' @return A ggplot object showing the transition probabilities across the gene
+#' @param start Integer, starting position for plotting (default: NULL, uses excludeFirstSite logic)
+#' @param end Integer, ending position for plotting (default: NULL, uses full range)
+#' @return A plotly object showing interactive polymerase occupancy
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- SimulatePolymerase(
@@ -526,92 +544,90 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
 #'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 #'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
 #'     timePointsToRecord=NULL)
-#' # Plot transition probabilities
-#' plotTransitionProbabilities(sim)
+#' # Plot interactive
+#' plotCombinedCells(sim)
 #' @export
-setGeneric("plotTransitionProbabilities", function(
-    object, file = NULL,
-    width = 8, height = 6) {
-    standardGeneric("plotTransitionProbabilities")
+setGeneric("plotCombinedCells", function(
+    object, start = NULL, end = NULL) {
+  standardGeneric("plotCombinedCells")
 })
 setMethod(
-    "plotTransitionProbabilities", "SimulatePolymerase",
-    function(object, file = NULL, width = 8, height = 6) {
-        prob_matrix <- slot(object, "siteProbabilities")
-        
-        # Calculate mean probabilities across cells for each site
-        mean_probabilities <- rowMeans(prob_matrix)
-        
-        df <- data.frame(
-            position = 0:(length(mean_probabilities) - 1),
-            probability = mean_probabilities
-        )
-
-        p <- ggplot(df, aes(x = position, y = probability)) +
-            geom_line() +
-            theme_minimal() +
-            labs(
-                title = "Transition Probabilities Across Gene (Mean Across Cells)",
-                x = "Position",
-                y = "Transition Probability"
-            )
-
-        if (!is.null(file)) {
-            ggsave(file, p, width = width, height = height)
-        }
-
-        return(p)
+  "plotCombinedCells", "SimulatePolymerase",
+  function(object, start = NULL, end = NULL) {
+    data <- slot(object, "combinedCellsData")
+    if (length(data) == 0) {
+      stop("combinedCellsData is empty. Run the simulation first.")
     }
+    
+    if (!is.null(start) || !is.null(end)) {
+      # Use explicit start/end if provided
+      plot_start <- if (!is.null(start)) start + 1 else 2
+      plot_end <- if (!is.null(end)) end else length(data)
+      
+      # Validate range
+      if (plot_start < 1 || plot_start > length(data) - 1) {
+        stop(sprintf("start must be between 1 and %d", length(data) - 1))
+      }
+      if (plot_end < plot_start || plot_end > length(data)) {
+        stop(sprintf("end must be between %d and %d", plot_start, length(data)))
+      }
+      
+      df <- data.frame(
+        position = plot_start:plot_end,
+        count = data[plot_start:plot_end]
+      )
+    }
+    
+    p <- ggplot(df, aes(x = position, y = count)) +
+      geom_line(color = "steelblue", size = 1) +
+      geom_point(color = "darkblue", size = 0.8, alpha = 0.7) +
+      theme_minimal() +
+      labs(
+        title = "Polymerase Occupancy (Interactive)",
+        x = "Position",
+        y = "Number of Polymerases"
+      ) +
+      theme(
+        plot.background = element_rect(fill = "white"),
+        panel.background = element_rect(fill = "white")
+      )
+    
+    pause_sites <- slot(object, "pauseSites")
+    if (length(pause_sites) > 0) {
+      # Calculate pause site statistics
+      pause_mean <- mean(pause_sites)
+      pause_sd <- sd(pause_sites)
+      
+      # Only add pause site annotations if they fall within the plotted range
+      if (pause_mean >= min(df$position) && pause_mean <= max(df$position)) {
+        p <- p + 
+          # Add vertical line for mean pause site
+          geom_vline(xintercept = pause_mean, 
+                     color = "red", linetype = "dashed", 
+                     size = 1) +
+          # Add pause site label
+          annotate("text", x = pause_mean, y = Inf,
+                   label = sprintf("Pause Site\nMean: %.0f ± %.0f", 
+                                   pause_mean, pause_sd),
+                   vjust = 2, hjust = 0.5, color = "red",
+                   fontface = "bold", size = 3)
+      }
+    }
+    
+    # Convert to plotly
+    plotly_p <- ggplotly(p, tooltip = c("x", "y")) %>%
+      layout(
+        xaxis = list(title = "Position"),
+        yaxis = list(title = "Number of Polymerases"),
+        hovermode = "x unified"
+      ) %>%
+      config(displayModeBar = TRUE, 
+             modeBarButtonsToRemove = c("pan2d", "select2d", "lasso2d"))
+    
+    return(plotly_p)
+  }
 )
 
-#' @rdname SimulatePolymerase-class
-#' @title Save all plots to files
-#'
-#' @description
-#' Save all plots to files.
-#'
-#' @param object A SimulatePolymerase-class object
-#' @param dir Directory to save the plots (default: "results")
-#' @param width Plot width in inches
-#' @param height Plot height in inches
-#' @return Outputs directory where plots were saved to pdf files
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-#'     timePointsToRecord=c(0.5, 1.0))
-#' # Save plots
-#' savePlots(sim)
-#' @export
-setGeneric("savePlots", function(
-    object, dir = "results", width = 8,
-    height = 6) {
-    standardGeneric("savePlots")
-})
-setMethod("savePlots", "SimulatePolymerase", function(
-    object,
-    dir = "results", width = 8, height = 6) {
-    # Create directory if it doesn't exist
-    if (!dir.exists(dir)) {
-        dir.create(dir, recursive = TRUE)
-    }
-
-    # Save each plot
-    plotPolymeraseDistribution(object, file.path(
-        dir,
-        "polymerase_distribution.pdf"
-    ), width, height)
-    plotPauseSites(
-        object, file.path(dir, "pause_sites_distribution.pdf"),
-        width, height
-    )
-    plotTransitionProbabilities(object, file.path(
-        dir,
-        "transition_probabilities.pdf"
-    ), width, height)
-})
 
 # Accessor methods
 #' @rdname SimulatePolymerase-class
@@ -959,4 +975,250 @@ setMethod(
         
         return(p)
     }
+)
+
+#' @rdname SimulatePolymerase-class
+#' @title Plot Polymerase Count per Cell
+#'
+#' @description
+#' Plot the distribution of polymerase counts per cell from the final position matrix.
+#' This shows how transcription activity is distributed across all cells using a histogram.
+#'
+#' @param object A SimulatePolymerase-class object
+#' @param maxCells Maximum number of cells to display (for performance with 
+#' large datasets). If NULL, shows all cells.
+#' @param samplingMethod Method for sampling cells when maxCells is specified:
+#' "random" (random sampling), "even" (evenly spaced), or "first" (first N cells)
+#' @param bins Number of bins for the histogram (default: 30)
+#' @param addStatistics Logical, whether to add summary statistics
+#' @param file Optional file path to save the plot
+#' @param width Plot width in inches
+#' @param height Plot height in inches
+#' @return A ggplot object showing histogram of polymerase counts per cell
+#' @examples
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     timePointsToRecord=NULL)
+#' # Plot all cells
+#' plotPolymeraseCountPerCell(sim)
+#' # Plot sampled cells
+#' plotPolymeraseCountPerCell(sim, maxCells=200, samplingMethod="even")
+#' # Custom bins
+#' plotPolymeraseCountPerCell(sim, bins=50)
+#' @export
+setGeneric("plotPolymeraseCountPerCell", function(
+    object, maxCells = NULL, samplingMethod = "even", bins = 30, 
+    addStatistics = TRUE, file = NULL, width = 8, height = 6) {
+  standardGeneric("plotPolymeraseCountPerCell")
+})
+setMethod(
+  "plotPolymeraseCountPerCell", "SimulatePolymerase",
+  function(object, maxCells = NULL, samplingMethod = "even", bins = 30, 
+           addStatistics = TRUE, file = NULL, width = 8, height = 6) {
+    matrix <- slot(object, "finalPositionMatrix")
+    
+    if (nrow(matrix) == 0 || ncol(matrix) == 0) {
+      stop("finalPositionMatrix is empty. Run the simulation first.")
+    }
+    
+    # Calculate polymerase count per cell
+    cell_counts <- colSums(matrix)
+    total_cells <- length(cell_counts)
+    
+    # Sample cells if specified
+    if (!is.null(maxCells) && total_cells > maxCells) {
+      if (samplingMethod == "random") {
+        cell_indices <- sample(1:total_cells, maxCells)
+      } else if (samplingMethod == "even") {
+        cell_indices <- seq(1, total_cells, length.out = maxCells)
+      } else if (samplingMethod == "first") {
+        cell_indices <- 1:maxCells
+      } else {
+        stop("samplingMethod must be 'random', 'even', or 'first'")
+      }
+      cell_counts <- cell_counts[cell_indices]
+      cell_numbers <- cell_indices
+    } else {
+      cell_numbers <- 1:total_cells
+    }
+    
+    # Create data frame for histogram
+    df <- data.frame(count = cell_counts)
+    
+    # Create the histogram
+    p <- ggplot(df, aes(x = count)) +
+      geom_histogram(bins = bins, fill = "steelblue", 
+                     color = "darkblue", alpha = 0.7) +
+      theme_minimal() +
+      labs(
+        title = sprintf("Distribution of Polymerase Counts per Cell (%s)", 
+                        if (!is.null(maxCells) && total_cells > maxCells) 
+                          sprintf("Showing %d of %d cells", maxCells, total_cells) 
+                        else sprintf("All %d cells", total_cells)),
+        x = "Number of Polymerases per Cell",
+        y = "Number of Cells"
+      )
+    
+    # Add statistics if requested
+    if (addStatistics) {
+      mean_count <- mean(cell_counts)
+      median_count <- median(cell_counts)
+      sd_count <- sd(cell_counts)
+      
+      # Add vertical lines for mean and median
+      p <- p + 
+        geom_vline(xintercept = mean_count, color = "red", 
+                   linetype = "dashed", size = 1) +
+        geom_vline(xintercept = median_count, color = "orange", 
+                   linetype = "dotted", size = 1) +
+        annotate("text", x = mean_count, y = Inf, 
+                 label = sprintf("Mean: %.1f", mean_count), 
+                 vjust = 2, hjust = -0.1, color = "red", 
+                 fontface = "bold") +
+        annotate("text", x = median_count, y = Inf, 
+                 label = sprintf("Median: %.1f", median_count), 
+                 vjust = 4, hjust = -0.1, color = "orange", 
+                 fontface = "bold") +
+        annotate("text", x = Inf, y = Inf, 
+                 label = sprintf("SD: %.1f", sd_count), 
+                 vjust = 6, hjust = 1.1, color = "black", 
+                 fontface = "bold")
+    }
+    
+    if (!is.null(file)) {
+      ggsave(file, p, width = width, height = height)
+    }
+    
+    return(p)
+  }
+)
+
+
+#' @rdname SimulatePolymerase-class
+#' @title Plot Final Position Matrix (Interactive Heatmap)
+#'
+#' @description
+#' Plot the final position matrix as an interactive plotly heatmap showing 
+#' the final state of all polymerases across all cells. Each cell in the 
+#' heatmap represents whether a polymerase is present (1) or absent (0) 
+#' at a specific site in a specific cell.
+#'
+#' @param object A SimulatePolymerase-class object
+#' @param maxCells Maximum number of cells to display (for performance with 
+#' large datasets). If NULL, shows all cells.
+#' @param addPauseSites Logical, whether to add pause site annotations
+#' @param addGeneBody Logical, whether to add gene body annotation
+#' @return A plotly object showing interactive heatmap of final polymerase positions
+#' @examples
+#' # Create a SimulatePolymerase object
+#' sim <- SimulatePolymerase(
+#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
+#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
+#'     timePointsToRecord=NULL)
+#' # Plot final position heatmap
+#' plotFinalPositionHeatmap(sim, maxCells=100)
+#' @export
+setGeneric("plotFinalPositionHeatmap", function(
+    object, maxCells = NULL, addPauseSites = TRUE, addGeneBody = TRUE) {
+  standardGeneric("plotFinalPositionHeatmap")
+})
+setMethod(
+  "plotFinalPositionHeatmap", "SimulatePolymerase",
+  function(object, maxCells = NULL, addPauseSites = TRUE, addGeneBody = TRUE) {
+    matrix <- slot(object, "finalPositionMatrix")
+    
+    if (nrow(matrix) == 0 || ncol(matrix) == 0) {
+      stop("finalPositionMatrix is empty. Run the simulation first.")
+    }
+    
+    # Limit cells for visualization if specified
+    if (!is.null(maxCells) && ncol(matrix) > maxCells) {
+      # Sample cells evenly across the range
+      cell_indices <- seq(1, ncol(matrix), length.out = maxCells)
+      matrix <- matrix[, cell_indices]
+    }
+    
+    # Create the plotly heatmap
+    p <- plot_ly(
+      z = matrix,
+      type = "heatmap",
+      colorscale = list(
+        list(0, "white"),
+        list(1, "red")
+      ),
+      showscale = TRUE,
+      colorbar = list(
+        title = "Polymerase",
+        ticktext = c("Absent", "Present"),
+        tickvals = c(0, 1)
+      )
+    ) %>%
+      layout(
+        title = list(
+          text = "Final Polymerase Positions Heatmap",
+          font = list(size = 16)
+        ),
+        xaxis = list(
+          title = "Cell",
+          showticklabels = FALSE,
+          showgrid = FALSE
+        ),
+        yaxis = list(
+          title = "Site",
+          showgrid = FALSE
+        ),
+        margin = list(l = 60, r = 60, t = 80, b = 60)
+      )
+    
+    # Add pause site annotation if requested
+    if (addPauseSites) {
+      pause_sites <- slot(object, "pauseSites")
+      if (length(pause_sites) > 0) {
+        pause_mean <- mean(pause_sites)
+        pause_sd <- sd(pause_sites)
+        
+        # Add horizontal line for mean pause site
+        p <- p %>% add_segments(
+          x = 0, xend = ncol(matrix),
+          y = pause_mean, yend = pause_mean,
+          line = list(color = "blue", width = 2, dash = "dash"),
+          showlegend = FALSE
+        ) %>%
+          add_annotations(
+            x = ncol(matrix) * 0.5,
+            y = pause_mean,
+            text = sprintf("Pause Site<br>Mean: %.0f ± %.0f", pause_mean, pause_sd),
+            showarrow = FALSE,
+            font = list(color = "blue", size = 12),
+            bgcolor = "rgba(255,255,255,0.8)",
+            bordercolor = "blue",
+            borderwidth = 1
+          )
+      }
+    }
+    
+    # Add gene body annotation if requested
+    if (addGeneBody) {
+      gene_len <- slot(object, "geneLen")
+      k_max <- slot(object, "kMax")
+      
+      # Add gene body region annotation
+      p <- p %>% add_annotations(
+        x = ncol(matrix) * 0.5,
+        y = (k_max + 1 + gene_len) / 2,
+        text = "Gene Body",
+        showarrow = FALSE,
+        font = list(color = "darkgreen", size = 12),
+        bgcolor = "rgba(255,255,255,0.8)",
+        bordercolor = "darkgreen",
+        borderwidth = 1
+      )
+    }
+    
+    return(p)
+  }
 )
