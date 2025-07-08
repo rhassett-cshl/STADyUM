@@ -138,11 +138,8 @@ inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
 
 prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
                                     geneBodyRegions, kmax) {
-    rcCutoff <- 20
     pb <- progress::progress_bar$new(
-        format = "Processing [:bar] :percent eta: :eta",
-        total = 4,  
-    )
+        format = "Processing [:bar] :percent eta: :eta", total = 4)
     
     message("\nImporting bigwig files...")
     pb$tick(0)
@@ -151,21 +148,15 @@ prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
     if (sum(bwp1P3$score) == 0 || sum(bwm1P3$score) == 0) {
         stop("No reads found in plus or minus strand bigwig file")
     }
-    # Check chromosome name compatibility between bigwig files and GRanges
-    bigwigChrs <- unique(c(
-        as.character(seqnames(bwp1P3)),
-        as.character(seqnames(bwm1P3))
-    ))
-    grangesChrs <- unique(c(
-        as.character(seqnames(pauseRegions)),
-        as.character(seqnames(geneBodyRegions))
-    ))
+    bigwigChrs <- unique(c(as.character(seqnames(bwp1P3)),
+        as.character(seqnames(bwm1P3))))
+    grangesChrs <- unique(c(as.character(seqnames(pauseRegions)),
+        as.character(seqnames(geneBodyRegions))))
     missingChrs <- setdiff(grangesChrs, bigwigChrs)
     if (length(missingChrs) > 0) {
         stop("The following chromosomes in GRanges objects are not found in 
         bigwig files: ", paste(missingChrs, collapse = ", "))
     }
-    
     pb$tick()
 
     message("\nProcessing plus and minus strands bigwig...")
@@ -180,22 +171,19 @@ prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
     message("\nSummarizing pause and gene body regions...")
     rc1Pause <- summariseBw(bw = bw1P3, grng = pauseRegions, 
                             colName = "summarizedPauseCounts")    
-    rc1Gb <- summariseBw(bw = bw1P3, grng = geneBodyRegions, 
+    rc1Gb <- summariseBw(bw = bw1P3, grng = geneBodyRegions,
                         colName = "summarizedGbCounts")
     rc1Pause$pauseLength <- kmax
     rc1Gb$gbLength <- width(geneBodyRegions)[match(
             rc1Gb$gene_id, geneBodyRegions$gene_id)]
     pb$tick()
 
-
     message("\nGenerating read counts table...")
-    rc1 <- Reduce(
-        function(x, y) merge(x, y, by="gene_id", all=TRUE),
-        list(rc1Pause, rc1Gb)
-    )
+    rc1 <- Reduce(function(x, y) merge(x, y, by="gene_id", all=TRUE),
+        list(rc1Pause, rc1Gb))
     rc1 <- rc1[!(is.na(rc1$pauseLength) | is.na(rc1$gbLength)), ]
-    rc1 <- rc1[(rc1$summarizedPauseCounts > rcCutoff) &
-        (rc1$summarizedGbCounts > rcCutoff), ]
+    rc1 <- rc1[(rc1$summarizedPauseCounts > 20) &
+        (rc1$summarizedGbCounts > 20), ]
     pb$tick()
 
     return(list(rc1 = rc1, bw1P3 = bw1P3))
@@ -221,7 +209,7 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
 
     ## For each region, extract per-base signal and store position + region ID
     # First, identify valid regions
-    validIndices <- sapply(seq_along(pauseRegions), function(i) {
+    validIndices <- vapply(seq_along(pauseRegions), function(i) {
         chr <- regionsChr[i]
         regionStart <- starts[i]
         regionEnd <- ends[i]
@@ -248,7 +236,7 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
         }
         
         return(TRUE)
-    })
+    }, logical(1))
     
     # Check if we have any valid data
     if (sum(validIndices) == 0) {
@@ -349,7 +337,6 @@ estimateEmRates <- function(rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
 
 prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
     emRate <- emRate %>% left_join(analyticalRateTbl, by = "geneId")
-    print(emRate)
 
     if (!stericHindrance) {
         emRate <- emRate %>%

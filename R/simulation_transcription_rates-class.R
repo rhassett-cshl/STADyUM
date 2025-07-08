@@ -155,41 +155,32 @@ createGenomicRegions <- function(params) {
 generateRnapPositions <- function(params, regions) {
     seeds <- seq(from = 2013, by = 1, length.out = params$sampleN)
     rnapGrng <- list()
-
-
     beta_prob <- params$prob[1, 1] / params$alpha * params$beta
     
-    # Find pause sites for each cell by looking for the beta_prob value in each column
+    # Find pause sites for each cell from the beta_prob value in each column
     pauseSitesPerCell <- numeric(params$totalCell)
-    for (cell in 1:params$totalCell) {
-        # Find where beta_prob occurs in this cell's probability vector
+    for (cell in seq_len(params$totalCell)) {
         cell_probs <- params$prob[, cell]
         pause_indices <- which(cell_probs == beta_prob)
-        # Remove the first position (position 0) as it's not a pause site
         pause_indices <- pause_indices[pause_indices != 1]
         
         if (length(pause_indices) > 0) {
-            # Take the first pause site found
             pauseSitesPerCell[cell] <- pause_indices[1] - 1
         } else {
-            # If no pause site found, use a default value (e.g., k)
             pauseSitesPerCell[cell] <- params$k
         }
     }
 
     for (i in seq_len(params$sampleN)) {
-        set.seed(seeds[i])
         selCells <- sample(seq_len(params$totalCell), 
             size = params$sampleCell, replace = TRUE)
         resPos <- params$rnapPos[, selCells]
         resPos <- resPos[-1, ]
 
-
         # Use the pre-calculated pause sites for the selected cells
         pauseSite <- pauseSitesPerCell[selCells]
         resShape <- dim(resPos)
         afterPauseLen <- resShape[1] - pauseSite
-
         
         maskMx <- map2(pauseSite, afterPauseLen,
             function(x, y) c(rep(TRUE, x), rep(FALSE, y))
@@ -197,7 +188,6 @@ generateRnapPositions <- function(params, regions) {
         maskMx <- matrix(unlist(maskMx), 
             nrow = resShape[1], ncol = resShape[2])
         
-
         # calculate rnap positions across all cells
         resAll <- rowSums(resPos)
         # generate bigwigs for positive strand
@@ -390,57 +380,35 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
 #' @rdname SimulationTranscriptionRates-class
 #' @export
 setMethod("estimateTranscriptionRates", "SimulatePolymerase", 
-function(x, stericHindrance=FALSE, ...) {
-    
+function(x, stericHindrance=FALSE, ...) {  
     simpol <- x  # x is the SimulatePolymerase object
-
     if (!is(simpol, "SimulatePolymerase")) {
         stop("simpol parameter must be a SimulatePolymerase object")
     }
     if (!is.logical(stericHindrance)) {
         stop("stericHindrance parameter must be a logical value")
     }
-    
-    # Prepare parameters and regions
     params <- prepareSimulationParameters(simpol)
     regions <- createGenomicRegions(params)
 
-    # Generate RNAP positions
     rnapGrng <- generateRnapPositions(params, regions)
-
-    # Calculate initial read counts
     bwDfs <- calculateReadCounts(rnapGrng, regions, params)
 
-    # Adjust read coverage if needed
     adjustedData <- adjustReadCoverage(rnapGrng, regions, params, bwDfs)
     bwDfs <- adjustedData$bwDfs
     rnapGrng <- adjustedData$rnapGrng
-    
-    # Calculate initial rates
-    bwDfs <- calculateInitialRates(bwDfs, regions, params, simpol, rnapGrng)
-    
-    # Run EM algorithm
+
+    bwDfs <- calculateInitialRates(bwDfs, regions, params, simpol, rnapGrng)    
     emLs <- runEmAlgorithm(bwDfs, params, stericHindrance)
-    
-    # Process EM results
     bwDfs <- processEmResults(bwDfs, emLs, stericHindrance)
     
     rates_tibble <- tibble(
-        trial = bwDfs$trial,
-        chi = bwDfs$chi,
-        betaOrg = bwDfs$betaOrg,
-        betaAdp = bwDfs$betaAdp,
-        fk = bwDfs$fk,
-        fkMean = bwDfs$fkMean,
-        fkVar = bwDfs$fkVar,
-        totalTssRc = bwDfs$rcTss,
-        totalGbRc = bwDfs$rcGb,
-        totalLandingRc = bwDfs$rcLanding,
-        avgRcPerCell = bwDfs$R,
-        avgTssRcPerCell = bwDfs$Rpause,
-        avgLandingRcPerCell = bwDfs$rnapProp,
-        simulatedPauseSiteCounts = bwDfs$Xk,
-        expectedPauseSiteCounts = bwDfs$Yk,
+        trial = bwDfs$trial, chi = bwDfs$chi, betaOrg = bwDfs$betaOrg,
+        betaAdp = bwDfs$betaAdp, fk = bwDfs$fk, fkMean = bwDfs$fkMean,
+        fkVar = bwDfs$fkVar, totalTssRc = bwDfs$rcTss, totalGbRc = bwDfs$rcGb,
+        totalLandingRc = bwDfs$rcLanding, avgRcPerCell = bwDfs$R,
+        avgTssRcPerCell = bwDfs$Rpause, avgLandingRcPerCell = bwDfs$rnapProp,
+        simulatedPauseSiteCounts = bwDfs$Xk, expectedPauseSiteCounts = bwDfs$Yk,
         expectationMaximizationStatus = bwDfs$flag
     )
     
@@ -449,9 +417,7 @@ function(x, stericHindrance=FALSE, ...) {
     }
     
     new("SimulationTranscriptionRates",
-        simpol = simpol, 
-        stericHindrance = stericHindrance,
-        rates = rates_tibble
+        simpol = simpol, stericHindrance = stericHindrance, rates = rates_tibble
     )
 })
 

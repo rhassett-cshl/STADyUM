@@ -374,36 +374,29 @@ setMethod("show", "SimulatePolymerase", function(object) {
     combinedData <- slot(object, "combinedCellsData")
     if (length(combinedData) > 0) {
         siteData <- data.frame(
-            position = 0:(length(combinedData) - 1),
-            count = combinedData
-        )
+            position = 0:(length(combinedData) - 1), count = combinedData)
         topSites <- siteData[order(siteData$count, decreasing = TRUE), ]
         top10 <- head(topSites, 10)
-        
         cat("  - top 10 most occupied sites across all cells:\n")
-        for (i in 1:nrow(top10)) {
+        for (i in seq_len(nrow(top10))) {
             cat(sprintf("    position %4d: %d polymerases\n", 
-                       top10$position[i], top10$count[i]))
+                top10$position[i], top10$count[i]))
         }
     }
     readCounts <- slot(object, "readCounts")
     kMax <- slot(object, "kMax")
     N <- length(combinedData)
     L <- N - kMax
-
     gbRc <- sum(readCounts[(kMax + 1):N])
     gbAvgRc <- gbRc / L
-    pauseRc <- sum(readCounts[1:kMax])
+    pauseRc <- sum(readCounts[seq_len(kMax)])
     pauseAvgRc <- pauseRc / kMax
-
     cat("  - gene body average read counts =", round(gbAvgRc, 2), "\n")
     cat("  - pause region average read counts =", round(pauseAvgRc, 2), "\n")
     
-    # Calculate fraction of nucleotides with zero reads to indicate sparsity
     zeroReadsFraction <- sum(readCounts == 0) / length(readCounts)
     cat("  - percent of nucleotides with zero reads =", 
         round(zeroReadsFraction * 100, 1), "%\n")
-
     cat("\nTo access the full simulation parameters, use: parameters(object)\n")
     cat("\nTo access the all sampled read counts, use: readCounts(object)\n")
 })
@@ -996,7 +989,7 @@ setMethod(
     df <- data.frame(
       PC1 = pca$x[, 1],
       PC2 = pca$x[, 2],
-      Cell = factor(1:ncol(mat)),
+      Cell = factor(seq_len(ncol(mat))),
       PolymeraseCount = colSums(mat)
     )
     
