@@ -16,7 +16,17 @@ A tibble containing the estimated rates
 Generic accessor for the estimated rates from any TranscriptionRates object
 }
 \examples{
-# Works with both ExperimentTranscriptionRates and SimulationTranscriptionRates
+# Create an ExperimentTranscriptionRates object
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+expRates <- estimateTranscriptionRates(
+    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
+    stericHindrance = TRUE,
+    omegaScale = 1000,
+)
 rates(expRates)
-rates(simRates)
+
 }

@@ -87,27 +87,50 @@ landing-pad occupancy or not. Defaults to FALSE.}
 \item{\code{rates}}{a \code{\link[tibble]{tbl_df}} containing the estimated rates
 with columns:
 \describe{
-\item{trial}{Numeric. Trial number}
-\item{chi}{Numeric. RNAP density along gene body}
-\item{betaOrg}{Numeric. RNAP density along pause region}
-\item{betaAdp}{Numeric. RNAP density along pause region from adapted model
-which allows pause sites to vary across cells}
-\item{fkMean}{Numeric. Mean position of pause sites}
-\item{fkVar}{Numeric. Variance of pause site positions}
+\item{trial}{Numeric. Trial number, each trial samples 5000 cells}
+\item{chi}{Numeric. RNAP density along gene body given as estimate for the
+gene body elongation rate \link{RNAPs/bp}}
+\item{betaOrg}{Numeric. Ratio of gene body RNAP density to pause region
+RNAP density with fixed pause sites given as an estimate for the
+pause-escape rate}
+\item{betaAdp}{Numeric. Ratio of gene body RNAP density to pause region
+RNAP density from adapted model which allows pause sites to vary across
+cells given as an estimate for the pause-escape rate}
 \item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
 enabled)}
+\item{fk}{list. Likelihood of pausing at each pause region position}
+\item{fkMean}{Numeric. Mean position of pause sites}
+\item{fkVar}{Numeric. Variance of pause site positions}
+\item{totalTssRc}{Numeric. Total RNAP read counts in the TSS region (across
+all cells)}
+\item{totalGbRc}{Numeric. Total RNAP read counts in the gene body region
+(across all cells)}
+\item{totalLandingRc}{Numeric. Total RNAP read counts in the landing pad
+region (across all cells)}
+\item{avgRcPerCell}{Numeric. Average number of RNAPs per cell for gene
+body and TSS regions}
+\item{avgTssRcPerCell}{Numeric. Average number of RNAPs per cell for
+pause regions (across all cells)}
+\item{avgLandingRcPerCell}{Numeric. Average number of RNAPs per cell for
+landing pad regions (across all cells)}
+\item{simulatedPauseSiteCounts}{list. Simulated pause site counts for each
+cell}
+\item{expectedPauseSiteCounts}{list. Expected pause site counts for each
+cell estimated from the EM algorithm}
+\item{expectationMaximizationStatus}{character. Status of the expectation
+maximization algorithm. "normal": converged normally, "single_site":
+converged to single pause site, "max_iterations": reached maximum
+iterations without convergence. Note max # of iterations is 500.}
 }}
-
-\item{\code{rnapN}}{a list of \code{\link[GenomicRanges]{GRanges-class}} objects
-that hold the RNAP positions}
 }}
 
 \examples{
 # Create a SimulatePolymerase object
 sim <- simulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500,
+    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+    addSpace = 17, time = 1)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Print the estimated rates
@@ -115,36 +138,44 @@ print(estRates)
 
 # Create a SimulatePolymerase object
 sim <- simulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+    addSpace = 17, time = 1
+)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Show the object
 show(estRates)
 # Create a SimulatePolymerase object
 sim <- simulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+    addSpace = 17, time = 1
+)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Plot transcription rates
 plotTranscriptionRates(estRates)
 # Create a SimulatePolymerase object
 sim <- simulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+    addSpace = 17, time = 1
+)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Plot pause site distribution
 plotPauseSiteDistribution(estRates)
 # Create a SimulatePolymerase object
 sim <- simulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+    addSpace = 17, time = 1
+)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Get simpol
@@ -153,9 +184,11 @@ simpol <- simpol(estRates)
 print(simpol)
 # Create a SimulatePolymerase object
 sim <- simulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+    addSpace = 17, time = 1
+)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Get steric hindrance
@@ -164,9 +197,11 @@ stericHindrance <- stericHindrance(estRates)
 print(stericHindrance)
 # Create a SimulatePolymerase object
 sim <- simulatePolymerase(
-    k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-    alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-    zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+    addSpace = 17, time = 1
+)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim)
 # Get rates

@@ -611,7 +611,7 @@ setMethod("parameters", "SimulatePolymerase", function(object) {
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-#'     addSpace = 17, time = 1 timesToRecord = NULL
+#'     addSpace = 17, time = 1, timesToRecord = NULL
 #' )
 #' # Get read counts
 #' readCounts <- readCounts(sim)
@@ -781,7 +781,7 @@ setMethod("getCombinedCellsDataAtTime", "SimulatePolymerase", function(
 #'     addSpace = 17, time = 1, timesToRecord = NULL
 #' )
 #' # Plot pause site distribution
-#' plotPauseSites(sim)
+#' plotPauseSites(sim, file="pause_sites.png")
 #' @export
 setGeneric("plotPauseSites", function(
     object, file = NULL, width = 8,
@@ -881,9 +881,10 @@ setupPauseSiteAnnotation <- function(p, pause_sites, matrix_cols) {
 #'     addSpace = 17, time = 1, timesToRecord = NULL
 #' )
 #' # Plot final position heatmap
-#' plotFinalPositionHeatmap(sim, maxCells = 100)
+#' plotFinalPositionHeatmap(sim, maxCells = 100, file="heatmap.html")
 #' # Plot specific time point
-#' plotPositionHeatmap(sim, timePoint = 0.5, maxCells = 100)
+#' plotPositionHeatmap(sim, timePoint = 0.5, maxCells = 100, file="heatmap
+#' html")
 #' @export
 setGeneric("plotPositionHeatmap", function(
     object, timePoint = NULL,
@@ -953,13 +954,11 @@ setMethod("plotPositionHeatmap", "SimulatePolymerase", function(
 #' @param object A SimulatePolymerase object
 #' @param timePoint Optional time point to plot. If NULL, plots the final
 #' position matrix.
+#' @param file Optional html file path to save the plotly object
 #' @return A plotly object showing the interactive PCA plot of cells
 #' @examples
 #' # Using a SimulatePolymerase object
-#' plotPolymerasePCA(sim, timePoint = 0.5)
-#' # Using a matrix directly
-#' mat <- getPositionMatrixAtTime(sim, 0.5)
-#' plotPolymerasePCA(mat)
+#' plotPolymerasePCA(sim, timePoint = 0.5, file="pca.html")
 #' @export
 setGeneric("plotPolymerasePCA", function(
     object, timePoint = NULL, file = NULL) {
@@ -1062,6 +1061,7 @@ validatePlotRange <- function(start, end, data) {
 #' range)
 #' @param timePoint Optional numeric value specifying the time point being
 #' plotted (used for automatic title generation and documentation)
+#' @param file Optional html file path to save the plotly object
 #' @return A plotly object showing interactive polymerase occupancy
 #' @examples
 #' # Create a SimulatePolymerase object
@@ -1072,11 +1072,12 @@ validatePlotRange <- function(start, end, data) {
 #'     addSpace = 17, time = 1, timesToRecord = NULL
 #' )
 #' # Plot final combined cells data
-#' plotCombinedCells(sim)
+#' plotCombinedCells(sim, file="combined_cells.html")
 #' # Plot specific time point data
-#' plotCombinedCells(sim, timePoint = 0.5)
+#' plotCombinedCells(sim, timePoint = 0.5, file="combined_cells.html")
 #' # Plot with custom range and title
-#' plotCombinedCells(sim, timePoint = 0.5, start = 100, end = 500)
+#' plotCombinedCells(sim, timePoint = 0.5, start = 100, end = 500,
+#' file="combined_cells.html")
 #' @export
 setGeneric("plotCombinedCells", function(
     object, start = NULL, end = NULL, timePoint = NULL, file = NULL) {
@@ -1128,7 +1129,8 @@ setMethod(
 #' @title Plot Read Counts Lollipop
 #'
 #' @description
-#' Plot nonzero read counts as a lollipop plot, skipping the first value.
+#' Plot nonzero read counts as a lollipop plot, skipping the first value since
+#' first position is initiation site and always has a polymerase.
 #'
 #' @param object A SimulatePolymerase-class object
 #' @param file Optional file path to save the plot
@@ -1144,7 +1146,7 @@ setMethod(
 #'     addSpace = 17, time = 1, timesToRecord = NULL
 #' )
 #' # Plot read counts lollipop
-#' plotReadCountsLollipop(sim)
+#' plotReadCountsLollipop(sim, file="read_counts_lollipop.png")
 #' @export
 setGeneric("plotReadCountsLollipop", function(
     object, file = NULL, width = 8,
@@ -1175,9 +1177,7 @@ setMethod(
             ) +
             theme_minimal() +
             theme(plot.title = element_text(hjust = 0.5))
-        if (!is.null(file)) {
-            ggsave(file, p, width = width, height = height)
-        }
+        if (!is.null(file)) ggsave(file, p, width = width, height = height)
         return(p)
     }
 )

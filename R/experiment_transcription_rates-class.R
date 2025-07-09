@@ -337,21 +337,6 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
     return(emRate)
 }
 
-#' @title Generic function for estimating transcription rates
-#'
-#' @description
-#' Generic function that estimates transcription rates from either simulation
-#' data (SimulatePolymerase object) or experimental data (bigwig files and
-#' genomic regions).
-#'
-#' @param x The input data (either a SimulatePolymerase object or bigwig files)
-#' @param ... Additional arguments passed to the specific methods
-#' @return An object containing estimated transcription rates
-#' @export
-setGeneric("estimateTranscriptionRates", function(x, ...) {
-    standardGeneric("estimateTranscriptionRates")
-})
-
 #' @title Estimate transcription rates from real PRO-seq data
 #'
 #' @description
@@ -766,6 +751,38 @@ setMethod("stericHindrance", "ExperimentTranscriptionRates", function(object) {
 })
 
 ## plotting utilities
+
+#' @title Plot Mean Pause Site Distribution
+#'
+#' @description
+#' Creates a histogram plot showing the distribution of observed mean pause site
+#' positions across all genes. This visualization helps identify the range and
+#' shape of pause site positions
+#'
+#'
+#' @param object an \code{\link{ExperimentTranscriptionRates}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#'
+#' @return an \code{\link{ggplot2}} object
+#'
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#' )
+#' plotMeanPauseDistrib(expRates, file="mean_pause_distrib.png")
+#'
+#' @rdname ExperimentTranscriptionRates-class
 #' @export
 setGeneric("plotMeanPauseDistrib", function(
     object, file = NULL, width = 8,
@@ -807,15 +824,52 @@ setMethod(
     }
 )
 
+#' @title Plot Expected vs Observed Pause Sites
+#'
+#' @description
+#' Creates a scatter plot comparing observed pause site counts (Xk) against
+#' expected pause site counts (Yk) from the EM algorithm. This visualization
+#' assesses the goodness-of-fit of the pause site model by showing how well
+#' the model predictions align with the actual data. A perfect fit would show
+#' all points on the diagonal line (y=x). The R² value is calculated and
+#' displayed on the plot to quantify the model fit quality. This plot is
+#' useful for validating the accuracy of the pause site estimation and
+#' identifying any systematic biases in the model predictions.
+#'
+#'
+#' @param object an \code{\link{ExperimentTranscriptionRates}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#'
+#' @return an \code{\link{ggplot2}} object
+#'
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#' )
+#' plotExpectedVsObservedPauseSites(expRates,
+#' file="expected_vs_observed_pause_sites.png")
+#'
+#' @rdname ExperimentTranscriptionRates-class
 #' @export
-setGeneric("plotPauseSiteCounts", function(
+setGeneric("plotExpectedVsObservedPauseSites", function(
     object, file = NULL, width = 8,
     height = 6, dpi = 300) {
-    standardGeneric("plotPauseSiteCounts")
+    standardGeneric("plotExpectedVsObservedPauseSites")
 })
 
 setMethod(
-    "plotPauseSiteCounts", "ExperimentTranscriptionRates",
+    "plotExpectedVsObservedPauseSites", "ExperimentTranscriptionRates",
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
 
@@ -958,10 +1012,8 @@ setGeneric("plotBetaVsChi", function(
     standardGeneric("plotBetaVsChi")
 })
 
-setMethod(
-    "plotBetaVsChi", "ExperimentTranscriptionRates",
-    plotChiVsBeta <- function(
-        object, beta_type = "betaAdp", file = NULL,
+setMethod("plotBetaVsChi", "ExperimentTranscriptionRates",
+    function(object, beta_type = "betaAdp", file = NULL,
         width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
 
@@ -1038,8 +1090,8 @@ setGeneric("plotPauseSiteContourMap", function(
 
 setMethod(
     "plotPauseSiteContourMap", "ExperimentTranscriptionRates",
-    plotPauseSiteContourMap <- function(object, file = NULL, width = 8,
-                                        height = 6, dpi = 300) {
+    function(object, file = NULL, width = 8,
+            height = 6, dpi = 300) {
         cr <- rates(object)
 
         p <- ggplot(cr, aes(x = fkMean, y = fkVar)) +

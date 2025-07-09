@@ -22,6 +22,33 @@ methods::setClass("TranscriptionRates",
     contains = "VIRTUAL"
 )
 
+#' @title Generic function for estimating transcription rates
+#'
+#' @description
+#' Generic function that estimates transcription rates from either simulation
+#' data (SimulatePolymerase object) or experimental data (bigwig files and
+#' genomic regions).
+#'
+#' @param x The input data (either a SimulatePolymerase object or bigwig files)
+#' @param ... Additional arguments passed to the specific methods
+#' @return An object containing estimated transcription rates
+#' 
+#' @examples
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#' )
+#' @export
+setGeneric("estimateTranscriptionRates", function(x, ...) {
+    standardGeneric("estimateTranscriptionRates")
+})
+
 #' @title Accessor for estimated rates
 #'
 #' @description
@@ -29,6 +56,21 @@ methods::setClass("TranscriptionRates",
 #'
 #' @param object A TranscriptionRates object
 #' @return A tibble containing the estimated rates
+#' 
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#' )
+#' rates(expRates)
+#' 
 #' @export
 setGeneric("rates", function(object) standardGeneric("rates"))
 
@@ -40,8 +82,21 @@ setGeneric("rates", function(object) standardGeneric("rates"))
 #'
 #' @param object A TranscriptionRates object
 #' @return A logical value indicating whether steric hindrance was modeled
+#' 
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#' )
+#' stericHindrance(expRates)
+#' 
 #' @export
-setGeneric(
-    "stericHindrance",
-    function(object) standardGeneric("stericHindrance")
-)
+setGeneric("stericHindrance",
+    function(object) standardGeneric("stericHindrance"))

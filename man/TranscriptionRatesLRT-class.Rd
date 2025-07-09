@@ -57,70 +57,85 @@ Accessor for the spike-in scaling factor from a
 TranscriptionRatesLRT object.
 }
 \examples{
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 expData1 <- estimateTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
 )
 expData2 <- estimateTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
 )
-spikeInScalingFactor <- "path/to/scale.csv"
+spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
 # Print the likelihood ratio test object
 print(lrts)
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 expData1 <- estimateTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
 )
 expData2 <- estimateTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
 )
-lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
+spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
 expData1(lrts)
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 expData1 <- estimateTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
 )
 expData2 <- estimateTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
 )
-lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
+spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
 expData2(lrts)
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 expData1 <- estimateTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
 )
 expData2 <- estimateTranscriptionRates(
-    bigwigPlus = "path/to/plus.bw",
-    bigwigMinus = "path/to/minus.bw",
-    pauseRegions = GRanges("chr1:1-1000"),
-    geneBodyRegions = GRanges("chr1:1-2000"),
-    geneNameColumn = "gene_id"
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
 )
-lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
+spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
 spikeInScalingFactor(lrts)
 }
