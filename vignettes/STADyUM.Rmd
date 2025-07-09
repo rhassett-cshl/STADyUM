@@ -19,7 +19,6 @@ knitr::opts_chunk$set(
 ```{r load_package, include = FALSE}
 # Load the package
 library(STADyUM)
-
 ```
 
 # Introduction

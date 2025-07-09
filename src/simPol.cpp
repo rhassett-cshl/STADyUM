@@ -16,7 +16,8 @@
 using namespace std;
 using namespace Rcpp;
 
-void ConvertSiteDataToMatrix(vector<vector<int>> &input, vector<vector<int>> &output)
+void ConvertSiteDataToMatrix(vector<vector<int>> &input, 
+    vector<vector<int>> &output)
 {
     for (size_t i = 0; i < output.size(); i++)
     {
@@ -28,7 +29,9 @@ void ConvertSiteDataToMatrix(vector<vector<int>> &input, vector<vector<int>> &ou
     }
 }
 
-vector<double> NormalDistrubtionGenerator(double mean, double stddev, double min, double max, size_t length, bool round_result, double multiplication_factor=1)
+vector<double> NormalDistrubtionGenerator(double mean, double stddev, 
+    double min, double max, size_t length, bool round_result, 
+    double multiplication_factor=1)
 {
     GetRNGstate();  // Initialize R's random number generator
     vector<double> random_values;
@@ -77,7 +80,8 @@ Rcpp::List simulate_polymerase_cpp(
     std::vector<double> recorded_time_points;
     
     if (time_points_to_record.isNotNull()) {
-        Rcpp::NumericVector time_vec = Rcpp::as<Rcpp::NumericVector>(time_points_to_record);
+        Rcpp::NumericVector time_vec 
+            = Rcpp::as<Rcpp::NumericVector>(time_points_to_record);
         for (int i = 0; i < time_vec.length(); i++) {
             double time_point = time_vec[i];
             if (time_point >= 0 && time_point <= time) {
@@ -105,7 +109,8 @@ Rcpp::List simulate_polymerase_cpp(
     /* Construct a probability matrix to control RNAP movement
      * Generate pause sites located from kmin to kmax with sd = ksd
      */
-    std::vector<double> y = NormalDistrubtionGenerator(k, ksd, k_min, k_max, cell_num, true);
+    std::vector<double> y = NormalDistrubtionGenerator(k, ksd, k_min, k_max,
+        cell_num, true);
 
     /* A matrix of probabilities to control transition from state to state
      * cols are cells, rows are positions
@@ -115,17 +120,16 @@ Rcpp::List simulate_polymerase_cpp(
         // Generate different zv values for each cell
         zv = Rcpp::NumericMatrix(total_sites, cell_num);
         for (int cell = 0; cell < cell_num; cell++) {
-            std::vector<double> cell_zv = NormalDistrubtionGenerator(zeta, zeta_sd, 
-                                                                   zeta_min, zeta_max, 
-                                                                   total_sites, false, 
-                                                                   delta_t);
+            std::vector<double> cell_zv = NormalDistrubtionGenerator(zeta,
+                zeta_sd, zeta_min, zeta_max, total_sites, false, delta_t);
             for (int site = 0; site < total_sites; site++) {
                 zv(site, cell) = cell_zv[site];
             }
         }
     } else {
-        // Convert Rcpp::NumericVector to std::vector<double> and copy across all cells
-        std::vector<double> zeta_vec_values = Rcpp::as<std::vector<double>>(zeta_vec);
+        // Convert Rcpp::NumericVector vector<double> and copy across all cells
+        std::vector<double> zeta_vec_values 
+            = Rcpp::as<std::vector<double>>(zeta_vec);
         
         // Ensure correct length
         if ((int)zeta_vec_values.size() > total_sites) {
@@ -134,11 +138,13 @@ Rcpp::List simulate_polymerase_cpp(
         else if((int)zeta_vec_values.size() == total_sites - 1)
         {
             double mean = std::accumulate(zeta_vec_values.begin(), 
-                                        zeta_vec_values.end(), 0.0) / zeta_vec_values.size();
+                                        zeta_vec_values.end(), 0.0) /
+                                        zeta_vec_values.size();
             zeta_vec_values.insert(zeta_vec_values.begin(), mean);
         }
         else if ((int)zeta_vec_values.size() != total_sites) {
-            Rcpp::Rcout << "Vector for scaling zeta is too short, check total length of the vector!";
+            Rcpp::Rcout << "Vector for scaling zeta is too short, check total"
+            << "length of the vector!";
             return Rcpp::List::create();
         }
         
@@ -177,12 +183,13 @@ Rcpp::List simulate_polymerase_cpp(
                 double prob = site_idx == 0            ? alpha * delta_t
                               : site_idx == y.at(cell) ? beta * delta_t
                                                   : zv(site_idx, cell);
-                double draw = R::runif(0.0, 1.0);  // Using R's uniform random number generator
+                double draw = R::runif(0.0, 1.0);
                 if (prob > draw)
                 {
                     size_t last_polymerase = sites->size() - 1;
                     /* Check if space ahead is larger than polymerase size */
-                    if (i != last_polymerase && (*sites)[i + 1] - (*sites)[i] > steric_hindrance)
+                    if (i != last_polymerase && (*sites)[i + 1] - 
+                        (*sites)[i] > steric_hindrance)
                     {
                         (*sites)[i]++;
                     }
@@ -197,30 +204,35 @@ Rcpp::List simulate_polymerase_cpp(
                         {
                             /* Remove polymerase if past final site */
                             sites->pop_back();
-                            break; // to prevent iterating past the end of the linked list
+                            break; 
                         }
                     }
                 }
             }
 
-            /* Ensure there are always polymerases waiting to be initialized (i.e., first col is always 1) */
+            /* Ensure there are always polymerases waiting to be initialized 
+            (i.e., first col is always 1) */
             if (sites->size() == 0 || (*sites)[0] != 0)
             {
                 sites->insert(sites->begin(), 0);
             }
         }
         /* Record info for studying steric hindrance */
-        bool record_to_pos_matrix = std::find(steps_to_record.begin(), steps_to_record.end(), step) != steps_to_record.end();
+        bool record_to_pos_matrix = std::find(steps_to_record.begin(),
+        steps_to_record.end(), step) != steps_to_record.end();
         if (record_to_pos_matrix)
         {
             pos_matrices.push_back(pos_matrix);
         }
     }
     auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
-    Rcpp::Rcout << "Total time used for the simulation is " << duration.count() / 60.0 << " mins.\n";
+    auto duration 
+        = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
+    Rcpp::Rcout << "Total time used for the simulation is " 
+    << duration.count() / 60.0 << " mins.\n";
 
-    /* Calculate the # of polymerase at each site across all cells and output the results in csv format */
+    /* Calculate the # of polymerase at each site across all cells and output
+    the results in csv format */
     std::vector<int> res_all(total_sites, 0);
     for (int cell = 0; cell < cell_num; cell++)
     {
@@ -249,7 +261,8 @@ Rcpp::List simulate_polymerase_cpp(
         }
         
         // Name the matrix with its corresponding time point
-        std::string time_name = "t_" + std::to_string(recorded_time_points[step]);
+        std::string time_name = "t_" 
+            + std::to_string(recorded_time_points[step]);
         pos_matrices_named[time_name] = pos_matrix_2d;
     }
 

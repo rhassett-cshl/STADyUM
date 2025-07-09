@@ -35,12 +35,11 @@ getMaximizationH0 <- function(chiHat, Xk1, Xk2, Yk1, Yk2, fk1, fk2, kmin, kmax)
 }
 
 # EM function to estimate parameters when assuming beta is the same between
-#conditions
+# conditions
 mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
-                                            chiHat, chiHat1, chiHat2,
+                                            chiHat, chiHat1, chiHat2, 
                                             maxItr = 100, tor = 1e-3) {
     betas <- list(); likelihoods <- list(); yks <- list(); flag <- "normal"
-
     for (i in seq_len(maxItr)) {
         if (i == 1) {
             Yk1 <- getExpectation(fkInt, Xk1, betaInt)
@@ -58,18 +57,19 @@ mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
                 hats$fk1, hats$fk2, kmin, kmax
             )
         }
-
         likelihoods[[i]] <-
-            getLikelihood(beta = hats$beta, chi = chiHat1, Xk = Xk1, Yk = Yk1,
-            fk = hats$fk1) +
-            getLikelihood(beta = hats$beta, chi = chiHat2, Xk = Xk2, Yk = Yk2,
-            fk = hats$fk2)
-
+            getLikelihood(
+                beta = hats$beta, chi = chiHat1, Xk = Xk1, Yk = Yk1,
+                fk = hats$fk1
+            ) +
+            getLikelihood(
+                beta = hats$beta, chi = chiHat2, Xk = Xk2, Yk = Yk2,
+                fk = hats$fk2
+            )
         betas[[i]] <- hats$beta
-
         if (any(hats$fk1 == 1) & any(hats$fk2 == 1)) {
             hats$beta <- chiHat / (Xk1[which(hats$fk1 == 1)] +
-                                    Xk2[which(hats$fk2 == 1)])
+                Xk2[which(hats$fk2 == 1)])
             flag <- "single_site"
             break
         }
@@ -79,7 +79,6 @@ mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
         }
     }
     if (i == maxItr) flag <- "max_iteration"
-
     return(list(
         "beta" = hats$beta, "Yk1" = Yk1, "Yk2" = Yk2,
         "fk1" = hats$fk1, "fk2" = hats$fk2, "betas" = betas,
@@ -93,7 +92,7 @@ mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
 omegaLRT <- function(s1, s2, tao1, tao2) {
     ## compute T statistic and p values
     tStats <- s1 * log(s1 / (tao1 * (s1 + s2))) + s2 * log(s2 / (tao2 * (s1 +
-    s2)))
+        s2)))
     p <- pchisq(2 * tStats, df = 1, ncp = 0, lower.tail = FALSE, log.p = FALSE)
     return(c("tStats" = tStats, "p" = p))
 }

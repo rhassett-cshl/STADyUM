@@ -2,52 +2,52 @@
 #'
 #' @description
 #' Class containing the simulated data, such as the nascent RNA sequencing reads
-#' sampled from the simulated polymerase movement in the 
+#' sampled from the simulated polymerase movement in the
 #' \code{SimulatePolymerase} object. It also contains the estimated average
 #' read depths along the gene body and pause regions, given fixed or varied
 #' pause sites, as well as the landing pad occupancy estimate. These can be
 #' under a model with or without steric hindrance.
-#' 
+#'
 #' @slot simpol a \code{\linkS4class{SimulatePolymerase}} object
 #' @slot stericHindrance a logical value to determine whether to infer
 #' landing-pad occupancy or not. Defaults to FALSE.
 #' @slot rates a \code{\link[tibble]{tbl_df}} containing the estimated rates
 #' with columns:
 #' \describe{
-#'   \item{trial}{Numeric. Trial number, each trial samples 5000 cells}
-#'   \item{chi}{Numeric. RNAP density along gene body given as estimate for the
-#'   gene body elongation rate [RNAPs/bp]}
-#'   \item{betaOrg}{Numeric. Ratio of gene body RNAP density to pause region
-#'   RNAP density with fixed pause sites given as an estimate for the
-#'   pause-escape rate}
-#'   \item{betaAdp}{Numeric. Ratio of gene body RNAP density to pause region
-#'   RNAP density from adapted model which allows pause sites to vary across
-#'   cells given as an estimate for the pause-escape rate}
-#'   \item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
-#'   enabled)}
-#'   \item{fk}{list. Likelihood of pausing at each pause region position}
-#'   \item{fkMean}{Numeric. Mean position of pause sites}
-#'   \item{fkVar}{Numeric. Variance of pause site positions}
-#'   \item{totalTssRc}{Numeric. Total RNAP read counts in the TSS region (across
-#'   all cells)}
-#'   \item{totalGbRc}{Numeric. Total RNAP read counts in the gene body region
-#'   (across all cells)}
-#'   \item{totalLandingRc}{Numeric. Total RNAP read counts in the landing pad
-#'   region (across all cells)}
-#'   \item{avgRcPerCell}{Numeric. Average number of RNAPs per cell for gene
-#'   body and TSS regions}
-#'   \item{avgTssRcPerCell}{Numeric. Average number of RNAPs per cell for
-#'   pause regions (across all cells)}
-#'   \item{avgLandingRcPerCell}{Numeric. Average number of RNAPs per cell for
-#'   landing pad regions (across all cells)}
-#'   \item{simulatedPauseSiteCounts}{list. Simulated pause site counts for each
-#'    cell}
-#'   \item{expectedPauseSiteCounts}{list. Expected pause site counts for each
-#'    cell estimated from the EM algorithm}
-#'   \item{expectationMaximizationStatus}{character. Status of the expectation
-#'   maximization algorithm. "normal": converged normally, "single_site":
-#'   converged to single pause site, "max_iterations": reached maximum
-#'   iterations without convergence. Note max # of iterations is 500.}
+#' \item{trial}{Numeric. Trial number, each trial samples 5000 cells}
+#' \item{chi}{Numeric. RNAP density along gene body given as estimate for the
+#' gene body elongation rate [RNAPs/bp]}
+#' \item{betaOrg}{Numeric. Ratio of gene body RNAP density to pause region
+#' RNAP density with fixed pause sites given as an estimate for the
+#' pause-escape rate}
+#' \item{betaAdp}{Numeric. Ratio of gene body RNAP density to pause region
+#' RNAP density from adapted model which allows pause sites to vary across
+#' cells given as an estimate for the pause-escape rate}
+#' \item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
+#' enabled)}
+#' \item{fk}{list. Likelihood of pausing at each pause region position}
+#' \item{fkMean}{Numeric. Mean position of pause sites}
+#' \item{fkVar}{Numeric. Variance of pause site positions}
+#' \item{totalTssRc}{Numeric. Total RNAP read counts in the TSS region (across
+#' all cells)}
+#' \item{totalGbRc}{Numeric. Total RNAP read counts in the gene body region
+#' (across all cells)}
+#' \item{totalLandingRc}{Numeric. Total RNAP read counts in the landing pad
+#' region (across all cells)}
+#' \item{avgRcPerCell}{Numeric. Average number of RNAPs per cell for gene
+#' body and TSS regions}
+#' \item{avgTssRcPerCell}{Numeric. Average number of RNAPs per cell for
+#' pause regions (across all cells)}
+#' \item{avgLandingRcPerCell}{Numeric. Average number of RNAPs per cell for
+#' landing pad regions (across all cells)}
+#' \item{simulatedPauseSiteCounts}{list. Simulated pause site counts for each
+#' cell}
+#' \item{expectedPauseSiteCounts}{list. Expected pause site counts for each
+#' cell estimated from the EM algorithm}
+#' \item{expectationMaximizationStatus}{character. Status of the expectation
+#' maximization algorithm. "normal": converged normally, "single_site":
+#' converged to single pause site, "max_iterations": reached maximum
+#' iterations without convergence. Note max # of iterations is 500.}
 #' }
 #'
 #' @name SimulationTranscriptionRates-class
@@ -104,7 +104,7 @@ prepareSimulationParameters <- function(simpol) {
     beta <- slot(simpol, "beta")
     prob <- siteProbabilities(simpol)
     startPoint <- 0.99 * 1e6
-    lambda <- 102.1  # from Dukler et al. 2017
+    lambda <- 102.1 # from Dukler et al. 2017
 
     rnapPos <- finalPositionMatrix(simpol)
     totalCell <- NCOL(rnapPos)
@@ -132,9 +132,12 @@ prepareSimulationParameters <- function(simpol) {
 }
 
 createGenomicRegions <- function(params) {
-    gnRng <- GRanges(seqnames = rep("chr1", 3),
-        IRanges::IRanges(start = c(1, params$kmax + 1, 1), 
-                end = c(params$kmax, params$geneLen, params$spacing))
+    gnRng <- GRanges(
+        seqnames = rep("chr1", 3),
+        IRanges::IRanges(
+            start = c(1, params$kmax + 1, 1),
+            end = c(params$kmax, params$geneLen, params$spacing)
+        )
     )
 
     gnRng <- IRanges::shift(gnRng, shift = params$startPoint)
@@ -156,14 +159,14 @@ generateRnapPositions <- function(params, regions) {
     seeds <- seq(from = 2013, by = 1, length.out = params$sampleN)
     rnapGrng <- list()
     beta_prob <- params$prob[1, 1] / params$alpha * params$beta
-    
+
     # Find pause sites for each cell from the beta_prob value in each column
     pauseSitesPerCell <- numeric(params$totalCell)
     for (cell in seq_len(params$totalCell)) {
         cell_probs <- params$prob[, cell]
         pause_indices <- which(cell_probs == beta_prob)
         pause_indices <- pause_indices[pause_indices != 1]
-        
+
         if (length(pause_indices) > 0) {
             pauseSitesPerCell[cell] <- pause_indices[1] - 1
         } else {
@@ -172,34 +175,30 @@ generateRnapPositions <- function(params, regions) {
     }
 
     for (i in seq_len(params$sampleN)) {
-        selCells <- sample(seq_len(params$totalCell), 
-            size = params$sampleCell, replace = TRUE)
+        selCells <- sample(seq_len(params$totalCell),
+            size = params$sampleCell, replace = TRUE
+        )
         resPos <- params$rnapPos[, selCells]
         resPos <- resPos[-1, ]
-
         # Use the pre-calculated pause sites for the selected cells
         pauseSite <- pauseSitesPerCell[selCells]
-        resShape <- dim(resPos)
-        afterPauseLen <- resShape[1] - pauseSite
-        
-        maskMx <- map2(pauseSite, afterPauseLen,
+        resShape <- dim(resPos); afterPauseLen <- resShape[1] - pauseSite
+        maskMx <- map2(
+            pauseSite, afterPauseLen,
             function(x, y) c(rep(TRUE, x), rep(FALSE, y))
         )
-        maskMx <- matrix(unlist(maskMx), 
-            nrow = resShape[1], ncol = resShape[2])
-        
+        maskMx <- matrix(unlist(maskMx),
+            nrow = resShape[1], ncol = resShape[2]
+        )
         # calculate rnap positions across all cells
         resAll <- rowSums(resPos)
-        # generate bigwigs for positive strand
-        rnapGrng[[i]] <- GRanges(seqnames = "chr1",
+        rnapGrng[[i]] <- GRanges(
+            seqnames = "chr1",
             IRanges::IRanges(start = (1 + params$startPoint):
-                (params$geneLen + params$startPoint),
-                width = 1), 
-            score = resAll,
-            strand = "+",
-            seqlengths = c("chr1" = params$geneLen * 10) + 
-                params$startPoint)
-
+            (params$geneLen + params$startPoint), width = 1),
+            score = resAll, strand = "+",
+            seqlengths = c("chr1" = params$geneLen * 10) + params$startPoint
+        )
         rm(resPos, resAll)
     }
 
@@ -218,8 +217,10 @@ calculateReadCounts <- function(rnapGrng, regions, params) {
         rnapProp = numeric(params$sampleN)
     )
 
-    bwDfs$rcRegion <- map(rnapGrng, 
-        ~ summariseSimulationBw(.x, regions$gnRng, regions$regionNames))
+    bwDfs$rcRegion <- map(
+        rnapGrng,
+        ~ summariseSimulationBw(.x, regions$gnRng, regions$regionNames)
+    )
 
     bwDfs$rcTss <- map_dbl(bwDfs$rcRegion, "tss")
     bwDfs$rcGb <- map_dbl(bwDfs$rcRegion, "gb")
@@ -237,15 +238,17 @@ adjustReadCoverage <- function(rnapGrng, regions, params, bwDfs) {
         rnapGrng <- map(rnapGrng, function(grng) {
             grng$score[params$kmin:params$kmax] <- rpois(
                 length(params$kmin:params$kmax),
-                grng$score[params$kmin:params$kmax] / 
+                grng$score[params$kmin:params$kmax] /
                     params$sampleCell * params$lambda
             )
             grng$score[seq_len(20)] <- 0
             return(grng)
         })
-        
-        bwDfs$rcRegion <- map(rnapGrng, 
-            ~ summariseSimulationBw(.x, regions$gnRng, regions$regionNames))
+
+        bwDfs$rcRegion <- map(
+            rnapGrng,
+            ~ summariseSimulationBw(.x, regions$gnRng, regions$regionNames)
+        )
         bwDfs$rcTss <- map_dbl(bwDfs$rcRegion, "tss")
 
         poisMean <- (params$lambda * bwDfs$rcGb / params$sampleCell) *
@@ -308,28 +311,28 @@ runEmAlgorithm <- function(bwDfs, params, stericHindrance) {
         rc <- bwDfs[i, ]
         if (!stericHindrance) {
             emLs[[i]] <- pauseEscapeEM(
-                Xk = rc$Xk[[1]], 
-                kmin = params$kmin, 
+                Xk = rc$Xk[[1]],
+                kmin = params$kmin,
                 kmax = params$kmax,
-                fkInt = fkInt, 
+                fkInt = fkInt,
                 betaInt = rc$betaInt[[1]],
-                chiHat = rc$chi, 
-                maxItr = 500, 
+                chiHat = rc$chi,
+                maxItr = 500,
                 tor = 1e-4
             )
         } else {
             emLs[[i]] <- stericHindranceEM(
-                Xk = rc$Xk[[1]], 
+                Xk = rc$Xk[[1]],
                 kmin = params$kmin,
-                kmax = params$kmax, 
-                f1 = f[["f1"]], 
+                kmax = params$kmax,
+                f1 = f[["f1"]],
                 f2 = f[["f2"]],
-                fkInt = fkInt, 
+                fkInt = fkInt,
                 betaInt = rc$betaInt[[1]],
-                chiHat = rc$chi, 
+                chiHat = rc$chi,
                 phiInt = phiInt,
-                lambda = lambda1, 
-                zeta = zeta, 
+                lambda = lambda1,
+                zeta = zeta,
                 maxItr = 500,
                 tor = 1e-4
             )
@@ -346,7 +349,7 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
     bwDfs$fkMean <- map_dbl(emLs, "fkMean", .default = NA)
     bwDfs$fkVar <- map_dbl(emLs, "fkVar", .default = NA)
     bwDfs$flag <- map_chr(emLs, "flag", .default = NA)
-    
+
     if (stericHindrance) {
         bwDfs$phi <- map_dbl(emLs, "phi", .default = NA)
     }
@@ -365,13 +368,14 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
 #' landing-pad occupancy or not. Defaults to FALSE.
 #' @param ... Additional arguments (not used)
 #' @return a \code{\linkS4class{SimulationTranscriptionRates}} object
-#' 
+#'
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500,
+#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+#'     addSpace = 17, time = 1)
 #' # Estimate transcription rates
 #' estRates <- estimateTranscriptionRates(sim)
 #' # Print the estimated rates
@@ -379,47 +383,55 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
 #'
 #' @rdname SimulationTranscriptionRates-class
 #' @export
-setMethod("estimateTranscriptionRates", "SimulatePolymerase", 
-function(x, stericHindrance=FALSE, ...) {  
-    simpol <- x  # x is the SimulatePolymerase object
-    if (!is(simpol, "SimulatePolymerase")) {
-        stop("simpol parameter must be a SimulatePolymerase object")
-    }
-    if (!is.logical(stericHindrance)) {
-        stop("stericHindrance parameter must be a logical value")
-    }
-    params <- prepareSimulationParameters(simpol)
-    regions <- createGenomicRegions(params)
+setMethod(
+    "estimateTranscriptionRates", "SimulatePolymerase",
+    function(x, stericHindrance = FALSE, ...) {
+        simpol <- x # x is the SimulatePolymerase object
+        if (!is(simpol, "SimulatePolymerase")) {
+            stop("simpol parameter must be a SimulatePolymerase object")
+        }
+        if (!is.logical(stericHindrance)) {
+            stop("stericHindrance parameter must be a logical value")
+        }
+        params <- prepareSimulationParameters(simpol)
+        regions <- createGenomicRegions(params)
 
-    rnapGrng <- generateRnapPositions(params, regions)
-    bwDfs <- calculateReadCounts(rnapGrng, regions, params)
+        rnapGrng <- generateRnapPositions(params, regions)
+        bwDfs <- calculateReadCounts(rnapGrng, regions, params)
 
-    adjustedData <- adjustReadCoverage(rnapGrng, regions, params, bwDfs)
-    bwDfs <- adjustedData$bwDfs
-    rnapGrng <- adjustedData$rnapGrng
+        adjustedData <- adjustReadCoverage(rnapGrng, regions, params, bwDfs)
+        bwDfs <- adjustedData$bwDfs
+        rnapGrng <- adjustedData$rnapGrng
 
-    bwDfs <- calculateInitialRates(bwDfs, regions, params, simpol, rnapGrng)    
-    emLs <- runEmAlgorithm(bwDfs, params, stericHindrance)
-    bwDfs <- processEmResults(bwDfs, emLs, stericHindrance)
-    
-    rates_tibble <- tibble(
-        trial = bwDfs$trial, chi = bwDfs$chi, betaOrg = bwDfs$betaOrg,
-        betaAdp = bwDfs$betaAdp, fk = bwDfs$fk, fkMean = bwDfs$fkMean,
-        fkVar = bwDfs$fkVar, totalTssRc = bwDfs$rcTss, totalGbRc = bwDfs$rcGb,
-        totalLandingRc = bwDfs$rcLanding, avgRcPerCell = bwDfs$R,
-        avgTssRcPerCell = bwDfs$Rpause, avgLandingRcPerCell = bwDfs$rnapProp,
-        simulatedPauseSiteCounts = bwDfs$Xk, expectedPauseSiteCounts = bwDfs$Yk,
-        expectationMaximizationStatus = bwDfs$flag
-    )
-    
-    if (stericHindrance && "phi" %in% colnames(bwDfs)) {
-        rates_tibble$phi <- bwDfs$phi
+        bwDfs <- calculateInitialRates(bwDfs, regions, params, simpol, rnapGrng)
+        emLs <- runEmAlgorithm(bwDfs, params, stericHindrance)
+        bwDfs <- processEmResults(bwDfs, emLs, stericHindrance)
+
+        rates_tibble <- tibble(
+            trial = bwDfs$trial, chi = bwDfs$chi, betaOrg = bwDfs$betaOrg,
+            betaAdp = bwDfs$betaAdp, fk = bwDfs$fk, fkMean = bwDfs$fkMean,
+            fkVar = bwDfs$fkVar, totalTssRc = bwDfs$rcTss, 
+            totalGbRc = bwDfs$rcGb, totalLandingRc = bwDfs$rcLanding,
+            avgRcPerCell = bwDfs$R, avgTssRcPerCell = bwDfs$Rpause,
+            avgLandingRcPerCell = bwDfs$rnapProp,
+            simulatedPauseSiteCounts = bwDfs$Xk, 
+            expectedPauseSiteCounts = bwDfs$Yk,
+            expectationMaximizationStatus = bwDfs$flag
+        )
+
+        if (stericHindrance && "phi" %in% colnames(bwDfs)) {
+            rates_tibble$phi <- bwDfs$phi
+        }
+
+        new("SimulationTranscriptionRates",
+            simpol = simpol, stericHindrance = stericHindrance, 
+            rates = rates_tibble
+        )
     }
-    
-    new("SimulationTranscriptionRates",
-        simpol = simpol, stericHindrance = stericHindrance, rates = rates_tibble
-    )
-})
+)
+
+showEmStatus <- function(emStatus) {
+}
 
 #' @rdname SimulationTranscriptionRates-class
 #' @title Show Method for SimulationTranscriptionRates Object
@@ -431,9 +443,11 @@ function(x, stericHindrance=FALSE, ...) {
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+#'     addSpace = 17, time = 1)
+#' )
 #' # Estimate transcription rates
 #' estRates <- estimateTranscriptionRates(sim)
 #' # Show the object
@@ -444,48 +458,50 @@ setMethod("show", "SimulationTranscriptionRates", function(object) {
     cat("  - Steric hindrance:", stericHindrance(object), "\n")
     cat("  - Number of Trials with 5000 cells:", nrow(rates(object)), "\n")
     cat("\nSummary statistics for rate estimates:\n")
-    
     ratesData <- rates(object)
-    
-    cat("\nSummary statistics for rate estimates:\n")
-    
+
     chi_mean <- mean(ratesData$chi, na.rm = TRUE)
     cat(sprintf("  - chi (gene body RNAP density): %.2f RNAPs/bp\n", chi_mean))
-    
+
     betaOrg_mean <- mean(ratesData$betaOrg, na.rm = TRUE)
-    cat(sprintf("  - betaOrg (ratio of gene body RNAP density to pause region RNAP density, fixed sites): %.4f\n", betaOrg_mean))
-    
+    cat(sprintf("  - betaOrg (ratio of gene body RNAP density to pause region
+        RNAP density, fixed sites): %.4f\n", betaOrg_mean))
     betaAdp_mean <- mean(ratesData$betaAdp, na.rm = TRUE)
-    cat(sprintf("  - betaAdp (ratio of gene body RNAP density to pause region RNAP density, adapted model): %.4f\n", betaAdp_mean))
-    
+    cat(sprintf("  - betaAdp (ratio of gene body RNAP density to pause region
+        RNAP density, adapted model): %.4f\n", betaAdp_mean))
+
     rcTssTrialMean <- mean(ratesData$totalTssRc, na.rm = TRUE)
-    cat(sprintf("  - TSS Read Counts Averaged Across Trials: ~ %.0f read counts\n", rcTssTrialMean))
-
+    cat(sprintf("  - TSS Read Counts Averaged Across Trials: ~ %.0f read
+        counts\n", rcTssTrialMean))
     rcGbTrialMean <- mean(ratesData$totalGbRc, na.rm = TRUE)
-    cat(sprintf("  - Gene Body Read Counts Averaged Across Trials: ~ %.0f read counts\n", rcGbTrialMean))
-
+    cat(sprintf("  - Gene Body Read Counts Averaged Across Trials: ~ %.0f read
+        counts\n", rcGbTrialMean))
     rcLandingTrialMean <- mean(ratesData$totalLandingRc, na.rm = TRUE)
-    cat(sprintf("  - Landing Pad Read Counts Averaged Across Trials: ~ %.0f read counts\n", rcLandingTrialMean))
-    
-    # Add steric hindrance parameter if enabled
+    cat(sprintf("  - Landing Pad Read Counts Averaged Across Trials: ~ %.0f
+        read counts\n", rcLandingTrialMean))
+
     if (stericHindrance(object) && "phi" %in% colnames(ratesData)) {
         phi_mean <- mean(ratesData$phi, na.rm = TRUE)
         cat(sprintf("  - phi (landing pad occupancy): %.2f\n", phi_mean))
     }
-    
+
     em_status <- ratesData$expectationMaximizationStatus
     total_trials <- length(em_status)
     max_iter_count <- sum(em_status == "max_iterations", na.rm = TRUE)
     normal_count <- sum(em_status == "normal", na.rm = TRUE)
     single_site_count <- sum(em_status == "single_site", na.rm = TRUE)
-        
     cat("\nEM Algorithm Convergence:\n")
-    cat(sprintf("  - Trials converged normally: %d/%d (%.1f%%)\n", 
-    normal_count, total_trials, (normal_count/total_trials)*100))
-    cat(sprintf("  - Trials converged to single site: %d/%d (%.1f%%)\n", 
-    single_site_count, total_trials, (single_site_count/total_trials)*100))
-    cat(sprintf("  - Trials reached max iterations without convergence: %d/%d (%.1f%%)\n", max_iter_count, total_trials, (max_iter_count/total_trials)*100))
-    
+    cat(sprintf("  - Trials converged normally: %d/%d (%.1f%%)\n",
+        normal_count, total_trials, (normal_count / total_trials) * 100
+    ))
+    cat(sprintf("  - Trials converged to single site: %d/%d (%.1f%%)\n",
+        single_site_count, total_trials, 
+        (single_site_count / total_trials) * 100
+    ))
+    cat(sprintf("  - Trials reached max iterations without convergence: %d/%d
+    (%.1f%%)\n", max_iter_count, total_trials,
+        (max_iter_count / total_trials) * 100
+    ))
 })
 
 #' @rdname SimulationTranscriptionRates-class
@@ -502,9 +518,11 @@ setMethod("show", "SimulationTranscriptionRates", function(object) {
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+#'     addSpace = 17, time = 1
+#' )
 #' # Estimate transcription rates
 #' estRates <- estimateTranscriptionRates(sim)
 #' # Plot transcription rates
@@ -520,7 +538,7 @@ setMethod(
     function(object, file = NULL, width = 8, height = 6) {
         # Get the rates tibble
         rates_df <- rates(object)
-        
+
         # Create plot
         p <- ggplot(rates_df, aes(x = trial)) +
             geom_line(aes(y = chi, color = "chi")) +
@@ -561,9 +579,11 @@ setMethod(
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+#'     addSpace = 17, time = 1
+#' )
 #' # Estimate transcription rates
 #' estRates <- estimateTranscriptionRates(sim)
 #' # Plot pause site distribution
@@ -579,7 +599,7 @@ setMethod(
     function(object, file = NULL, width = 8, height = 6) {
         # Get the rates tibble
         rates_df <- rates(object)
-        
+
         # Check if fkMean and fkVar columns exist
         if (!all(c("fkMean", "fkVar") %in% colnames(rates_df))) {
             stop("fkMean and fkVar columns not found in rates tibble")
@@ -615,9 +635,11 @@ setMethod(
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+#'     addSpace = 17, time = 1
+#' )
 #' # Estimate transcription rates
 #' estRates <- estimateTranscriptionRates(sim)
 #' # Get simpol
@@ -641,9 +663,11 @@ setMethod(
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+#'     addSpace = 17, time = 1
+#' )
 #' # Estimate transcription rates
 #' estRates <- estimateTranscriptionRates(sim)
 #' # Get steric hindrance
@@ -665,9 +689,11 @@ setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- simulatePolymerase(
-#'     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-#'     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-#'     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1)
+#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
+#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+#'     addSpace = 17, time = 1)
+#' )
 #' # Estimate transcription rates
 #' estRates <- estimateTranscriptionRates(sim)
 #' # Get rates
@@ -681,11 +707,13 @@ setMethod("rates", "SimulationTranscriptionRates", function(object) {
 
 #' @examples
 #' # Create a SimulationTranscriptionRates object
-#' simpol <- simulatePolymerase(k = 50, ksd = 10, kMin = 30, kMax = 70,
+#' simpol <- simulatePolymerase(
+#'     k = 50, ksd = 10, kMin = 30, kMax = 70,
 #'     geneLen = 1000, alpha = 0.1, beta = 0.2, zeta = 1000,
 #'     zetaSd = 100, zetaMin = 800, zetaMax = 1200,
 #'     cellNum = 1000, polSize = 35, addSpace = 15,
-#'     time = 10)
+#'     time = 10
+#' )
 #'
 #' # Estimate transcription rates
 #' rates <- estimateTranscriptionRates(simpol)

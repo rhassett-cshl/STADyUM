@@ -99,7 +99,6 @@ pauseEscapeEM <- function(
                 kmax
             )
         }
-
         likelihoods[[i]] <-
             getLikelihood(
                 beta = hats$beta, chi = chiHat, Xk = Xk, Yk = Yk,
@@ -107,13 +106,11 @@ pauseEscapeEM <- function(
             )
 
         betas[[i]] <- hats$beta
-
         if (any(hats$fk == 1)) {
             hats$beta <- chiHat / Xk[which(hats$fk == 1)]
             flag <- "single_site"
             break
         }
-
         if (i > 1) {
             diff <- likelihoods[[i]] - likelihoods[[i - 1]]
             if (diff <= tor) break
@@ -121,7 +118,6 @@ pauseEscapeEM <- function(
     }
 
     if (i == maxItr) flag <- "max_iteration"
-
     return(list(
         "beta" = hats$beta, "Yk" = Yk, "fk" = hats$fk,
         "fkMean" = hats$fkMean, "fkVar" = hats$fkVar,
@@ -201,7 +197,7 @@ betaEcllOmegaLog <- function(args, omega, chi, t, f1, f2) {
 }
 
 betaMStepOmega <- function(chi, t, f1, f2, oldphi, oldbeta, lambda, zeta) {
-    omega <- chi * zeta / lambda 
+    omega <- chi * zeta / lambda
     ret <- list("par" = NA_integer_)
 
     try(ret <-
@@ -279,7 +275,6 @@ stericHindranceEM <- function(
                 hats$phi, hats$beta, lambda, zeta
             )
         }
-
         likelihoods[[i]] <-
             getLikelihood(
                 beta = hats$beta, chi = chiHat, Xk = Xk, Yk = Yk,
@@ -287,13 +282,11 @@ stericHindranceEM <- function(
             )
 
         betas[[i]] <- hats$beta
-
         if (any(hats$fk == 1)) {
             hats$beta <- chiHat / Xk[which(hats$fk == 1)]
             flag <- "single_site"
             break
         }
-
         if (i > 1) {
             diff <- likelihoods[[i]] - likelihoods[[i - 1]]
             if (diff <= tor) break
@@ -301,10 +294,9 @@ stericHindranceEM <- function(
     }
 
     if (i == maxItr) flag <- "max_iteration"
-
     return(list(
         "beta" = hats$beta, "Yk" = Yk, "fk" = hats$fk, "fkMean" =
-        hats$fkMean, "fkVar" = hats$fkVar, "betas" = betas, "likelihoods"
-        =likelihoods, "phi" = hats$phi, "flag" = flag
+            hats$fkMean, "fkVar" = hats$fkVar, "betas" = betas,
+        "likelihoods" = likelihoods, "phi" = hats$phi, "flag" = flag
     ))
 }

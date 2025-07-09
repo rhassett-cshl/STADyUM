@@ -23,29 +23,29 @@
 #' @slot rates a \code{\link[tibble]{tbl_df}} containing the estimated rates
 #' with columns:
 #' \describe{
-#'   \item{geneId}{Character. Gene identifier}
-#'   \item{chi}{Numeric. RNAP density along gene body given as estimate for the
-#'   gene body elongation rate [RNAPs/bp]}
-#'   \item{betaOrg}{Numeric. Ratio of gene body RNAP density to pause region
-#'   RNAP density with fixed pause sites given as an estimate for the
-#'   pause-escape rate}
-#'   \item{betaAdp}{Numeric. Ratio of gene body RNAP density to pause region
-#'   RNAP density from adapted model which allows pause sites to vary across
-#'   cells given as an estimate for the pause-escape rate}
-#'   \item{fkMean}{Numeric. Mean position of pause sites}
-#'   \item{fkVar}{Numeric. Variance of pause site positions}
-#'   \item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
-#'   enabled)}
-#'   \item{betaZeta}{Numeric. Pause-escape rate (only if steric hindrance is
-#'   enabled)}
-#'   \item{alphaZeta}{Numeric. Potential initiation rate (only if steric
-#'   hindrance is enabled)}
-#'   \item{omegaZeta}{Numeric. Effective initiation rate (only if steric
-#'   hindrance is enabled)}
-#'   \item{totalGbRc}{Numeric. Total gene body read counts}
-#'   \item{gbLength}{Numeric. Gene body length}
-#'   \item{Yk}{Numeric. Expected pause site counts}
-#'   \item{Xk}{Numeric. Observed pause site counts}
+#' \item{geneId}{Character. Gene identifier}
+#' \item{chi}{Numeric. RNAP density along gene body given as estimate for the
+#' gene body elongation rate [RNAPs/bp]}
+#' \item{betaOrg}{Numeric. Ratio of gene body RNAP density to pause region
+#' RNAP density with fixed pause sites given as an estimate for the
+#' pause-escape rate}
+#' \item{betaAdp}{Numeric. Ratio of gene body RNAP density to pause region
+#' RNAP density from adapted model which allows pause sites to vary across
+#' cells given as an estimate for the pause-escape rate}
+#' \item{fkMean}{Numeric. Mean position of pause sites}
+#' \item{fkVar}{Numeric. Variance of pause site positions}
+#' \item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
+#' enabled)}
+#' \item{betaZeta}{Numeric. Pause-escape rate (only if steric hindrance is
+#' enabled)}
+#' \item{alphaZeta}{Numeric. Potential initiation rate (only if steric
+#' hindrance is enabled)}
+#' \item{omegaZeta}{Numeric. Effective initiation rate (only if steric
+#' hindrance is enabled)}
+#' \item{totalGbRc}{Numeric. Total gene body read counts}
+#' \item{gbLength}{Numeric. Gene body length}
+#' \item{Yk}{Numeric. Expected pause site counts}
+#' \item{Xk}{Numeric. Observed pause site counts}
 #' }
 #'
 #' @name ExperimentTranscriptionRates-class
@@ -74,19 +74,38 @@ methods::setClass("ExperimentTranscriptionRates",
     contains = "TranscriptionRates"
 )
 
-inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
-    geneBodyRegions, stericHindrance, omegaScale) {
-    if (!file.exists(bigwigPlus) || !file.access(bigwigPlus, 4) == 0) {
+checkForOverlappingRegions <- function(pauseRegions, gbRegions) {
+    pauseOverlaps <- findOverlaps(pauseRegions, drop.self = TRUE)
+    gbOverlaps <- findOverlaps(gbRegions, drop.self = TRUE)
+    overlapType <- switch(paste(length(pauseOverlaps) > 0, 
+    length(gbOverlaps) > 0),
+        "TRUE FALSE" = "pauseRegion",
+        "FALSE TRUE" = "geneBodyRegion",
+        "TRUE TRUE" = "both pauseRegion and geneBodyRegion",
+        "none"
+    )
+
+    if (overlapType != "none") {
+        stop(sprintf("Overlapping coordinates detected in %s. Handle multiple
+        isoforms by selecting a single representative isoform per gene or
+        providing non-overlapping regions", overlapType))
+    }
+}
+
+inputValidationChecks <- function(
+    bwPlus, bwMinus, pauseRegions,
+    gbRegions, stericHindrance, omegaScale) {
+    if (!file.exists(bwPlus) || !file.access(bwPlus, 4) == 0) {
         stop("bigwigPlus file does not exist or is not readable")
     }
-    if (!file.exists(bigwigMinus) || !file.access(bigwigMinus, 4) == 0) {
+    if (!file.exists(bwMinus) || !file.access(bwMinus, 4) == 0) {
         stop("bigwigMinus file does not exist or is not readable")
     }
-    if(!methods::is(pauseRegions, "GRanges") || length(pauseRegions) == 0) {
-        stop("pauseRegions must be a GRanges object with at least one region")
+    if (!methods::is(pauseRegions, "GRanges") || length(pauseRegions) == 0) {
+        stop("pauseRegions must be GRanges object with at least one region")
     }
-    if(!methods::is(geneBodyRegions, "GRanges") || length(geneBodyRegions) == 0) {
-        stop("geneBodyRegions must be a GRanges object with at least one region")
+    if (!methods::is(gbRegions, "GRanges") || length(gbRegions) == 0) {
+        stop("geneBodyRegions must be GRanges object with at least one region")
     }
     if (!is.logical(stericHindrance)) {
         stop("stericHindrance must be a single logical value")
@@ -94,179 +113,134 @@ inputValidationChecks <- function(bigwigPlus, bigwigMinus, pauseRegions,
     if (!is.null(omegaScale) && !is.numeric(omegaScale)) {
         stop("omegaScale must be NULL or a numeric value")
     }
-    if (!"gene_id" %in%
-        colnames(S4Vectors::elementMetadata(pauseRegions)) ||
-        !"gene_id" %in%
-            colnames(S4Vectors::elementMetadata(geneBodyRegions))) {
+    if (!"gene_id" %in% colnames(S4Vectors::elementMetadata(pauseRegions)) ||
+        !"gene_id" %in% colnames(S4Vectors::elementMetadata(gbRegions))) {
         stop("pauseRegions or geneBodyRegions does not have gene_id column")
     }
 
     duplicatedPauseRegionGeneNames <-
-        any(duplicated(
-            S4Vectors::elementMetadata(pauseRegions)[,"gene_id"]))
+        any(duplicated(S4Vectors::elementMetadata(pauseRegions)[, "gene_id"]))
     if (duplicatedPauseRegionGeneNames) {
-        stop("One or more gene names are
-        duplicated in pause region, gene names must be unique")
+        stop("Gene names must be unique in pauseRegion")
     }
-    duplicatedGeneBodyRegionGeneNames <-
-        any(duplicated(
-            S4Vectors::elementMetadata(geneBodyRegions)[,"gene_id"]))
-    if (duplicatedGeneBodyRegionGeneNames) {
-        stop("One or more gene names are duplicated in gene body region, gene
-        names must be unique")
+    duplicatedGbRegionGeneNames <-
+        any(duplicated(S4Vectors::elementMetadata(gbRegions)[, "gene_id"]))
+    if (duplicatedGbRegionGeneNames) {
+        stop("Gene names must be unique in geneBodyRegion")
     }
-    
-    # Check for overlapping coordinates in GRanges objects
-    # This could indicate multiple isoforms that need to be handled separately
-    pauseOverlaps <- findOverlaps(pauseRegions, drop.self = TRUE)
-    if (length(pauseOverlaps) > 0) {
-        stop("Overlapping coordinates detected in pauseRegions. This may indicate multiple isoforms. Please handle multiple isoforms by selecting a single representative isoform per gene or by providing non-overlapping regions.")
-    }
-    
-    geneBodyOverlaps <- findOverlaps(geneBodyRegions, drop.self = TRUE)
-    if (length(geneBodyOverlaps) > 0) {
-        stop("Overlapping coordinates detected in geneBodyRegions. This may 
-        indicate multiple isoforms. Please handle multiple isoforms by selecting a single representative isoform per gene or by providing non-overlapping regions.")
-    }
-    
+    checkForOverlappingRegions(pauseRegions, gbRegions)
     if (stericHindrance && (is.null(omegaScale) || !is.numeric(omegaScale) ||
         omegaScale <= 0)) {
-        stop("For steric hindrance case, omegaScale parameter must be set to
-        numeric greater than 0")
+        stop("For steric hindrance, omegaScale must be set to a numeric > 0")
     }
 }
 
-prepareReadCountTable <- function(bigwigPlus, bigwigMinus, pauseRegions,
-                                    geneBodyRegions, kmax) {
+prepareReadCountTable <- function(bwPlus, bwMinus, pauseRegions, gbRegions,   
+                                    kmax) {
     pb <- progress::progress_bar$new(
-        format = "Processing [:bar] :percent eta: :eta", total = 4)
-    
-    message("\nImporting bigwig files...")
-    pb$tick(0)
-    bwp1P3 <- import.bw(bigwigPlus)
-    bwm1P3 <- import.bw(bigwigMinus)
+        format = "Processing [:bar] :percent eta: :eta", total = 4
+    )
+    message("\nImporting bigwig files..."); pb$tick(0)
+    bwp1P3 <- import.bw(bwPlus)
+    bwm1P3 <- import.bw(bwMinus)
     if (sum(bwp1P3$score) == 0 || sum(bwm1P3$score) == 0) {
         stop("No reads found in plus or minus strand bigwig file")
     }
-    bigwigChrs <- unique(c(as.character(seqnames(bwp1P3)),
-        as.character(seqnames(bwm1P3))))
-    grangesChrs <- unique(c(as.character(seqnames(pauseRegions)),
-        as.character(seqnames(geneBodyRegions))))
-    missingChrs <- setdiff(grangesChrs, bigwigChrs)
-    if (length(missingChrs) > 0) {
-        stop("The following chromosomes in GRanges objects are not found in 
-        bigwig files: ", paste(missingChrs, collapse = ", "))
-    }
-    pb$tick()
-
-    message("\nProcessing plus and minus strands bigwig...")
-    bwp1P3 <- processBw(bw = bwp1P3, strand = "+")    
+    bigwigChrs <- unique(c(
+        as.character(seqnames(bwp1P3)),
+        as.character(seqnames(bwm1P3))
+    ))
+    grangesChrs <- unique(c(
+        as.character(seqnames(pauseRegions)),
+        as.character(seqnames(gbRegions))
+    ))
+    pb$tick(); message("\nProcessing plus and minus strands bigwig...")
+    bwp1P3 <- processBw(bw = bwp1P3, strand = "+")
     bwm1P3 <- processBw(bw = bwm1P3, strand = "-")
     bw1P3 <- c(bwp1P3, bwm1P3)
     rm(bwp1P3, bwm1P3)
-    pb$tick()  
-
     pauseRegions <- promoters(pauseRegions, upstream = 0, downstream = kmax)
-
-    message("\nSummarizing pause and gene body regions...")
-    rc1Pause <- summariseBw(bw = bw1P3, grng = pauseRegions, 
-                            colName = "summarizedPauseCounts")    
-    rc1Gb <- summariseBw(bw = bw1P3, grng = geneBodyRegions,
-                        colName = "summarizedGbCounts")
+    pb$tick(); message("\nSummarizing pause and gene body regions...")
+    rc1Pause <- summariseBw(
+        bw = bw1P3, grng = pauseRegions,
+        colName = "summarizedPauseCounts"
+    )
+    rc1Gb <- summariseBw(
+        bw = bw1P3, grng = gbRegions,
+        colName = "summarizedGbCounts"
+    )
     rc1Pause$pauseLength <- kmax
-    rc1Gb$gbLength <- width(geneBodyRegions)[match(
-            rc1Gb$gene_id, geneBodyRegions$gene_id)]
-    pb$tick()
-
-    message("\nGenerating read counts table...")
-    rc1 <- Reduce(function(x, y) merge(x, y, by="gene_id", all=TRUE),
-        list(rc1Pause, rc1Gb))
+    rc1Gb$gbLength <- width(gbRegions)[match(rc1Gb$gene_id, gbRegions$gene_id)]
+    pb$tick(); message("\nGenerating read counts table...")
+    rc1 <- Reduce(
+        function(x, y) merge(x, y, by = "gene_id", all = TRUE),
+        list(rc1Pause, rc1Gb)
+    )
     rc1 <- rc1[!(is.na(rc1$pauseLength) | is.na(rc1$gbLength)), ]
     rc1 <- rc1[(rc1$summarizedPauseCounts > 20) &
         (rc1$summarizedGbCounts > 20), ]
     pb$tick()
-
     return(list(rc1 = rc1, bw1P3 = bw1P3))
 }
 
-prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax, 
-                            stericHindrance, omegaScale, zeta) {
-    emRate <- DataFrame(
-        geneId = rc1$gene_id, 
-        totalGbRc = rc1$summarizedGbCounts, 
-        gbLength = rc1$gbLength
-    )
-    
-    emRate$chi <- emRate$totalGbRc / emRate$gbLength
-
-    bwCov <- coverage(bw1P3, weight = "score")
-
-    geneIds <- pauseRegions$gene_id
-    strands <- as.character(strand(pauseRegions))
-    regionsChr <- as.character(seqnames(pauseRegions))
-    starts <- start(pauseRegions)
-    ends <- end(pauseRegions)
-
-    ## For each region, extract per-base signal and store position + region ID
-    # First, identify valid regions
+## For each region, extract per-base signal and store position + region ID
+findValidPauseIndices <- function(pauseRegions, regionsChr, starts, ends,
+bwCov, geneIds) {
     validIndices <- vapply(seq_along(pauseRegions), function(i) {
-        chr <- regionsChr[i]
-        regionStart <- starts[i]
-        regionEnd <- ends[i]
-        
-        # Check if chromosome exists in coverage data
+        chr <- regionsChr[i]; rStart <- starts[i]; rEnd <- ends[i]
         if (!chr %in% names(bwCov)) {
-            warning(sprintf("Chromosome %s not found in coverage data for gene %s", chr, geneIds[i]))
+            warning(sprintf("Chrom %s not in coverage for %s", chr, geneIds[i]))
             return(FALSE)
         }
-        
-        if (regionStart > regionEnd || regionStart < 1 || 
-            regionEnd > length(bwCov[[chr]])) {
-            warning(sprintf("Invalid region coordinates for gene %s: %s:%d-%d", 
-                          geneIds[i], chr, regionStart, regionEnd))
+        if (rStart > rEnd || rStart < 1 || rEnd > length(bwCov[[chr]])) {
+            warning(sprintf(
+                "Invalid region coordinates for gene %s: %s:%d-%d",
+                geneIds[i], chr, rStart, rEnd
+            ))
             return(FALSE)
         }
-        
-        signal <- as.numeric(bwCov[[chr]][regionStart:regionEnd])
-        
-        # Check if signal extraction was successful
-        if (length(signal) == 0) {
+        if (length(as.numeric(bwCov[[chr]][rStart:rEnd])) == 0) {
             warning(sprintf("No signal data extracted for gene %s", geneIds[i]))
             return(FALSE)
         }
-        
         return(TRUE)
     }, logical(1))
-    
-    # Check if we have any valid data
     if (sum(validIndices) == 0) {
-        stop("No valid signal data could be extracted from any regions")
+        stop("No valid signal data could be extracted")
     }
-    
-    # Process only valid regions
+    return(validIndices)
+}
+
+prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
+                            stericHindrance, omegaScale, zeta) {
+    emRate <- DataFrame(
+        geneId = rc1$gene_id,
+        totalGbRc = rc1$summarizedGbCounts, gbLength = rc1$gbLength
+    )
+    emRate$chi <- emRate$totalGbRc / emRate$gbLength
+    bwCov <- coverage(bw1P3, weight = "score")
+    geneIds <- pauseRegions$gene_id
+    strands <- as.character(strand(pauseRegions))
+    regionsChr <- as.character(seqnames(pauseRegions))
+    starts <- start(pauseRegions); ends <- end(pauseRegions)
+    validIndices <- findValidPauseIndices(pauseRegions, regionsChr, starts,
+    ends, bwCov, geneIds)
     Xk <- do.call(rbind, lapply(which(validIndices), function(i) {
         chr <- regionsChr[i]
-        regionStart <- starts[i]
-        regionEnd <- ends[i]
-        regionLen <- regionEnd - regionStart + 1
-        signal <- as.numeric(bwCov[[chr]][regionStart:regionEnd])
-        
+        rStart <- starts[i]
+        rEnd <- ends[i]
+        regionLen <- rEnd - rStart + 1
+        signal <- as.numeric(bwCov[[chr]][rStart:rEnd])
         if (strands[i] == "-") signal <- rev(signal)
-
         data.frame(
-            region = geneIds[i],
-            position = seq_len(regionLen),
+            region = geneIds[i], position = seq_len(regionLen),
             signal = signal
         )
     }))
-    
     Xk <- splitAsList(Xk$signal, Xk$region)
-    
     emRate$Xk <- Xk[emRate$geneId]
-    
     emRate$XkSum <- vapply(emRate$Xk, sum, numeric(1))
     emRate$betaInt <- emRate$chi / emRate$XkSum
-    
     if (stericHindrance) {
         emRate$omegaZeta <- emRate$chi * omegaScale
         emRate$omega <- emRate$omegaZeta / zeta
@@ -274,7 +248,7 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
     return(emRate)
 }
 
-experimentRunEmAlgorithm <- function(emRate, kmin, kmax, fkInt,       
+experimentRunEmAlgorithm <- function(emRate, kmin, kmax, fkInt,
                                         stericHindrance, zeta, lambda = NULL) {
     emLs <- list()
     for (i in seq_len(NROW(emRate))) {
@@ -287,9 +261,9 @@ experimentRunEmAlgorithm <- function(emRate, kmin, kmax, fkInt,
             )
         } else {
             emLs[[i]] <- stericHindranceEM(
-                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax, 
-                f1 = 0.517, f2 = 0.024, fkInt = fkInt, 
-                betaInt = rc$betaInt[[1]], phiInt = 0.5, 
+                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
+                f1 = 0.517, f2 = 0.024, fkInt = fkInt,
+                betaInt = rc$betaInt[[1]], phiInt = 0.5,
                 chiHat = rc$chi, lambda = lambda, zeta = zeta,
                 maxItr = 500, tor = 1e-4
             )
@@ -305,11 +279,14 @@ experimentProcessEmResults <- function(emRate, emLs, stericHindrance, zeta) {
     emRate$fk <- map(emLs, "fk", .default = NA)
     emRate$fkMean <- map_dbl(emLs, "fkMean", .default = NA)
     emRate$fkVar <- map_dbl(emLs, "fkVar", .default = NA)
-    
+
     emRate$t <- vapply(emRate$Yk, sum, numeric(1))
     emRate$proportionYk <- emRate$t / vapply(emRate$Xk, sum, numeric(1))
-    emRate$likelihood <- map_dbl(emLs, ~ .x$likelihoods[[length(.x$likelihoods)]])
-    
+    emRate$likelihood <- map_dbl(
+        emLs,
+        ~ .x$likelihoods[[length(.x$likelihoods)]]
+    )
+
     ## Convert to tibble and handle steric hindrance
     emRate <- as_tibble(emRate)
     if (stericHindrance) {
@@ -320,17 +297,21 @@ experimentProcessEmResults <- function(emRate, emLs, stericHindrance, zeta) {
                 alphaZeta = omegaZeta / (1 - phi)
             )
     }
-    
+
     return(emRate)
 }
 
 estimateEmRates <- function(rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
                             stericHindrance, omegaScale, zeta) {
-    emRate <- prepareEmData(rc1, bw1P3, pauseRegions, kmin, kmax,
-                            stericHindrance, omegaScale, zeta)
+    emRate <- prepareEmData(
+        rc1, bw1P3, pauseRegions, kmin, kmax,
+        stericHindrance, omegaScale, zeta
+    )
     lambda <- if (stericHindrance) zeta^2 / omegaScale else NULL
-    emLs <- experimentRunEmAlgorithm(emRate, kmin, kmax, fkInt,
-                                    stericHindrance, zeta, lambda)
+    emLs <- experimentRunEmAlgorithm(
+        emRate, kmin, kmax, fkInt,
+        stericHindrance, zeta, lambda
+    )
     emRate <- experimentProcessEmResults(emRate, emLs, stericHindrance, zeta)
     return(emRate)
 }
@@ -340,12 +321,16 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 
     if (!stericHindrance) {
         emRate <- emRate %>%
-            select(geneId, chi, betaOrg, betaAdp, fkMean, fkVar, totalGbRc, gbLength, Yk, Xk, likelihood)
+            select(
+                geneId, chi, betaOrg, betaAdp, fkMean, fkVar, totalGbRc,
+                gbLength, Yk, Xk, likelihood
+            )
     } else {
         emRate <- emRate %>%
             select(
                 geneId, chi, betaOrg, betaAdp, fkMean, fkVar, phi,
-                omegaZeta, betaZeta, alphaZeta, totalGbRc, gbLength, Yk, Xk, likelihood
+                omegaZeta, betaZeta, alphaZeta, totalGbRc, gbLength, Yk, Xk,
+                likelihood
             )
     }
 
@@ -353,7 +338,7 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 }
 
 #' @title Generic function for estimating transcription rates
-#' 
+#'
 #' @description
 #' Generic function that estimates transcription rates from either simulation
 #' data (SimulatePolymerase object) or experimental data (bigwig files and
@@ -392,66 +377,75 @@ setGeneric("estimateTranscriptionRates", function(x, ...) {
 #' @param ... Additional arguments (not used)
 #'
 #' @return an \code{\link{ExperimentTranscriptionRates-class}} object
-#' 
+#'
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",    
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
 #' )
 #'
 #' @rdname ExperimentTranscriptionRates-class
 #' @export
-setMethod("estimateTranscriptionRates", "character", 
-function(x, bigwigMinus, pauseRegions, geneBodyRegions, stericHindrance=FALSE, omegaScale=NULL, ...) {
-    
-    bigwigPlus <- x  # x is the first bigwig file path
-    
-    inputValidationChecks(
-        bigwigPlus, bigwigMinus, pauseRegions,
-        geneBodyRegions, stericHindrance, omegaScale
-    )
+setMethod(
+    "estimateTranscriptionRates", "character",
+    function(
+        x, bigwigMinus, pauseRegions, geneBodyRegions, stericHindrance = FALSE,
+        omegaScale = NULL, ...) {
+        bigwigPlus <- x # x is the first bigwig file path
+        inputValidationChecks(
+            bigwigPlus, bigwigMinus, pauseRegions,
+            geneBodyRegions, stericHindrance, omegaScale
+        )
+        ## Force copy underlying GRanges obj to prevent side effects
+        pauseRegions <- GenomicRanges::makeGRangesFromDataFrame(
+            data.table::copy(data.table::as.data.table(pauseRegions)),
+            keep.extra.columns = TRUE
+        )
+        geneBodyRegions <- GenomicRanges::makeGRangesFromDataFrame(
+            data.table::copy(data.table::as.data.table(geneBodyRegions)),
+            keep.extra.columns = TRUE
+        )
 
-    ## Force copy underlying GRanges obj to prevent modify in place side effects
-    pauseRegions <- GenomicRanges::makeGRangesFromDataFrame(
-        data.table::copy(data.table::as.data.table(pauseRegions)),
-        keep.extra.columns = TRUE
-    )
-    geneBodyRegions <- GenomicRanges::makeGRangesFromDataFrame(
-        data.table::copy(data.table::as.data.table(geneBodyRegions)),
-        keep.extra.columns = TRUE
-    )
+        kmin <- 1; kmax <- 200; rnapSize <- 50; zeta <- 2000
+        processedData <- prepareReadCountTable(
+            bigwigPlus, bigwigMinus,
+            pauseRegions, geneBodyRegions, kmax
+        )
+        rc1 <- processedData$rc1; bw1P3 <- processedData$bw1P3
 
-    kmin <- 1; kmax <- 200; rnapSize <- 50; zeta <- 2000
+        message("estimating rates...")
+        ## Initial model: Poisson-based Maximum Likelihood Estimation
+        analyticalRateTbl <- tibble::tibble(
+            geneId = rc1$gene_id, betaOrg =
+                (rc1$summarizedGbCounts / rc1$gbLength) /
+                (rc1$summarizedPauseCounts /
+                    rc1$pauseLength)
+        )
+        fkInt <- dnorm(kmin:kmax, mean = 50, sd = 100)
+        fkInt <- fkInt / sum(fkInt)
+        emRate <- estimateEmRates(
+            rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
+            stericHindrance, omegaScale, zeta
+        )
+        emRate <- prepareRateTable(emRate, analyticalRateTbl, stericHindrance)
 
-    processedData <- prepareReadCountTable(bigwigPlus, bigwigMinus,
-    pauseRegions, geneBodyRegions, kmax)
-    rc1 <- processedData$rc1; bw1P3 <- processedData$bw1P3
-
-    message("estimating rates...")
-
-    ## Initial model: Poisson-based Maximum Likelihood Estimation 
-    analyticalRateTbl <- tibble::tibble(geneId = rc1$gene_id, betaOrg =
-    (rc1$summarizedGbCounts / rc1$gbLength) / (rc1$summarizedPauseCounts /
-    rc1$pauseLength))
-
-    fkInt <- dnorm(kmin:kmax, mean = 50, sd = 100)
-    fkInt <- fkInt / sum(fkInt)
-
-    emRate <- estimateEmRates(rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
-    stericHindrance, omegaScale, zeta)
-    emRate <- prepareRateTable(emRate, analyticalRateTbl, stericHindrance)
-
-    return(methods::new(
-        Class = "ExperimentTranscriptionRates",
-        counts = as.data.frame(rc1), bigwigPlus = bigwigPlus,
-        bigwigMinus = bigwigMinus, pauseRegions = pauseRegions,
-        geneBodyRegions = geneBodyRegions, stericHindrance = stericHindrance,
-        omegaScale = omegaScale, rates = emRate
-    ))
-})
+        return(methods::new(
+            Class = "ExperimentTranscriptionRates",
+            counts = as.data.frame(rc1), bigwigPlus = bigwigPlus,
+            bigwigMinus = bigwigMinus, pauseRegions = pauseRegions,
+            geneBodyRegions = geneBodyRegions, 
+            stericHindrance = stericHindrance, omegaScale = omegaScale, 
+            rates = emRate
+        ))
+    }
+)
 
 #' @title Show method for ExperimentTranscriptionRates objects
 #'
@@ -473,22 +467,30 @@ methods::setMethod("show", "ExperimentTranscriptionRates", function(object) {
 
     cat("\nSummary statistics for rate estimates across all genes/features:\n")
     ratesData <- rates(object)
-    
+
     chi_mean <- mean(ratesData$chi, na.rm = TRUE)
     cat(sprintf("  - chi (gene body RNAP density): %.2f RNAPs/bp\n", chi_mean))
-    
+
     betaOrg_mean <- mean(ratesData$betaOrg, na.rm = TRUE)
-    cat(sprintf("  - betaOrg (ratio of gene body RNAP density to pause region RNAP density, fixed sites): %.4f\n", betaOrg_mean))
-    
+    cat(sprintf("  - betaOrg (ratio of gene body RNAP density to pause region
+    RNAP density, fixed sites): %.4f\n", betaOrg_mean))
+
     betaAdp_mean <- mean(ratesData$betaAdp, na.rm = TRUE)
-    cat(sprintf("  - betaAdp (ratio of gene body RNAP density to pause region RNAP density, adapted model): %.4f\n", betaAdp_mean))
-    
+    cat(sprintf("  - betaAdp (ratio of gene body RNAP density to pause region
+    RNAP density, adapted model): %.4f\n", betaAdp_mean))
+
     fkMean_mean <- mean(ratesData$fkMean, na.rm = TRUE)
-    cat(sprintf("  - fkMean (mean position of pause sites): ~ %.0f bp\n", fkMean_mean))
-    
+    cat(sprintf(
+        "  - fkMean (mean position of pause sites): ~ %.0f bp\n",
+        fkMean_mean
+    ))
+
     fkVar_mean <- mean(ratesData$fkVar, na.rm = TRUE)
-    cat(sprintf("  - fkVar (variance of pause site positions): %.2f bp^2\n", fkVar_mean))
-    
+    cat(sprintf(
+        "  - fkVar (variance of pause site positions): %.2f bp^2\n",
+        fkVar_mean
+    ))
+
     cat("\nTo access the full rates data, use: rates(object)\n")
 })
 
@@ -550,14 +552,16 @@ applyCommonTheme <- function() {
 #' @param ... Additional arguments passed to the plotting function
 #' @return A ggplot object
 #' @rdname ExperimentTranscriptionRates-class
-#' 
+#'
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
 #' )
 #'
 #' # Plot rates as a histogram
@@ -601,7 +605,7 @@ setMethod("plotRates", "ExperimentTranscriptionRates", function(
 ## Accessors
 
 #' @rdname ExperimentTranscriptionRates-class
-#' 
+#'
 #' @title Accessor for Estimated Rates
 #'
 #' @description
@@ -622,13 +626,15 @@ setMethod("plotRates", "ExperimentTranscriptionRates", function(
 #' \item{omegaZeta}{a numeric vector of the effective initiation rate}
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
 #' )
-#' 
+#'
 #' # Get the rates from the object
 #' rates(expRates)
 #' @export
@@ -664,12 +670,14 @@ setMethod("counts", "ExperimentTranscriptionRates", function(object) {
 #' @return a \link[GenomicRanges]{GRanges-class} object with the pause regions
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#' )    
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#' )
 #' pauseRegions(expRates)
 #' @export
 setGeneric("pauseRegions", function(object) standardGeneric("pauseRegions"))
@@ -687,12 +695,14 @@ setMethod("pauseRegions", "ExperimentTranscriptionRates", function(object) {
 #' regions
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#' )    
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#' )
 #' geneBodyRegions(expRates)
 #' @export
 setGeneric("geneBodyRegions", function(object) {
@@ -715,12 +725,14 @@ setMethod(
 #' @return a numeric value for the scaling factor for omega
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#' )    
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#' )
 #' omegaScale(expRates)
 #' @export
 setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
@@ -739,12 +751,14 @@ setMethod("omegaScale", "ExperimentTranscriptionRates", function(object) {
 #' or not
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000"),
-#' )    
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#' )
 #' stericHindrance(expRates)
 #' @export
 setMethod("stericHindrance", "ExperimentTranscriptionRates", function(object) {
@@ -753,150 +767,297 @@ setMethod("stericHindrance", "ExperimentTranscriptionRates", function(object) {
 
 ## plotting utilities
 #' @export
-setGeneric("plotMeanPauseDistrib", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
-  standardGeneric("plotMeanPauseDistrib"))
-
-setMethod("plotMeanPauseDistrib", "ExperimentTranscriptionRates", 
-  function(object, file = NULL, width = 8, height = 6, dpi = 300) {
-    
-    cr <- rates(object)
-    p <- ggplot(cr, aes(x = fkMean)) +
-      geom_histogram(bins = nclass.Sturges(cr$fkMean), 
-                     fill = "#56B4E9", alpha = 0.8, 
-                     color = "white", size = 0.1) +
-      labs(x = "Mean Pause Site Position (bp)", 
-           y = "Count",
-           title = "Distribution of Mean Pause Site Positions",
-           subtitle = paste("n =", nrow(cr), "genes")) +
-      theme_classic() +
-      theme(
-        plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
-        plot.subtitle = element_text(size = 10, color = "gray50", hjust = 0.5),
-        axis.title = element_text(size = 11, face = "bold"),
-        axis.text = element_text(size = 10),
-        axis.line = element_line(color = "black", size = 0.5)
-      )
-    
-    if (!is.null(file)) {
-      ggsave(file, p, width = width, height = height, dpi = dpi)
-    }
-    
-    return(p)
-  }
-)
-
-#' @export
-setGeneric("plotPauseSiteCounts", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
-  standardGeneric("plotPauseSiteCounts"))
-
-setMethod("plotPauseSiteCounts", "ExperimentTranscriptionRates", 
-  function(object, file = NULL, width = 8, height = 6, dpi = 300) {
-    cr <- rates(object)
-    
-    # Aggregate all Xk and Yk values
-    all_data <- data.frame(
-      observed = unlist(cr$Xk),
-      expected = unlist(cr$Yk)
-    )
-    
-    r_squared <- cor(all_data$observed, all_data$expected)^2
-    r2_text <- paste("R² =", round(r_squared, 3))
-    
-    p <- ggplot(all_data, aes(x = observed, y = expected)) +
-      geom_point(alpha = 0.6, size = 0.8) +
-      geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "red") +
-      annotate("text", x = max(all_data$observed) * 0.05, 
-               y = max(all_data$expected) * 0.95, 
-               label = paste("R² =", round(r_squared, 3)), 
-               size = 4, fontface = "bold", hjust = 0) +
-      labs(x = "Observed Pause Site Counts (Xk)", 
-           y = "Expected Pause Site Counts (Yk)",
-           title = "Model Fit: Observed vs Expected") +
-      theme_bw()
-    
-    if (!is.null(file)) ggsave(file, p, width = width, height = height, dpi = dpi)
-    return(p)
-    }
-)
-
-#' @export
-setGeneric("plotChiDistrib", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
-  standardGeneric("plotChiDistrib"))
-
-setMethod("plotChiDistrib", "ExperimentTranscriptionRates", 
-  function(object, file = NULL, width = 8, height = 6, dpi = 300) {
-    cr <- rates(object)
-    
-    p <- ggplot(cr, aes(x = chi)) +
-      geom_density(fill = "#56B4E9", alpha = 0.7) +
-      labs(x = "RNAP Density (chi)", 
-           y = "Density",
-           title = "Distribution of Gene Body RNAP Density") +
-      theme_classic()
-    
-    if (!is.null(file)) ggsave(file, p, width = width, height = height, dpi = dpi)
-    return(p)
-  }
-)
-
-#' @export
-setGeneric("plotBetaVsChi", function(object, beta_type = "betaAdp", file = NULL, width = 8, height = 6, dpi = 300) 
-  standardGeneric("plotBetaVsChi"))
-
-setMethod("plotBetaVsChi", "ExperimentTranscriptionRates", 
-  plotChiVsBeta <- function(object, beta_type = "betaAdp", file = NULL, width = 8, height = 6, dpi = 300) {
-    cr <- rates(object)
-    
-    # Validate beta_type parameter
-    if (!beta_type %in% c("betaAdp", "betaOrg")) {
-      stop("beta_type must be either 'betaAdp' or 'betaOrg'")
-    }
-    
-    # Set y-axis label based on beta type
-    y_label <- if (beta_type == "betaAdp") {
-      "Pause Escape Rate (betaAdp)"
-    } else {
-      "Pause Escape Rate (betaOrg)"
-    }
-    
-    # Set title based on beta type
-    title_text <- if (beta_type == "betaAdp") {
-      "Gene Activity vs Pause Escape Rate (Adapted Model)"
-    } else {
-      "Gene Activity vs Pause Escape Rate (Single Pause Site)"
-    }
-    
-    p <- ggplot(cr, aes(x = chi, y = !!sym(beta_type))) +
-      geom_point(alpha = 0.7, color = "#CC79A7") +
-      geom_smooth(method = "loess", se = TRUE, color = "red") +
-      labs(x = "Gene Body RNAP Density (chi)", 
-           y = y_label,
-           title = title_text) +
-      theme_bw()
-    
-    if (!is.null(file)) ggsave(file, p, width = width, height = height, dpi = dpi)
-    return(p)
-  }
-)
-
-#' @export
-setGeneric("plotPauseSiteContourMap", function(object, file = NULL, width = 8, height = 6, dpi = 300) 
-  standardGeneric("plotPauseSiteContourMap"))
-
-setMethod("plotPauseSiteContourMap", "ExperimentTranscriptionRates", 
-          plotPauseSiteContourMap <- function(object, file = NULL, width = 8, height = 6, dpi = 300) {
-    cr <- rates(object)
-    
-    p <- ggplot(cr, aes(x = fkMean, y = fkVar)) +
-      geom_density_2d(color = "blue", size = 0.8) +  # Shows clustering patterns
-      geom_point(alpha = 0.6, size = 1.5, color = "#E69F00") +  # Shows individual genes
-      labs(x = "Mean Pause Site Position (bp)", 
-           y = "Pause Site Variance (bp²)",
-           title = "Pause Site Mean vs Variance Distribution") +
-      theme_bw()
-    
-    if (!is.null(file)) ggsave(file, p, width = width, height = height, dpi = dpi)
-    return(p)
+setGeneric("plotMeanPauseDistrib", function(
+    object, file = NULL, width = 8,
+    height = 6, dpi = 300) {
+    standardGeneric("plotMeanPauseDistrib")
 })
 
-          
+setMethod(
+    "plotMeanPauseDistrib", "ExperimentTranscriptionRates",
+    function(object, file = NULL, width = 8, height = 6, dpi = 300) {
+        cr <- rates(object)
+        p <- ggplot(cr, aes(x = fkMean)) +
+            geom_histogram(
+                bins = nclass.Sturges(cr$fkMean),
+                fill = "#56B4E9", alpha = 0.8,
+                color = "white", size = 0.1
+            ) +
+            labs(
+                x = "Mean Pause Site Position (bp)",
+                y = "Count",
+                title = "Distribution of Mean Pause Site Positions",
+                subtitle = paste("n =", nrow(cr), "genes")
+            ) +
+            theme_classic() +
+            theme(
+                plot.title = element_text(size = 14, face = "bold", 
+                hjust = 0.5), plot.subtitle = element_text(size = 10, 
+                color = "gray50", hjust = 0.5),
+                axis.title = element_text(size = 11, face = "bold"),
+                axis.text = element_text(size = 10),
+                axis.line = element_line(color = "black", size = 0.5)
+            )
+
+        if (!is.null(file)) {
+            ggsave(file, p, width = width, height = height, dpi = dpi)
+        }
+
+        return(p)
+    }
+)
+
+#' @export
+setGeneric("plotPauseSiteCounts", function(
+    object, file = NULL, width = 8,
+    height = 6, dpi = 300) {
+    standardGeneric("plotPauseSiteCounts")
+})
+
+setMethod(
+    "plotPauseSiteCounts", "ExperimentTranscriptionRates",
+    function(object, file = NULL, width = 8, height = 6, dpi = 300) {
+        cr <- rates(object)
+
+        # Aggregate all Xk and Yk values
+        all_data <- data.frame(
+            observed = unlist(cr$Xk),
+            expected = unlist(cr$Yk)
+        )
+
+        r_squared <- cor(all_data$observed, all_data$expected)^2
+        r2_text <- paste("R² =", round(r_squared, 3))
+
+        p <- ggplot(all_data, aes(x = observed, y = expected)) +
+            geom_point(alpha = 0.6, size = 0.8) +
+            geom_abline(slope = 1, intercept = 0, linetype = "dashed", 
+            color = "red") +
+            annotate("text",
+                x = max(all_data$observed) * 0.05,
+                y = max(all_data$expected) * 0.95,
+                label = paste("R² =", round(r_squared, 3)),
+                size = 4, fontface = "bold", hjust = 0
+            ) +
+            labs(
+                x = "Observed Pause Site Counts (Xk)",
+                y = "Expected Pause Site Counts (Yk)",
+                title = "Model Fit: Observed vs Expected"
+            ) +
+            theme_bw()
+
+        if (!is.null(file)) {
+            ggsave(file, p,
+                width = width, height = height,
+                dpi = dpi
+            )
+        }
+        return(p)
+    }
+)
+
+#' @title Plot Chi Distribution
+#'
+#' @description
+#' Creates a density plot showing the distribution of gene body RNAP density
+#' (chi) across all genes. This visualization helps identify the range and
+#' shape of RNA polymerase density in gene bodies, which can reveal patterns in
+#' transcriptional activity.
+#'
+#'
+#' @param object an \code{\link{ExperimentTranscriptionRates}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#'
+#' @return an \code{\link{ggplot2}} object
+#'
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#' )
+#' plotChiDistrib(expRates, file="chi_distrib.png")
+#'
+#' @rdname ExperimentTranscriptionRates-class
+#' @export
+setGeneric("plotChiDistrib", function(
+    object, file = NULL, width = 8,
+    height = 6, dpi = 300) {
+    standardGeneric("plotChiDistrib")
+})
+
+setMethod(
+    "plotChiDistrib", "ExperimentTranscriptionRates",
+    function(object, file = NULL, width = 8, height = 6, dpi = 300) {
+        cr <- rates(object)
+
+        p <- ggplot(cr, aes(x = chi)) +
+            geom_density(fill = "#56B4E9", alpha = 0.7) +
+            labs(
+                x = "RNAP Density (chi)",
+                y = "Density",
+                title = "Distribution of Gene Body RNAP Density"
+            ) +
+            theme_classic()
+
+        if (!is.null(file)) {
+            ggsave(file, p,
+                width = width, height = height,
+                dpi = dpi
+            )
+        }
+        return(p)
+    }
+)
+
+#' @title Plot Beta vs Chi
+#'
+#' @description
+#' Plot a scatter plot with gene body RNAP density on the x-axis and beta (ratio
+#' of gene body RNAP density to pause region RNAP density) on the y-axis. Fits a
+#' linear model to the data and plots the line. Can plot beta for either the
+#' adapted model or the single pause site model.
+#'
+#' @param object an \code{\link{ExperimentTranscriptionRates}} object
+#' @param beta_type the type of beta to plot. Can be "betaAdp" for the adapted
+#' model or "betaOrg" for the single pause site model. Defaults to "betaAdp".
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#'
+#' @return an \code{\link{ggplot2}} object
+#'
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#' )
+#' plotBetaVsChi(expRates, beta_type = "betaAdp", file="beta_vs_chi.png")
+#'
+#' @rdname ExperimentTranscriptionRates-class
+#' @export
+setGeneric("plotBetaVsChi", function(
+    object, beta_type = "betaAdp",
+    file = NULL, width = 8, height = 6, dpi = 300) {
+    standardGeneric("plotBetaVsChi")
+})
+
+setMethod(
+    "plotBetaVsChi", "ExperimentTranscriptionRates",
+    plotChiVsBeta <- function(
+        object, beta_type = "betaAdp", file = NULL,
+        width = 8, height = 6, dpi = 300) {
+        cr <- rates(object)
+
+        # Validate beta_type parameter
+        if (!beta_type %in% c("betaAdp", "betaOrg")) {
+            stop("beta_type must be either 'betaAdp' or 'betaOrg'")
+        }
+
+        # Set y-axis label based on beta type
+        y_label <- if (beta_type == "betaAdp") {
+            "Pause Escape Rate (betaAdp)"
+        } else {
+            "Pause Escape Rate (betaOrg)"
+        }
+
+        title_text <- if (beta_type == "betaAdp") {
+            "Gene Activity vs Pause Escape Rate (Adapted Model)"
+        } else {
+            "Gene Activity vs Pause Escape Rate (Single Pause Site)"
+        }
+
+        p <- ggplot(cr, aes(x = chi, y = !!sym(beta_type))) +
+            geom_point(alpha = 0.7, color = "#CC79A7") +
+            geom_smooth(method = "loess", se = TRUE, color = "red") +
+            labs(
+                x = "Gene Body RNAP Density (chi)",
+                y = y_label,
+                title = title_text
+            ) +
+            theme_bw()
+
+        if (!is.null(file)) {
+            ggsave(file, p, width = width, height = height, dpi = dpi)
+        }
+        return(p)
+    }
+)
+
+#' @title Plot pause site contour map
+#'
+#' @description
+#' Plot a contour map with mean pause site position on the x-axis and pause site
+#' variance on the y-axis.
+#'
+#' @param object an \code{\link{ExperimentTranscriptionRates}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#'
+#' @return an \code{\link{ggplot2}} object
+#'
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#' )
+#' plotPauseSiteContourMap(expRates, file="pause_sites_contour_map.png")
+#'
+#' @rdname ExperimentTranscriptionRates-class
+#' @export
+setGeneric("plotPauseSiteContourMap", function(
+    object, file = NULL, width = 8,
+    height = 6, dpi = 300) {
+    standardGeneric("plotPauseSiteContourMap")
+})
+
+setMethod(
+    "plotPauseSiteContourMap", "ExperimentTranscriptionRates",
+    plotPauseSiteContourMap <- function(object, file = NULL, width = 8,
+                                        height = 6, dpi = 300) {
+        cr <- rates(object)
+
+        p <- ggplot(cr, aes(x = fkMean, y = fkVar)) +
+            geom_density_2d(color = "blue", size = 0.8) +
+            geom_point(alpha = 0.6, size = 1.5, color = "#E69F00") +
+            labs(
+                x = "Mean Pause Site Position (bp)",
+                y = "Pause Site Variance (bp²)",
+                title = "Pause Site Mean vs Variance Distribution"
+            ) +
+            theme_bw()
+
+        if (!is.null(file)) {
+            ggsave(file, p,
+                width = width, height = height,
+                dpi = dpi
+            )
+        }
+        return(p)
+    }
+)

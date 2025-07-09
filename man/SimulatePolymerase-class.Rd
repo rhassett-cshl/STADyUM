@@ -39,7 +39,7 @@ simulatePolymerase(
   polSize = 33,
   addSpace = 17,
   time = 1,
-  timePointsToRecord = NULL
+  timesToRecord = NULL
 )
 
 sampleReadCounts(object, readDensity = 0.0489)
@@ -116,7 +116,7 @@ RNAP size.}
 
 \item{time}{a numeric value for the time to simulate.}
 
-\item{timePointsToRecord}{a numeric vector of specific time points to record
+\item{timesToRecord}{a numeric vector of specific time points to record
 position matrices for, or NULL to record no extra position matrices. Final
 position matrix is always recorded. Default is NULL.}
 
@@ -266,7 +266,7 @@ RNAP size.}
 
 \item{\code{time}}{a numeric value for the time to simulate.}
 
-\item{\code{timePointsToRecord}}{a numeric vector of specific time points to record
+\item{\code{timesToRecord}}{a numeric vector of specific time points to record
 position matrices for, or NULL to record no extra position matrices. Final
 position matrix is always recorded. Default is NULL.}
 
@@ -291,19 +291,19 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=NULL)
+    timesToRecord=NULL)
 # Create a SimulatePolymerase object with specific time points recorded
 sim2 <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=c(0.5, 1.0))
+    timesToRecord=c(0.5, 1.0))
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=NULL)
+    timesToRecord=NULL)
 # Sample read counts per nucleotide
 sim <- sampleReadCounts(sim)
 # Print the read counts per nucleotide
@@ -313,7 +313,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=c(0.5, 1.0))
+    timesToRecord=c(0.5, 1.0))
 # Show the object
 show(sim)
 # Create a SimulatePolymerase object
@@ -321,7 +321,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=c(0.5, 1.0))
+    timesToRecord=c(0.5, 1.0))
 # Plot polymerase distribution
 plotPolymeraseDistribution(sim)
 # Create a SimulatePolymerase object
@@ -329,7 +329,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=NULL) 
+    timesToRecord=NULL) 
 # Plot pause site distribution
 plotPauseSites(sim)
 # Create a SimulatePolymerase object
@@ -337,7 +337,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=NULL)
+    timesToRecord=NULL)
 # Plot transition probabilities
 plotTransitionProbabilities(sim)
 # Create a SimulatePolymerase object
@@ -345,7 +345,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=c(0.5, 1.0))
+    timesToRecord=c(0.5, 1.0))
 # Save plots
 savePlots(sim)
 # Create a SimulatePolymerase object
@@ -353,7 +353,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=NULL)
+    timesToRecord=NULL)
 # Get pause sites
 pauseSites <- pauseSites(sim)
 # Print the pause sites
@@ -363,7 +363,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=NULL)
+    timesToRecord=NULL)
 # Get probability matrix
 siteProbabilities <- siteProbabilities(sim)
 # Print the probability matrix dimensions
@@ -373,7 +373,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=NULL)
+    timesToRecord=NULL)
 # Get combined cells data
 combinedCellsData <- combinedCellsData(sim)
 # Print the combined cells data
@@ -383,7 +383,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=c(0.5, 1.0))
+    timesToRecord=c(0.5, 1.0))
 # Get position matrices
 positionMatrices <- positionMatrices(sim)
 # Print the position matrices
@@ -393,7 +393,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=c(0.5, 1.0))
+    timesToRecord=c(0.5, 1.0))
 # Get final position matrix
 finalMatrix <- finalPositionMatrix(sim)
 # Print the final position matrix
@@ -403,7 +403,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=c(0.5, 1.0))
+    timesToRecord=c(0.5, 1.0))
 # Get parameters
 parameters <- parameters(sim)
 # Print the parameters
@@ -413,7 +413,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=NULL)
+    timesToRecord=NULL)
 # Get read counts    
 readCounts <- readCounts(sim)
 # Print the read counts
@@ -423,7 +423,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=c(0.5, 1.0))
+    timesToRecord=c(0.5, 1.0))
 # Get position matrix for time 0.5
 posMatrix <- getPositionMatrixAtTime(sim, 0.5)
 # Print the position matrix
@@ -433,7 +433,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=NULL)
+    timesToRecord=NULL)
 # Get available time points
 availableTimes <- getAvailableTimePoints(sim)
 # Print the available time points
@@ -443,7 +443,7 @@ sim <- SimulatePolymerase(
     k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
     alpha=1, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     zetaVec=NULL, cellNum=1000, polSize=33, addSpace=17, time=1, 
-    timePointsToRecord=c(0.5, 1.0))
+    timesToRecord=c(0.5, 1.0))
 # Plot position matrix
 plotPositionMatrix(sim)
 }

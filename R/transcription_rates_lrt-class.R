@@ -6,8 +6,8 @@
 #' @importFrom readr read_csv
 #' @importFrom stringr str_detect
 #' @title Constructor for TranscriptionRatesLRT object
-#' 
-#' @description 
+#'
+#' @description
 #' Constructs results of likelihood ratio test comparing transcription data
 #' estimated from two different sets of experimental read counts.
 #'
@@ -21,18 +21,20 @@ methods::setClass("TranscriptionRatesLRT",
         spikeInScalingFactor = "character",
         omegaTbl = "tbl_df",
         betaTbl = "tbl_df"
-))
+    )
+)
 
 computeOmegaLRT <- function(lambda1, lambda2, rc1, rc2) {
     tao1 <- lambda1 / (lambda1 + lambda2)
     tao2 <- 1 - tao1
 
-    chi1 <- rc1$chi; chi2 <- rc2$chi * lambda1 / lambda2
-    p <- numeric(length(rc1$geneId)) #is this correct?
+    chi1 <- rc1$chi
+    chi2 <- rc2$chi * lambda1 / lambda2
+    p <- numeric(length(rc1$geneId)) # is this correct?
 
     omegaTbl <-
         tibble(
-            geneId = rc1$geneId, chi1 = chi1, chi2 = chi2,  
+            geneId = rc1$geneId, chi1 = chi1, chi2 = chi2,
             lfc = log2(chi2 / chi1)
         )
 
@@ -48,14 +50,19 @@ computeOmegaLRT <- function(lambda1, lambda2, rc1, rc2) {
 computeBetaLRTParams <- function(rc1, rc2, kmin, kmax) {
     fkInt <- dnorm(kmin:kmax, mean = 50, sd = 100)
     fkInt <- fkInt / sum(fkInt)
-    s1 <- rc1$totalGbRc; s2 <- rc2$totalGbRc
-    t1H1 <- map_dbl(rc1$Yk, sum); t2H1 <- map_dbl(rc2$Yk, sum)
-    Xk1 <- rc1$Xk; Xk2 <- rc2$Xk; M <- rc1$gbLength
+    s1 <- rc1$totalGbRc
+    s2 <- rc2$totalGbRc
+    t1H1 <- map_dbl(rc1$Yk, sum)
+    t2H1 <- map_dbl(rc2$Yk, sum)
+    Xk1 <- rc1$Xk
+    Xk2 <- rc2$Xk
+    M <- rc1$gbLength
     chiHat <- (s1 + s2) / M
     betaInt <- chiHat / (map_dbl(rc1$Xk, sum) + map_dbl(rc2$Xk, sum))
-    chiHat1 <- rc1$chi; chiHat2 <- rc2$chi
+    chiHat1 <- rc1$chi
     chiHat2 <- rc2$chi
-    
+    chiHat2 <- rc2$chi
+
     list(
         fkInt = fkInt, s1 = s1, s2 = s2, t1H1 = t1H1, t2H1 = t2H1,
         Xk1 = Xk1, Xk2 = Xk2, M = M, chiHat = chiHat, betaInt = betaInt,
@@ -72,30 +79,33 @@ runEMH0BetaLRT <- function(params, kmin, kmax, maxItr, tor) {
         function(x, y, z, k, m, n) {
             tryCatch(
                 mainExpectationMaximizationH0(
-                    params$fkInt, Xk1 = x, Xk2 = y, kmin, kmax,
+                    params$fkInt,
+                    Xk1 = x, Xk2 = y, kmin, kmax,
                     betaInt = z, chiHat = k, chiHat1 = m, chiHat2 = n,
                     maxItr = maxItr, tor = tor
                 ),
                 error = function(err) {
-                    list("beta" = NA, "Yk1" = NA, "Yk2" = NA, "likelihoods" = list(NA))
+                    list(
+                        "beta" = NA, "Yk1" = NA, "Yk2" = NA, "likelihoods" =
+                            list(NA)
+                    )
                 }
             )
         }
     )
-    
+
     list(
         emRes = emRes,
-        h0Likelihood = map_dbl(emRes, 
-        ~ .x$likelihoods[[length(.x$likelihoods)]])
+        h0Likelihood = map_dbl(
+            emRes,
+            ~ .x$likelihoods[[length(.x$likelihoods)]]
+        )
     )
 }
 
 runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
-    idx <- h0Results$tStats < 0
-    h0Beta <- map_dbl(h0Results$emRes, "beta")
-    h0Fk1 <- map(h0Results$emRes, "fk1")
-    h0Fk2 <- map(h0Results$emRes, "fk2")
-    
+    idx <- h0Results$tStats < 0; h0Beta <- map_dbl(h0Results$emRes, "beta")
+    h0Fk1 <- map(h0Results$emRes, "fk1"); h0Fk2 <- map(h0Results$emRes, "fk2")
     emHc <- pmap(
         list(h0Fk1[idx], params$Xk1[idx], h0Beta[idx], params$chiHat1[idx]),
         function(x, y, z, k) {
@@ -113,7 +123,6 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
             )
         }
     )
-    
     emHt <- pmap(
         list(h0Fk2[idx], params$Xk2[idx], h0Beta[idx], params$chiHat2[idx]),
         function(x, y, z, k) {
@@ -131,20 +140,24 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
             )
         }
     )
-    
     list(
         emHc = emHc, emHt = emHt,
-        h1Likelihood1 = map_dbl(emHc, 
-        ~ .x$likelihoods[[length(.x$likelihoods)]]),
-        h1Likelihood2 = map_dbl(emHt, 
-        ~ .x$likelihoods[[length(.x$likelihoods)]])
+        h1Likelihood1 = map_dbl(
+            emHc,
+            ~ .x$likelihoods[[length(.x$likelihoods)]]
+        ),
+        h1Likelihood2 = map_dbl(
+            emHt,
+            ~ .x$likelihoods[[length(.x$likelihoods)]]
+        )
     )
 }
 
 constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results) {
-    beta1 <- rc1$betaAdp; beta2 <- rc2$betaAdp
+    beta1 <- rc1$betaAdp
+    beta2 <- rc2$betaAdp
     tStats <- rc1$likelihood + rc2$likelihood - h0Results$h0Likelihood
-    p <- numeric(length(rc1$geneId)) #is this correct?
+    p <- numeric(length(rc1$geneId)) # is this correct?
 
     betaTbl <- tibble(
         geneId = rc1$geneId, beta1 = beta1, beta2 = beta2,
@@ -153,41 +166,43 @@ constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results) {
     )
 
     idx <- betaTbl$tStats < 0
-    
+
     betaTblIdx <- tibble(
-        geneId = names(h1Results$emHc), 
+        geneId = names(h1Results$emHc),
         beta1 = map_dbl(h1Results$emHc, "beta"),
-        beta2 = map_dbl(h1Results$emHt, "beta"), 
+        beta2 = map_dbl(h1Results$emHt, "beta"),
         lfc = log2(beta2 / beta1),
         fkMean1 = map_dbl(h1Results$emHc, "fkMean"),
         fkMean2 = map_dbl(h1Results$emHt, "fkMean"),
         fkVar1 = map_dbl(h1Results$emHc, "fkVar"),
         fkVar2 = map_dbl(h1Results$emHt, "fkVar"),
-        tStats = h1Results$h1Likelihood1 + h1Results$h1Likelihood2 - 
+        tStats = h1Results$h1Likelihood1 + h1Results$h1Likelihood2 -
             h0Results$h0Likelihood[idx]
     )
-    
+
     betaTbl <- bind_rows(betaTbl[!idx, ], betaTblIdx)
-    
+
     betaTbl <- betaTbl %>%
         mutate(
-            p = pchisq(2 * tStats, df = 1, ncp = 0, lower.tail = FALSE,
-                log.p = FALSE)
+            p = pchisq(2 * tStats,
+                df = 1, ncp = 0, lower.tail = FALSE,
+                log.p = FALSE
+            )
         ) %>%
         mutate(padj = p.adjust(p, method = "BH"))
-    
+
     return(betaTbl)
 }
 
 computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
     maxItr <- 500
     tor <- 1e-6
-    
+
     params <- computeBetaLRTParams(rc1, rc2, kmin, kmax)
     h0Results <- runEMH0BetaLRT(params, kmin, kmax, maxItr, tor)
     h1Results <- runEMH1BetaLRT(params, h0Results, kmin, kmax, maxItr, tor)
     betaTbl <- constructBetaLRTTable(rc1, rc2, h0Results, h1Results)
-    
+
     return(betaTbl)
 }
 
@@ -209,25 +224,30 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #' @param expData2 an \code{\linkS4class{ExperimentTranscriptionRates}} object
 #' @param spikeInScalingFactor path to a csv file containing scale factors
 #' based on total or spike-in reads
-#' 
+#'
 #' Note: Gene body length assumed to be the same between conditions
 #'
 #' @return a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expData1 <- estimateTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000")
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
 #' )
 #' expData2 <- estimateTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000")
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
 #' )
-#' spikeInScalingFactor <- "path/to/scale.csv"
+#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
 #' # Print the likelihood ratio test object
 #' print(lrts)
@@ -239,8 +259,8 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
     if (!is(expData2, "ExperimentTranscriptionRates")) {
         stop("expData2 must be an ExperimentTranscriptionRates object")
     }
-    k <- 50; kmin <- 1; kmax <- 200; rnapSize <- 50; zeta <- 2000; 
-    sigP <- 0.05; lfc1 <- 0; lfc2 <- 0; maxItr <- 500; tor <- 1e-6
+    k <- 50; kmin <- 1; kmax <- 200; rnapSize <- 50; zeta <- 2000; sigP <- 0.05
+    lfc1 <- 0; lfc2 <- 0; maxItr <- 500; tor <- 1e-6
     rc1 <- rates(expData1); rc2 <- rates(expData2)
 
     ## Get union set of genes being analyzed
@@ -251,16 +271,17 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
     ## Poisson-based Likelihood Ratio Tests
     ## Use # of spike-in or total # of mappable reads as scaling factor
     scaleTbl <- read_csv(spikeInScalingFactor, show_col_types = FALSE)
-    
-    # Validate that scaleTbl has the required columns
+
     required_cols <- c("control_1", "control_2", "treated_1", "treated_2")
     missing_cols <- setdiff(required_cols, colnames(scaleTbl))
     if (length(missing_cols) > 0) {
-        stop("scaleTbl is missing required columns: ", 
-             paste(missing_cols, collapse = ", "), 
-             "\nExpected columns: ", paste(required_cols, collapse = ", "))
+        stop(
+            "scaleTbl is missing required columns: ",
+            paste(missing_cols, collapse = ", "),
+            "\nExpected columns: ", paste(required_cols, collapse = ", ")
+        )
     }
-    
+
     ## Cancel out M and zeta since they are the same between conditions
     lambda1 <- scaleTbl$control_1 + ifelse(is.na(scaleTbl$control_2), 0,
         scaleTbl$control_2
@@ -291,19 +312,25 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 #' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expData1 <- estimateTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000")
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
 #' )
 #' expData2 <- estimateTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000")
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
 #' )
-#' lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
+#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
 #' expData1(lrts)
 #' @export
 setGeneric("expData1", function(object) standardGeneric("expData1"))
@@ -321,19 +348,25 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
 #' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expData1 <- estimateTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000")
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
 #' )
 #' expData2 <- estimateTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000")
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
 #' )
-#' lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
+#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
 #' expData2(lrts)
 #' @export
 setGeneric("expData2", function(object) standardGeneric("expData2"))
@@ -351,22 +384,31 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
 #' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 #' expData1 <- estimateTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000")
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
 #' )
 #' expData2 <- estimateTranscriptionRates(
-#'     bigwigPlus = "path/to/plus.bw",
-#'     bigwigMinus = "path/to/minus.bw",
-#'     pauseRegions = GRanges("chr1:1-1000"),
-#'     geneBodyRegions = GRanges("chr1:1-2000")
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
 #' )
-#' lrts <- likelihoodRatioTest(expData1, expData2, "spikeInScalingFactor.csv")
+#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
 #' spikeInScalingFactor(lrts)
 #' @export
-setGeneric("spikeInScalingFactor", function(object) 
-standardGeneric("spikeInScalingFactor"))
-setMethod("spikeInScalingFactor", "TranscriptionRatesLRT", 
-function(object) slot(object, "spikeInScalingFactor"))
+setGeneric("spikeInScalingFactor", function(object) {
+    standardGeneric("spikeInScalingFactor")
+})
+setMethod(
+    "spikeInScalingFactor", "TranscriptionRatesLRT",
+    function(object) slot(object, "spikeInScalingFactor")
+)
