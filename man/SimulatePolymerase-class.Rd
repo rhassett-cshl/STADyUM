@@ -69,9 +69,24 @@ getCombinedCellsDataAtTime(object, timePoint = NULL)
 
 plotPauseSites(object, file = NULL, width = 8, height = 6)
 
-plotPositionHeatmap(object, timePoint = NULL, maxCells = NULL, file = NULL)
+plotPositionHeatmap(
+  object,
+  timePoint = NULL,
+  maxCells = NULL,
+  file = NULL,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
 
-plotPolymerasePCA(object, timePoint = NULL, file = NULL)
+plotPolymerasePCA(
+  object,
+  timePoint = NULL,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
 
 plotCombinedCells(
   object,
@@ -140,6 +155,8 @@ plotted (used for automatic title generation and documentation)}
 \item{maxCells}{Maximum number of cells to display (for performance with
 large datasets). If NULL, shows all cells.}
 
+\item{dpi}{Plot resolution in DPI}
+
 \item{start}{Integer, starting position for plotting (default: NULL, uses
 full range)}
 
@@ -165,11 +182,11 @@ each site across all cells for the specified time point
 
 A ggplot object showing the distribution of pause sites
 
-A plotly object showing interactive heatmap of polymerase positions
+A ggplot object showing heatmap of polymerase positions
 
-A plotly object showing the interactive PCA plot of cells
+A ggplot object showing the PCA plot of cells
 
-A plotly object showing interactive polymerase occupancy
+A ggplot object
 
 A ggplot object showing the lollipop plot of nonzero read counts
 }
@@ -238,24 +255,19 @@ similar to the final combinedCellsData but for intermediate time points.
 
 Plot the distribution of pause sites across the gene as a histogram.
 
-Plot position matrices as an interactive plotly heatmap showing
-polymerase positions across all cells at specific time points. Each cell in
-the heatmap represents whether a polymerase is present (1) or absent (0)
-at a specific site in a specific cell. By default, shows the final position
-matrix. The heatmap is interactive, allowing users to hover over cells to
-see the exact polymerase positions. Users can also zoom in and out, pan, and
-click on cells to get more detailed information.
+Plot position matrices as a ggplot2 heatmap showing polymerase positions
+across all cells at specific time points. Each cell in the heatmap
+represents whether a polymerase is present (1) or absent (0) at a specific
+site in a specific cell. By default, shows the final position matrix.
 
-Create an interactive plotly PCA plot of the polymerase position matrix,
-showing the first two principal components for each cell. Useful for
-exploring heterogeneity and clustering among cells interactively. Useful
-for exploring the site occupancy patterns for each cell.
+Create a ggplot2 PCA plot of the polymerase position matrix, showing the
+first two principal components for each cell. Useful for exploring
+heterogeneity and clustering among cells. Useful for exploring the site
+occupancy patterns for each cell.
 
-Plot combined cells data as an interactive plotly visualization.
-This provides zoom, pan, and hover capabilities for exploring polymerase
-occupancy patterns. For SimulatePolymerase objects, can plot data from
-specific time points by calculating combined cells data from position
-matrices.
+Plot combined cells data as a ggplot2 plot. For SimulatePolymerase objects,
+can plot data from specific time points by calculating combined cells data
+from position matrices.
 
 Plot nonzero read counts as a lollipop plot, skipping the first value since
 first position is initiation site and always has a polymerase.
@@ -483,12 +495,12 @@ sim <- SimulatePolymerase(
     addSpace = 17, time = 1, timesToRecord = NULL
 )
 # Plot final position heatmap
-plotFinalPositionHeatmap(sim, maxCells = 100, file="heatmap.html")
+plotPositionHeatmap(sim, maxCells = 100, file="heatmap.png")
 # Plot specific time point
-plotPositionHeatmap(sim, timePoint = 0.5, maxCells = 100, file="heatmap
-html")
+plotPositionHeatmap(sim, timePoint = 0.5, maxCells = 100, 
+    file="heatmap.png")
 # Using a SimulatePolymerase object
-plotPolymerasePCA(sim, timePoint = 0.5, file="pca.html")
+plotPolymerasePCA(sim, timePoint = 0.5, file="pca.png")
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,

@@ -76,8 +76,11 @@ pause-escape rate}
 \item{betaAdp}{Numeric. Ratio of gene body RNAP density to pause region
 RNAP density from adapted model which allows pause sites to vary across
 cells given as an estimate for the pause-escape rate}
-\item{phi}{Numeric. Landing-pad occupancy (only if steric hindrance is
-enabled)}
+\item{phi}{Numeric. Landing-pad occupancy representing the fraction of time
+in the simulation that the landing pad is occupied by RNA polymerase. The
+landing pad, also known as the initiation site, is the region where the RNA
+polymerase binds to the DNA and begins transcription. It is the polSize +
+addSpace length (only applicable if steric hindrance is enabled)}
 \item{fk}{list. Likelihood of pausing at each pause region position}
 \item{fkMean}{Numeric. Mean position of pause sites}
 \item{fkVar}{Numeric. Variance of pause site positions}

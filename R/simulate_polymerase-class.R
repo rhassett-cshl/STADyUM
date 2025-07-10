@@ -48,9 +48,6 @@
 #' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave geom_histogram
 #' @importFrom reshape2 melt
 #' @importFrom readr read_csv
-#' @importFrom plotly plot_ly layout add_segments add_annotations ggplotly
-#' @importFrom plotly config
-#' @importFrom htmlwidgets saveWidget
 #' @exportClass SimulatePolymerase
 methods::setClass("SimulatePolymerase",
     slots = c(
@@ -836,43 +833,25 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
     return(p)
 })
 
-setupPauseSiteAnnotation <- function(p, pause_sites, matrix_cols) {
-    pmean <- mean(pause_sites)
-    psd <- sd(pause_sites)
 
-    p %>%
-        add_segments(
-            x = 0, xend = matrix_cols, y = pmean,
-            yend = pmean, line = list(color = "blue", width = 2, 
-            dash = "dash")
-        ) %>%
-        add_annotations(
-            x = matrix_cols * 0.5, y = pmean,
-            text = sprintf("Pause Site<br>Mean: %.0f ± %.0f", pmean, psd),
-            showarrow = FALSE, font = list(color = "blue", size = 12),
-            bgcolor = "rgba(255,255,255,0.8)"
-        )
-
-    return(p)
-}
 
 #' @rdname SimulatePolymerase-class
-#' @title Plot Position Matrix Heatmap (Interactive)
+#' @title Plot Position Matrix Heatmap
 #' @description
-#' Plot position matrices as an interactive plotly heatmap showing
-#' polymerase positions across all cells at specific time points. Each cell in
-#' the heatmap represents whether a polymerase is present (1) or absent (0)
-#' at a specific site in a specific cell. By default, shows the final position
-#' matrix. The heatmap is interactive, allowing users to hover over cells to
-#' see the exact polymerase positions. Users can also zoom in and out, pan, and
-#' click on cells to get more detailed information.
+#' Plot position matrices as a ggplot2 heatmap showing polymerase positions
+#' across all cells at specific time points. Each cell in the heatmap
+#' represents whether a polymerase is present (1) or absent (0) at a specific
+#' site in a specific cell. By default, shows the final position matrix.
 #' @param object A SimulatePolymerase-class object
 #' @param timePoint Optional time point to plot. If NULL, plots the final
 #' position matrix.
 #' @param maxCells Maximum number of cells to display (for performance with
 #' large datasets). If NULL, shows all cells.
-#' @param file Optional html file path to save the plotly object
-#' @return A plotly object showing interactive heatmap of polymerase positions
+#' @param file Optional file path to save the plot to
+#' @param width Plot width in inches
+#' @param height Plot height in inches
+#' @param dpi Plot resolution in DPI
+#' @return A ggplot object showing heatmap of polymerase positions
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- SimulatePolymerase(
@@ -882,20 +861,19 @@ setupPauseSiteAnnotation <- function(p, pause_sites, matrix_cols) {
 #'     addSpace = 17, time = 1, timesToRecord = NULL
 #' )
 #' # Plot final position heatmap
-#' plotFinalPositionHeatmap(sim, maxCells = 100, file="heatmap.html")
+#' plotPositionHeatmap(sim, maxCells = 100, file="heatmap.png")
 #' # Plot specific time point
-#' plotPositionHeatmap(sim, timePoint = 0.5, maxCells = 100, file="heatmap
-#' html")
+#' plotPositionHeatmap(sim, timePoint = 0.5, maxCells = 100, 
+#'     file="heatmap.png")
 #' @export
 setGeneric("plotPositionHeatmap", function(
-    object, timePoint = NULL,
-    maxCells = NULL, file = NULL) {
+    object, timePoint = NULL, maxCells = NULL, file = NULL,
+    width = 10, height = 8, dpi = 300) {
     standardGeneric("plotPositionHeatmap")
 })
 setMethod("plotPositionHeatmap", "SimulatePolymerase", function(
-    object,
-    timePoint = NULL, maxCells = NULL, file = NULL) {
-    options(browser = "false")
+    object, timePoint = NULL, maxCells = NULL, file = NULL,
+    width = 10, height = 8, dpi = 300) {
 
     if (is.null(timePoint)) {
         matrix <- slot(object, "finalPositionMatrix")
@@ -909,60 +887,76 @@ setMethod("plotPositionHeatmap", "SimulatePolymerase", function(
     if (nrow(matrix) == 0 || ncol(matrix) == 0) {
         stop("Position matrix is empty. Run the simulation first.")
     }
+    
     # Limit cells for visualization if specified
     if (!is.null(maxCells) && ncol(matrix) > maxCells) {
         cell_indices <- seq(1, ncol(matrix), length.out = maxCells)
         matrix <- matrix[, cell_indices]
     }
 
-    p <- plot_ly(
-        z = matrix, type = "heatmap", showscale = TRUE,
-        colorscale = list(list(0, "white"), list(1, "red")),
-        colorbar = list(title = "Polymerase", ticktext = c("Absent", "Present"),
-            tickvals = c(0, 1))
-    ) %>%
-        layout(
-            title = list(text = plot_title, font = list(size = 16)),
-            xaxis = list(title = "Cell", showticklabels = FALSE, 
-            showgrid = FALSE),
-            yaxis = list(title = "Site", showgrid = FALSE),
-            margin = list(l = 60, r = 60, t = 80, b = 60)
-        ) %>%
-        config(
-            displayModeBar = TRUE, scale = 1,
-            toImageButtonOptions = list(
-                format = "png",
-                filename = "polymerase_heatmap", height = 600, width = 800
-            )
-        )
-
+    # Convert matrix to long format for ggplot2
+    df <- expand.grid(Site = 1:nrow(matrix), Cell = 1:ncol(matrix))
+    df$Polymerase <- as.vector(matrix)
+    
+    # Calculate pause site statistics
     pause_sites <- slot(object, "pauseSites")
-    p <- setupPauseSiteAnnotation(p, pause_sites, ncol(matrix))
+    pause_mean <- mean(pause_sites)
+    
+    p <- ggplot(df, aes(x = Cell, y = Site, fill = factor(Polymerase))) +
+        geom_tile() +
+        scale_fill_manual(
+            values = c("0" = "white", "1" = "red"),
+            labels = c("0" = "Absent", "1" = "Present"),
+            name = "Polymerase"
+        ) +
+        geom_hline(yintercept = pause_mean, color = "blue", 
+                   linetype = "dashed", size = 1) +
+        labs(
+            title = plot_title,
+            x = "Cell",
+            y = "Site"
+        ) +
+        theme_minimal() +
+        theme(
+            plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+            axis.text.x = element_blank(),
+            axis.ticks.x = element_blank(),
+            legend.position = "right"
+        ) +
+        annotate("text", x = ncol(matrix) * 0.1, y = pause_mean + 20,
+                 label = sprintf("Pause Site Mean: %.0f", pause_mean),
+                 color = "blue", size = 3, hjust = 0)
 
-    if (!is.null(file)) htmlwidgets::saveWidget(p, file)
+    if (!is.null(file)) {
+        ggsave(file, p, width = width, height = height, dpi = dpi)
+    }
+    
     return(p)
 })
 
 #' @rdname SimulatePolymerase-class
-#' @title Interactive PCA Plot of Polymerase Position Matrix
+#' @title PCA Plot of Polymerase Position Matrix
 #'
 #' @description
-#' Create an interactive plotly PCA plot of the polymerase position matrix,
-#' showing the first two principal components for each cell. Useful for
-#' exploring heterogeneity and clustering among cells interactively. Useful
-#' for exploring the site occupancy patterns for each cell.
+#' Create a ggplot2 PCA plot of the polymerase position matrix, showing the
+#' first two principal components for each cell. Useful for exploring
+#' heterogeneity and clustering among cells. Useful for exploring the site
+#' occupancy patterns for each cell.
 #'
 #' @param object A SimulatePolymerase object
 #' @param timePoint Optional time point to plot. If NULL, plots the final
 #' position matrix.
-#' @param file Optional html file path to save the plotly object
-#' @return A plotly object showing the interactive PCA plot of cells
+#' @param file Optional file path to save the plot
+#' @param width Plot width in inches
+#' @param height Plot height in inches
+#' @param dpi Plot resolution in DPI
+#' @return A ggplot object showing the PCA plot of cells
 #' @examples
 #' # Using a SimulatePolymerase object
-#' plotPolymerasePCA(sim, timePoint = 0.5, file="pca.html")
+#' plotPolymerasePCA(sim, timePoint = 0.5, file="pca.png")
 #' @export
 setGeneric("plotPolymerasePCA", function(
-    object, timePoint = NULL, file = NULL) {
+    object, timePoint = NULL, file = NULL, width = 8, height = 6, dpi = 300) {
     standardGeneric("plotPolymerasePCA")
 })
 setMethod(
@@ -973,8 +967,12 @@ setMethod(
         if (inherits(object, "SimulatePolymerase")) {
             if (is.null(timePoint)) {
                 mat <- slot(object, "finalPositionMatrix")
+                plot_title <- "PCA of Polymerase Position Matrix (Final)"
             } else {
                 mat <- getPositionMatrixAtTime(object, timePoint)
+                plot_title <- sprintf(
+                    "PCA of Polymerase Position Matrix (Time %.2f)", timePoint
+                )
             }
         } else {
             stop("object must be a SimulatePolymerase object")
@@ -985,35 +983,37 @@ setMethod(
 
         # Transpose: cells as rows, sites as features
         pca <- prcomp(t(mat), center = TRUE, scale. = FALSE)
+        
+        # Calculate explained variance
+        var_explained <- round(100 * pca$sdev^2 / sum(pca$sdev^2), 1)
+        
         df <- data.frame(
-            PC1 = pca$x[, 1], PC2 = pca$x[, 2], 
-            Cell = factor(seq_len(ncol(mat))), PolymeraseCount = colSums(mat)
+            PC1 = pca$x[, 1], 
+            PC2 = pca$x[, 2], 
+            Cell = seq_len(ncol(mat)), 
+            PolymeraseCount = colSums(mat)
         )
 
-        df$hover <- paste0(
-            "Cell: ", df$Cell, "<br>PC1: ", round(df$PC1, 2),
-            "<br>PC2: ", round(df$PC2, 2),
-            "<br>Polymerase Count: ", df$PolymeraseCount
-        )
-
-        color_col <- "PolymeraseCount"
-        p <- plot_ly(
-            data = df, x = ~PC1, y = ~PC2, type = "scatter", mode = "markers",
-            color = df[[color_col]], text = ~hover, hoverinfo = "text",
-            marker = list(size = 8, opacity = 0.8)
-        ) %>%
-            layout(
-                title = "Interactive PCA of Polymerase Position Matrix (Cells)",
-                xaxis = list(title = "PC1"), yaxis = list(title = "PC2"),
-                legend = list(title = list(text = color_col))
-            ) %>%
-            config(
-                displayModeBar = TRUE,
-                modeBarButtonsToRemove = c("pan2d", "select2d", "lasso2d"),
-                displaylogo = FALSE
+        p <- ggplot(df, aes(x = PC1, y = PC2, color = PolymeraseCount)) +
+            geom_point(size = 3, alpha = 0.8) +
+            scale_color_gradient(
+                low = "lightblue", high = "darkred",
+                name = "Polymerase\nCount"
+            ) +
+            labs(
+                title = plot_title,
+                x = sprintf("PC1 (%.1f%% variance)", var_explained[1]),
+                y = sprintf("PC2 (%.1f%% variance)", var_explained[2])
+            ) +
+            theme_minimal() +
+            theme(
+                plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+                legend.position = "right"
             )
 
-        if (!is.null(file)) htmlwidgets::saveWidget(p, file)
+        if (!is.null(file)) {
+            ggsave(file, p, width = width, height = height, dpi = dpi)
+        }
 
         return(p)
     }
@@ -1046,14 +1046,12 @@ validatePlotRange <- function(start, end, data) {
 }
 
 #' @rdname SimulatePolymerase-class
-#' @title Plot Combined Cells Data (Interactive Plotly)
+#' @title Plot Combined Cells Data
 #'
 #' @description
-#' Plot combined cells data as an interactive plotly visualization.
-#' This provides zoom, pan, and hover capabilities for exploring polymerase
-#' occupancy patterns. For SimulatePolymerase objects, can plot data from
-#' specific time points by calculating combined cells data from position
-#' matrices.
+#' Plot combined cells data as a ggplot2 plot. For SimulatePolymerase objects,
+#' can plot data from specific time points by calculating combined cells data
+#' from position matrices.
 #'
 #' @param object A SimulatePolymerase-class object
 #' @param start Integer, starting position for plotting (default: NULL, uses
@@ -1062,8 +1060,8 @@ validatePlotRange <- function(start, end, data) {
 #' range)
 #' @param timePoint Optional numeric value specifying the time point being
 #' plotted (used for automatic title generation and documentation)
-#' @param file Optional html file path to save the plotly object
-#' @return A plotly object showing interactive polymerase occupancy
+#' @param file Optional file path to save the plot to
+#' @return A ggplot object
 #' @examples
 #' # Create a SimulatePolymerase object
 #' sim <- SimulatePolymerase(
@@ -1114,15 +1112,9 @@ setMethod(
             )
         }
 
-        plotly_p <- ggplotly(p, tooltip = c("x", "y")) %>%
-            layout(
-                xaxis = list(title = "Position"),
-                yaxis = list(title = "Number of Polymerases")
-            ) %>%
-            config(displayModeBar = TRUE)
 
-        if (!is.null(file)) htmlwidgets::saveWidget(plotly_p, file)
-        return(plotly_p)
+        return(p)
+
     }
 )
 
