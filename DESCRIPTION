@@ -49,11 +49,6 @@ Imports:
     Rcpp,
     data.table,
     purrr,
-    reshape2,
-    Matrix,
-    magrittr,
-    readr,
-    stringr,
     rtracklayer
 LinkingTo:
     Rcpp

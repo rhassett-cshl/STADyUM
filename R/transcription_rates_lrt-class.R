@@ -3,8 +3,6 @@
 #' @importFrom purrr map2 pmap map_dbl
 #' @importFrom stats pchisq p.adjust
 #' @importFrom methods slot is slot<- validObject
-#' @importFrom readr read_csv
-#' @importFrom stringr str_detect
 #' @title Constructor for TranscriptionRatesLRT object
 #'
 #' @description
@@ -270,7 +268,7 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 
     ## Poisson-based Likelihood Ratio Tests
     ## Use # of spike-in or total # of mappable reads as scaling factor
-    scaleTbl <- read_csv(spikeInScalingFactor, show_col_types = FALSE)
+    scaleTbl <- read.csv(spikeInScalingFactor)
 
     required_cols <- c("control_1", "control_2", "treated_1", "treated_2")
     missing_cols <- setdiff(required_cols, colnames(scaleTbl))

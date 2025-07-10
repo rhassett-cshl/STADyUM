@@ -61,7 +61,6 @@
 #' @importFrom IRanges IRanges
 #' @importFrom S4Vectors DataFrame
 #' @importFrom tibble tibble
-#' @importFrom Matrix Matrix
 #' @importFrom plyranges group_by_overlaps group_by summarise
 #' @importFrom purrr map map_chr map_dbl map2
 #' @importFrom dplyr mutate

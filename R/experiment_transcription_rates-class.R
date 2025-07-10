@@ -52,9 +52,8 @@
 #' @rdname ExperimentTranscriptionRates-class
 #' @import GenomicRanges
 #' @importClassesFrom tibble tbl_df
-#' @importFrom dplyr mutate select left_join rename
+#' @importFrom dplyr mutate select left_join rename %>%
 #' @importFrom stats dnorm uniroot density
-#' @importFrom magrittr %>%
 #' @importFrom methods slot is slot<- validObject
 #' @importFrom S4Vectors DataFrame splitAsList
 #' @importFrom tibble as_tibble

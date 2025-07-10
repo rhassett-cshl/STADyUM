@@ -46,8 +46,6 @@
 #' @importFrom methods slot new is slot<-
 #' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
 #' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave geom_histogram
-#' @importFrom reshape2 melt
-#' @importFrom readr read_csv
 #' @exportClass SimulatePolymerase
 methods::setClass("SimulatePolymerase",
     slots = c(
@@ -157,11 +155,7 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
     }
 
     # Read the full file
-    zeta_data <- read_csv(zetaVec,
-        col_names = FALSE,
-        col_types = "d",
-        show_col_types = FALSE
-    )
+    zeta_data <- read.csv(zetaVec)
 
     # Convert to numeric vector and ensure correct length
     zeta_vec <- as.numeric(zeta_data[[1]])
