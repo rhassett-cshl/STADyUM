@@ -40,7 +40,7 @@
 #' pause regions (across all cells)}
 #' \item{avgLandingRcPerCell}{Numeric. Average number of RNAPs per cell for
 #' landing pad regions (across all cells)}
-#' \item{simulatedPauseSiteCounts}{list. Simulated pause site counts for each
+#' \item{actualPauseSiteCounts}{list. Simulated pause site counts for each
 #' cell}
 #' \item{expectedPauseSiteCounts}{list. Expected pause site counts for each
 #' cell estimated from the EM algorithm}
@@ -70,8 +70,7 @@ methods::setClass("SimulationTranscriptionRates",
     slots = c(
         simpol = "SimulatePolymerase",
         stericHindrance = "logical",
-        rates = "tbl_df",
-        rnapN = "list"
+        rates = "tbl_df"
     ),
     contains = "TranscriptionRates"
 )
@@ -414,7 +413,7 @@ setMethod(
             totalGbRc = bwDfs$rcGb, totalLandingRc = bwDfs$rcLanding,
             avgRcPerCell = bwDfs$R, avgTssRcPerCell = bwDfs$Rpause,
             avgLandingRcPerCell = bwDfs$rnapProp,
-            simulatedPauseSiteCounts = bwDfs$Xk, 
+            actualPauseSiteCounts = bwDfs$Xk, 
             expectedPauseSiteCounts = bwDfs$Yk,
             expectationMaximizationStatus = bwDfs$flag
         )
@@ -504,125 +503,6 @@ setMethod("show", "SimulationTranscriptionRates", function(object) {
     ))
 })
 
-#' @rdname SimulationTranscriptionRates-class
-#' @title Plot Transcription Rates
-#'
-#' @description
-#' Plot the transcription rates across trials.
-#'
-#' @param object A SimulationTranscriptionRates object
-#' @param file Optional file path to save the plot
-#' @param width Plot width in inches
-#' @param height Plot height in inches
-#' @return A ggplot object showing the transcription rates
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-#'     addSpace = 17, time = 1
-#' )
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Plot transcription rates
-#' plotTranscriptionRates(estRates)
-#' @export
-setGeneric("plotTranscriptionRates", function(
-    object, file = NULL,
-    width = 8, height = 6) {
-    standardGeneric("plotTranscriptionRates")
-})
-setMethod(
-    "plotTranscriptionRates", "SimulationTranscriptionRates",
-    function(object, file = NULL, width = 8, height = 6) {
-        # Get the rates tibble
-        rates_df <- rates(object)
-
-        # Create plot
-        p <- ggplot(rates_df, aes(x = trial)) +
-            geom_line(aes(y = chi, color = "chi")) +
-            geom_line(aes(y = betaOrg, color = "betaOrg")) +
-            geom_line(aes(y = betaAdp, color = "betaAdp")) +
-            theme_minimal() +
-            labs(
-                title = "Transcription Rates Across Trials",
-                x = "Trial",
-                y = "Rate",
-                color = "Rate Type"
-            )
-
-        # Add phi line if steric hindrance is enabled
-        if (stericHindrance(object) && "phi" %in% colnames(rates_df)) {
-            p <- p + geom_line(aes(y = phi, color = "phi"))
-        }
-
-        if (!is.null(file)) {
-            ggsave(file, p, width = width, height = height)
-        }
-
-        return(p)
-    }
-)
-
-#' @rdname SimulationTranscriptionRates-class
-#' @title Plot Pause Site Distribution
-#'
-#' @description
-#' Plot the pause site distribution across trials.
-#'
-#' @param object A SimulationTranscriptionRates object
-#' @param file Optional file path to save the plot
-#' @param width Plot width in inches
-#' @param height Plot height in inches
-#' @return A ggplot object showing the pause site distribution
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-#'     addSpace = 17, time = 1
-#' )
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
-#' # Plot pause site distribution
-#' plotPauseSiteDistribution(estRates)
-#' @export
-setGeneric("plotPauseSiteDistribution", function(
-    object, file = NULL,
-    width = 8, height = 6) {
-    standardGeneric("plotPauseSiteDistribution")
-})
-setMethod(
-    "plotPauseSiteDistribution", "SimulationTranscriptionRates",
-    function(object, file = NULL, width = 8, height = 6) {
-        # Get the rates tibble
-        rates_df <- rates(object)
-
-        # Check if fkMean and fkVar columns exist
-        if (!all(c("fkMean", "fkVar") %in% colnames(rates_df))) {
-            stop("fkMean and fkVar columns not found in rates tibble")
-        }
-
-        # Create plot
-        p <- ggplot(rates_df, aes(x = fkMean, y = fkVar)) +
-            geom_point() +
-            theme_minimal() +
-            labs(
-                title = "Pause Site Distribution",
-                x = "Mean Position",
-                y = "Variance"
-            )
-
-        if (!is.null(file)) {
-            ggsave(file, p, width = width, height = height)
-        }
-
-        return(p)
-    }
-)
-
 # Accessor methods
 #' @rdname SimulationTranscriptionRates-class
 #' @title Accessor for SimulatePolymerase Object
@@ -705,18 +585,4 @@ setMethod("rates", "SimulationTranscriptionRates", function(object) {
     slot(object, "rates")
 })
 
-#' @examples
-#' # Create a SimulationTranscriptionRates object
-#' simpol <- simulatePolymerase(
-#'     k = 50, ksd = 10, kMin = 30, kMax = 70,
-#'     geneLen = 1000, alpha = 0.1, beta = 0.2, zeta = 1000,
-#'     zetaSd = 100, zetaMin = 800, zetaMax = 1200,
-#'     cellNum = 1000, polSize = 35, addSpace = 15,
-#'     time = 10
-#' )
-#'
-#' # Estimate transcription rates
-#' rates <- estimateTranscriptionRates(simpol)
-#'
-#' # Show the object
-#' show(rates)
+# Plotting utilities

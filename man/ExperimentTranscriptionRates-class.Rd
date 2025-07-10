@@ -4,18 +4,12 @@
 \name{ExperimentTranscriptionRates-class}
 \alias{ExperimentTranscriptionRates-class}
 \alias{estimateTranscriptionRates,character-method}
-\alias{plotRates}
 \alias{rates,ExperimentTranscriptionRates-method}
 \alias{counts}
 \alias{pauseRegions}
 \alias{geneBodyRegions}
 \alias{omegaScale}
 \alias{stericHindrance,ExperimentTranscriptionRates-method}
-\alias{plotMeanPauseDistrib}
-\alias{plotExpectedVsObservedPauseSites}
-\alias{plotChiDistrib}
-\alias{plotBetaVsChi}
-\alias{plotPauseSiteContourMap}
 \title{Constructor for ExperimentTranscriptionRates object}
 \usage{
 \S4method{estimateTranscriptionRates}{character}(
@@ -25,17 +19,6 @@
   geneBodyRegions,
   stericHindrance = FALSE,
   omegaScale = NULL,
-  ...
-)
-
-plotRates(
-  object,
-  type = "scatter",
-  rateType = "betaAdp",
-  file = NULL,
-  width = 8,
-  height = 6,
-  dpi = 300,
   ...
 )
 
@@ -50,29 +33,6 @@ geneBodyRegions(object)
 omegaScale(object)
 
 \S4method{stericHindrance}{ExperimentTranscriptionRates}(object)
-
-plotMeanPauseDistrib(object, file = NULL, width = 8, height = 6, dpi = 300)
-
-plotExpectedVsObservedPauseSites(
-  object,
-  file = NULL,
-  width = 8,
-  height = 6,
-  dpi = 300
-)
-
-plotChiDistrib(object, file = NULL, width = 8, height = 6, dpi = 300)
-
-plotBetaVsChi(
-  object,
-  beta_type = "betaAdp",
-  file = NULL,
-  width = 8,
-  height = 6,
-  dpi = 300
-)
-
-plotPauseSiteContourMap(object, file = NULL, width = 8, height = 6, dpi = 300)
 }
 \arguments{
 \item{x}{The path to a bigwig file from the plus strand recording PRO-seq
@@ -92,31 +52,12 @@ landing-pad occupancy or not. Defaults to FALSE.}
 
 \item{omegaScale}{a numeric value for scaling omega. Defaults to NULL.}
 
-\item{...}{Additional arguments passed to the plotting function}
+\item{...}{Additional arguments (not used)}
 
-\item{object}{an \code{\link{ExperimentTranscriptionRates}} object}
-
-\item{type}{Type of plot to create ("scatter", "histogram", or "density").
-Defaults to "scatter"}
-
-\item{rateType}{Which rate to plot ("betaOrg", "betaAdp", "chi", etc.).
-Defaults to "betaAdp"}
-
-\item{file}{the path to a file to save the plot to}
-
-\item{width}{the width of the plot in inches}
-
-\item{height}{the height of the plot in inches}
-
-\item{dpi}{the resolution of the plot in dpi}
-
-\item{beta_type}{the type of beta to plot. Can be "betaAdp" for the adapted
-model or "betaOrg" for the single pause site model. Defaults to "betaAdp".}
+\item{object}{an \code{ExperimentTranscriptionRates} object}
 }
 \value{
 an \code{\link{ExperimentTranscriptionRates-class}} object
-
-A ggplot object
 
 a \code{DataFrame} with the following columns:
 \item{geneId}{a character vector of gene IDs}
@@ -130,6 +71,11 @@ a \code{DataFrame} with the following columns:
 \item{alphaZeta}{a numeric vector of the potential initiation rate}
 \item{omega}{a numeric vector of the effective initiation rate}
 \item{omegaZeta}{a numeric vector of the effective initiation rate}
+\item{expectedPauseSiteCounts}{a numeric vector of the expected pause site
+counts}
+\item{actualPauseSiteCounts}{a numeric vector of the actual pause site
+counts that are observed}
+\item{likelihood}{a numeric vector of the likelihood of the model}
 
 a \code{DataFrame} with the following columns:
 \item{geneId}{a character vector of gene IDs}
@@ -148,16 +94,6 @@ a numeric value for the scaling factor for omega
 
 a logical value to determine whether to infer landing-pad occupancy
 or not
-
-an \code{\link{ggplot2}} object
-
-an \code{\link{ggplot2}} object
-
-an \code{\link{ggplot2}} object
-
-an \code{\link{ggplot2}} object
-
-an \code{\link{ggplot2}} object
 }
 \description{
 Class \code{ExperimentTranscriptionRates} has read counts, pause and gene
@@ -173,8 +109,6 @@ RNA sequencing read counts and genomic coordinates, and contructs an object
 that holds these rates. Considers models where pause sites are fixed or
 varied. Considers models where steric hindrance is enabled or disabled.
 
-Plots the transcription rates using ggplot2.
-
 Accessor for the estimated rates
 
 Accessor for the read counts
@@ -188,32 +122,6 @@ studies.
 
 Accessor for the steric hindrance flag. If TRUE, the landing-pad
 occupancy is inferred in the rates held in this object.
-
-Creates a histogram plot showing the distribution of observed mean pause site
-positions across all genes. This visualization helps identify the range and
-shape of pause site positions
-
-Creates a scatter plot comparing observed pause site counts (Xk) against
-expected pause site counts (Yk) from the EM algorithm. This visualization
-assesses the goodness-of-fit of the pause site model by showing how well
-the model predictions align with the actual data. A perfect fit would show
-all points on the diagonal line (y=x). The R² value is calculated and
-displayed on the plot to quantify the model fit quality. This plot is
-useful for validating the accuracy of the pause site estimation and
-identifying any systematic biases in the model predictions.
-
-Creates a density plot showing the distribution of gene body RNAP density
-(chi) across all genes. This visualization helps identify the range and
-shape of RNA polymerase density in gene bodies, which can reveal patterns in
-transcriptional activity.
-
-Plot a scatter plot with gene body RNAP density on the x-axis and beta (ratio
-of gene body RNAP density to pause region RNAP density) on the y-axis. Fits a
-linear model to the data and plots the line. Can plot beta for either the
-adapted model or the single pause site model.
-
-Plot a contour map with mean pause site position on the x-axis and pause site
-variance on the y-axis.
 }
 \section{Slots}{
 
@@ -263,8 +171,8 @@ hindrance is enabled)}
 hindrance is enabled)}
 \item{totalGbRc}{Numeric. Total gene body read counts}
 \item{gbLength}{Numeric. Gene body length}
-\item{Yk}{Numeric. Expected pause site counts}
-\item{Xk}{Numeric. Observed pause site counts}
+\item{expectedPauseSiteCounts}{Numeric. Expected pause site counts}
+\item{actualPauseSiteCounts}{Numeric. Observed pause site counts}
 }}
 }}
 
@@ -281,18 +189,6 @@ expRates <- estimateTranscriptionRates(
     omegaScale = 1000,
 )
 
-# Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
-expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
-    bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-)
-
-# Plot rates as a histogram
-plotRates(expRates, type = "histogram")
 # Create an ExperimentTranscriptionRates object
 load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
 expRates <- estimateTranscriptionRates(
@@ -345,70 +241,4 @@ expRates <- estimateTranscriptionRates(
     geneBodyRegions = bw_gene_body_21_subset,
 )
 stericHindrance(expRates)
-# Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
-expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
-    bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    stericHindrance = TRUE,
-    omegaScale = 1000,
-)
-plotMeanPauseDistrib(expRates, file="mean_pause_distrib.png")
-
-# Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
-expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
-    bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    stericHindrance = TRUE,
-    omegaScale = 1000,
-)
-plotExpectedVsObservedPauseSites(expRates,
-file="expected_vs_observed_pause_sites.png")
-
-# Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
-expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
-    bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    stericHindrance = TRUE,
-    omegaScale = 1000,
-)
-plotChiDistrib(expRates, file="chi_distrib.png")
-
-# Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
-expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
-    bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    stericHindrance = TRUE,
-    omegaScale = 1000,
-)
-plotBetaVsChi(expRates, beta_type = "betaAdp", file="beta_vs_chi.png")
-
-# Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
-expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
-    bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    stericHindrance = TRUE,
-    omegaScale = 1000,
-)
-plotPauseSiteContourMap(expRates, file="pause_sites_contour_map.png")
-
 }

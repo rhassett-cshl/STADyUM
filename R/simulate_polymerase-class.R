@@ -48,7 +48,8 @@
 #' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave geom_histogram
 #' @importFrom reshape2 melt
 #' @importFrom readr read_csv
-#' @importFrom plotly plot_ly layout add_segments add_annotations
+#' @importFrom plotly plot_ly layout add_segments add_annotations ggplotly
+#' @importFrom plotly config
 #' @importFrom htmlwidgets saveWidget
 #' @exportClass SimulatePolymerase
 methods::setClass("SimulatePolymerase",

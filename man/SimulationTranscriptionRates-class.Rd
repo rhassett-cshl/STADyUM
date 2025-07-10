@@ -5,8 +5,6 @@
 \alias{SimulationTranscriptionRates-class}
 \alias{estimateTranscriptionRates,SimulatePolymerase-method}
 \alias{show,SimulationTranscriptionRates-method}
-\alias{plotTranscriptionRates}
-\alias{plotPauseSiteDistribution}
 \alias{simpol}
 \alias{stericHindrance,SimulationTranscriptionRates-method}
 \alias{rates,SimulationTranscriptionRates-method}
@@ -15,10 +13,6 @@
 \S4method{estimateTranscriptionRates}{SimulatePolymerase}(x, stericHindrance = FALSE, ...)
 
 \S4method{show}{SimulationTranscriptionRates}(object)
-
-plotTranscriptionRates(object, file = NULL, width = 8, height = 6)
-
-plotPauseSiteDistribution(object, file = NULL, width = 8, height = 6)
 
 simpol(object)
 
@@ -34,20 +28,10 @@ landing-pad occupancy or not. Defaults to FALSE.}
 
 \item{object}{a \code{SimulationTranscriptionRates} object}
 
-\item{file}{Optional file path to save the plot}
-
-\item{width}{Plot width in inches}
-
-\item{height}{Plot height in inches}
-
 \item{simpol}{a \code{\linkS4class{SimulatePolymerase}} object}
 }
 \value{
 a \code{\linkS4class{SimulationTranscriptionRates}} object
-
-A ggplot object showing the transcription rates
-
-A ggplot object showing the pause site distribution
 }
 \description{
 Class containing the simulated data, such as the nascent RNA sequencing reads
@@ -62,10 +46,6 @@ Expectation Maximization likelihood formula.
 
 Show method for SimulationTranscriptionRates object in human readable format
 including summary statistics
-
-Plot the transcription rates across trials.
-
-Plot the pause site distribution across trials.
 
 Accessor for the SimulatePolymerase object from a
 SimulationTranscriptionRates object.
@@ -113,7 +93,7 @@ body and TSS regions}
 pause regions (across all cells)}
 \item{avgLandingRcPerCell}{Numeric. Average number of RNAPs per cell for
 landing pad regions (across all cells)}
-\item{simulatedPauseSiteCounts}{list. Simulated pause site counts for each
+\item{actualPauseSiteCounts}{list. Simulated pause site counts for each
 cell}
 \item{expectedPauseSiteCounts}{list. Expected pause site counts for each
 cell estimated from the EM algorithm}
@@ -147,28 +127,6 @@ sim <- simulatePolymerase(
 estRates <- estimateTranscriptionRates(sim)
 # Show the object
 show(estRates)
-# Create a SimulatePolymerase object
-sim <- simulatePolymerase(
-    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-    addSpace = 17, time = 1
-)
-# Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim)
-# Plot transcription rates
-plotTranscriptionRates(estRates)
-# Create a SimulatePolymerase object
-sim <- simulatePolymerase(
-    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-    addSpace = 17, time = 1
-)
-# Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim)
-# Plot pause site distribution
-plotPauseSiteDistribution(estRates)
 # Create a SimulatePolymerase object
 sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
