@@ -28,7 +28,8 @@ plotBetaVsChi(
   file = NULL,
   width = 8,
   height = 6,
-  dpi = 300
+  dpi = 300,
+  ...
 )
 
 plotPauseSiteContourMap(object, file = NULL, width = 8, height = 6, dpi = 300)
@@ -44,7 +45,7 @@ plotPauseSiteContourMap(object, file = NULL, width = 8, height = 6, dpi = 300)
 
 \item{dpi}{the resolution of the plot in dpi}
 
-\item{beta_type}{the type of beta to plot. Can be "betaAdp" for the adapted
+\item{betaType}{the type of beta to plot. Can be "betaAdp" for the adapted
 model or "betaOrg" for the single pause site model. Defaults to "betaAdp".}
 }
 \value{
@@ -152,7 +153,7 @@ expRates <- estimateTranscriptionRates(
     stericHindrance = TRUE,
     omegaScale = 1000,
 )
-plotBetaVsChi(expRates, beta_type = "betaAdp", file="beta_vs_chi.png")
+plotBetaVsChi(expRates, betaType = "betaAdp", file="beta_vs_chi.png")
 
 # Create an ExperimentTranscriptionRates object
 load("inst/extdata/granges_for_read_counting_chr21_subset.RData")

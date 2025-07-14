@@ -20,7 +20,6 @@
 \alias{plotPositionHeatmap}
 \alias{plotPolymerasePCA}
 \alias{plotCombinedCells}
-\alias{plotReadCountsLollipop}
 \title{Constructor for SimulatePolymerase object}
 \usage{
 simulatePolymerase(
@@ -95,8 +94,6 @@ plotCombinedCells(
   timePoint = NULL,
   file = NULL
 )
-
-plotReadCountsLollipop(object, file = NULL, width = 8, height = 6)
 }
 \arguments{
 \item{k}{an integer value for the mean of pause sites across cells.}
@@ -146,7 +143,7 @@ position matrix is always recorded. Default is NULL.}
 \item{timePoint}{Optional numeric value specifying the time point being
 plotted (used for automatic title generation and documentation)}
 
-\item{file}{Optional file path to save the plot}
+\item{file}{Optional file path to save the plot to}
 
 \item{width}{Plot width in inches}
 
@@ -187,8 +184,6 @@ A ggplot object showing heatmap of polymerase positions
 A ggplot object showing the PCA plot of cells
 
 A ggplot object
-
-A ggplot object showing the lollipop plot of nonzero read counts
 }
 \description{
 Class \code{SimulatePolymerase} tracks the movement of RNAPs along the DNA
@@ -258,7 +253,8 @@ Plot the distribution of pause sites across the gene as a histogram.
 Plot position matrices as a ggplot2 heatmap showing polymerase positions
 across all cells at specific time points. Each cell in the heatmap
 represents whether a polymerase is present (1) or absent (0) at a specific
-site in a specific cell. By default, shows the final position matrix.
+site in a specific cell. By default, shows the final position matrix. Plots
+for pause region which is from site 1 to  user-defined kMax.
 
 Create a ggplot2 PCA plot of the polymerase position matrix, showing the
 first two principal components for each cell. Useful for exploring
@@ -268,9 +264,6 @@ occupancy patterns for each cell.
 Plot combined cells data as a ggplot2 plot. For SimulatePolymerase objects,
 can plot data from specific time points by calculating combined cells data
 from position matrices.
-
-Plot nonzero read counts as a lollipop plot, skipping the first value since
-first position is initiation site and always has a polymerase.
 }
 \section{Slots}{
 
@@ -494,11 +487,13 @@ sim <- SimulatePolymerase(
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
     addSpace = 17, time = 1, timesToRecord = NULL
 )
-# Plot final position heatmap
-plotPositionHeatmap(sim, maxCells = 100, file="heatmap.png")
-# Plot specific time point
-plotPositionHeatmap(sim, timePoint = 0.5, maxCells = 100, 
-    file="heatmap.png")
+# Plot final position matrix
+plotPositionHeatmap(sim, file="position_heatmap.png")
+# Plot position matrix at time 0.5
+plotPositionHeatmap(sim, timePoint = 0.5, file="position_heatmap.png")
+# Plot position matrix with maxCells = 100
+plotPositionHeatmap(sim, timePoint = 0.5, maxCells = 100,
+file="position_heatmap.png")
 # Using a SimulatePolymerase object
 plotPolymerasePCA(sim, timePoint = 0.5, file="pca.png")
 # Create a SimulatePolymerase object
@@ -515,13 +510,4 @@ plotCombinedCells(sim, timePoint = 0.5, file="combined_cells.html")
 # Plot with custom range and title
 plotCombinedCells(sim, timePoint = 0.5, start = 100, end = 500,
 file="combined_cells.html")
-# Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
-    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-    addSpace = 17, time = 1, timesToRecord = NULL
-)
-# Plot read counts lollipop
-plotReadCountsLollipop(sim, file="read_counts_lollipop.png")
 }

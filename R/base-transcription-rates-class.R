@@ -228,22 +228,22 @@ setMethod(
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
 
-        all_data <- data.frame(
+        allData <- data.frame(
             actual = unlist(cr$actualPauseSiteCounts),
             expected = unlist(cr$expectedPauseSiteCounts)
         )
 
-        r_squared <- cor(all_data$actual, all_data$expected)^2
-        r2_text <- paste("R² =", round(r_squared, 3))
+        rSquared <- cor(allData$actual, allData$expected)^2
+        r2Text <- paste("R² =", round(rSquared, 3))
 
-        p <- ggplot(all_data, aes(x = actual, y = expected)) +
+        p <- ggplot(allData, aes(x = actual, y = expected)) +
             geom_point(alpha = 0.6, size = 0.8) +
             geom_abline(slope = 1, intercept = 0, linetype = "dashed", 
             color = "red") +
             annotate("text",
-                x = max(all_data$actual) * 0.05,
-                y = max(all_data$expected) * 0.95,
-                label = paste("R² =", round(r_squared, 3)),
+                x = max(allData$actual) * 0.05,
+                y = max(allData$expected) * 0.95,
+                label = r2Text,
                 size = 4, fontface = "bold", hjust = 0
             ) +
             labs(
@@ -338,7 +338,7 @@ setMethod(
 #' adapted model or the single pause site model.
 #'
 #' @param object an \code{\link{TranscriptionRates}} object
-#' @param beta_type the type of beta to plot. Can be "betaAdp" for the adapted
+#' @param betaType the type of beta to plot. Can be "betaAdp" for the adapted
 #' model or "betaOrg" for the single pause site model. Defaults to "betaAdp".
 #' @param file the path to a file to save the plot to
 #' @param width the width of the plot in inches
@@ -359,34 +359,34 @@ setMethod(
 #'     stericHindrance = TRUE,
 #'     omegaScale = 1000,
 #' )
-#' plotBetaVsChi(expRates, beta_type = "betaAdp", file="beta_vs_chi.png")
+#' plotBetaVsChi(expRates, betaType = "betaAdp", file="beta_vs_chi.png")
 #'
 #' @rdname TranscriptionRates-class
 #' @export
 setGeneric("plotBetaVsChi", function(
     object, beta_type = "betaAdp",
-    file = NULL, width = 8, height = 6, dpi = 300) {
+    file = NULL, width = 8, height = 6, dpi = 300, ...) {
     standardGeneric("plotBetaVsChi")
 })
 
 setMethod("plotBetaVsChi", "TranscriptionRates",
-    function(object, beta_type = "betaAdp", file = NULL,
+    function(object, betaType = "betaAdp", file = NULL,
         width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
 
         # Validate beta_type parameter
-        if (!beta_type %in% c("betaAdp", "betaOrg")) {
+        if (!betaType %in% c("betaAdp", "betaOrg")) {
             stop("beta_type must be either 'betaAdp' or 'betaOrg'")
         }
 
         # Set y-axis label based on beta type
-        y_label <- if (beta_type == "betaAdp") {
+        yLabel <- if (betaType == "betaAdp") {
             "Pause Escape Rate (betaAdp)"
         } else {
             "Pause Escape Rate (betaOrg)"
         }
 
-        title_text <- if (beta_type == "betaAdp") {
+        titleText <- if (betaType == "betaAdp") {
             "Gene Activity vs Pause Escape Rate (Adapted Model)"
         } else {
             "Gene Activity vs Pause Escape Rate (Single Pause Site)"
@@ -397,8 +397,8 @@ setMethod("plotBetaVsChi", "TranscriptionRates",
             geom_smooth(method = "loess", se = TRUE, color = "red") +
             labs(
                 x = "Gene Body RNAP Density (chi)",
-                y = y_label,
-                title = title_text
+                y = yLabel,
+                title = titleText
             ) +
             theme_bw() +
             theme(
