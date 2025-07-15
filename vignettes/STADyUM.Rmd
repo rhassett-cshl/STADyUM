@@ -69,6 +69,8 @@ Plotting functionality for TranscriptionRates objects
 plotMeanPauseDistrib(controlRates, file="mean_pause_site_distribution.png")
 
 plotBetaVsChi(controlRates, betaType="betaAdp", file="controlBetaAdpVsChi.png")
+
+plotExpectedVsActualPauseSiteCounts(treatedRates, file="treatedExpActPauseSites.png")
 ```
 
 Estimate transcription rates under model that includes steric hindrance
@@ -121,7 +123,6 @@ simRates <- estimateTranscriptionRates(simpol, stericHindrance=TRUE)
 
 show(simRates)
 
-plotExpectedVsActualPauseSiteCounts(simRates, file="simExpActPauseSites.png")
 plotChiDistrib(simRates, file="simChis.png")
 ```
 
