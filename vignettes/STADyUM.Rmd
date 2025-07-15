@@ -125,11 +125,6 @@ plotExpectedVsActualPauseSiteCounts(simRates, file="simExpActPauseSites.png")
 plotChiDistrib(simRates, file="simChis.png")
 ```
 
-## Session Info
-
-```{r session_info}
-sessionInfo()
-``` 
 
 # References
 - Vihervaara A, Mahat DB, Himanen SV, Blom MAH, Lis JT, Sistonen L. Stress-induced transcriptional memory accelerates promoter-proximal pause release and decelerates termination over mitotic divisions. Mol Cell. 2021 Apr 15;81(8):1715-1731.e6. doi: 10.1016/j.molcel.2021.03.007. Epub 2021 Mar 29. PMID: 33784494; PMCID: PMC8054823.
