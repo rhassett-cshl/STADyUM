@@ -27,3 +27,5 @@
 ^src/.*\.o$
 ^src/.*\.so$
 ^src/.*\.dylib$
+^doc$
+^Meta$

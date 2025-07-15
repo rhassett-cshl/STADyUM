@@ -48,13 +48,13 @@ First estimate transcription rates from experimental data bigwig files containin
 The example data used throughout this package is derived from Vihervaara et al. (2021). The data is from the raw PRO-Seq read counts for human K562 cells treated with heat shock as well as a control without heat shock. The raw fastq files were processed with https://github.com/Danko-Lab/proseq2.0. 
 
 ```{r estimate_experiment_rates}
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+load("../inst/extdata/granges_for_read_counting_chr21_subset.RData")
 
-controlRates <- estimateTranscriptionRates("inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw", "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Control")
+controlRates <- estimateTranscriptionRates("../inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw", "../inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Control")
 
 show(controlRates)
 
-treatedRates <- estimateTranscriptionRates("inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw", "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Treated")
+treatedRates <- estimateTranscriptionRates("../inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw", "../inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Treated")
 
 show(treatedRates)
 
@@ -66,18 +66,18 @@ head(controlRatesTbl)
 Plotting functionality for TranscriptionRates objects
 
 ```{r plot_exp_rates}
-plotMeanPauseSiteDistrib(controlRates)
+plotMeanPauseDistrib(controlRates, file="mean_pause_site_distribution.png")
 
 plotBetaVsChi(controlRates, betaType="betaAdp", file="controlBetaAdpVsChi.png")
 ```
 
 Estimate transcription rates under model that includes steric hindrance
 ```{r estimate_experiment_rates_steric_hindrance}
-controlRatesSH <- estimateTranscriptionRates("inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw", "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Control", stericHindrance=TRUE, omegaScale=12.3768278981277)
+controlRatesSH <- estimateTranscriptionRates("../inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw", "../inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Control", stericHindrance=TRUE, omegaScale=12.3768278981277)
 
 show(controlRatesSH)
 
-treatedRatesSH <- estimateTranscriptionRates("inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw", "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Treated", stericHindrance=TRUE, omegaScale=11.0318379571379)
+treatedRatesSH <- estimateTranscriptionRates("../inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw", "../inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Treated", stericHindrance=TRUE, omegaScale=11.0318379571379)
 
 show(treatedRatesSH)
 ```
@@ -87,7 +87,7 @@ show(treatedRatesSH)
 
 Compare samples treated with heat shock to the control samples using the likelihood ratio test functionality
 ```{r likelihood_ratio_tests}
-lrt <- likelihoodRatioTest(controlRates, treatRates, spikeInScalingFactor="inst/extdata/spikein_scaling_factor.csv")
+lrt <- likelihoodRatioTest(controlRates, treatedRates, spikeInScalingFactor="../inst/extdata/spikein_scaling_factor.csv")
 
 show(lrt)
 ```
@@ -97,9 +97,9 @@ Plot results from likelihood ratio test
 
 plotPauseSiteContourMapTwoConditions(lrt, file="lrtPauseSiteContourMap.png")
 
-BetaViolinPlot(lrt)
+BetaViolinPlot(lrt, file="lrtBetaViolinPlot.png")
 
-ChiViolinPlot(lrt, file="lrtChiViolinPlot.png)
+ChiViolinPlot(lrt, file="lrtChiViolinPlot.png")
 ```
 
 ## Simulate Polymerase
@@ -110,9 +110,9 @@ simpol <- simulatePolymerase(k=50, ksd=25, kMin=17, kMax=200, geneLen=1950, alph
 
 show(simpol)
 
-plotPauseSites(simpol, "simpolPauseSites.png")
-plotPositionHeatMap(simpol)
-plotCombinedCells(simpol, "combinedCellsLollipopPlot.png)
+plotPauseSites(simpol, file="simpolPauseSites.png")
+plotPositionHeatmap(simpol, file="polymerasePositionHeatmap.png")
+plotCombinedCells(simpol, file="combinedCellsLollipopPlot.png")
 ```
 
 ## Estimate Transcription Rates from Simualted Data
