@@ -322,6 +322,10 @@ RNAPs at each site across all cells}
 \item{\code{readCounts}}{a numeric vector for read counts per nucleotide}
 }}
 
+\note{
+The \code{simulatePolymerase} function can take a few minutes to run for
+large numbers of cells (> 1000) and long simulation times (> 200).
+}
 \examples{
 # Create a SimulatePolymerase object
 sim <- SimulatePolymerase(

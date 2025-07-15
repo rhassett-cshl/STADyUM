@@ -250,6 +250,10 @@ simulatePolymerase <- function(
 
     zeta_vec <- validateAndLoadZetaVec(zetaVec, geneLen)
 
+    if (cellNum > 1000 && time > 200) {
+        message("Note: The simulation may take a few minutes to run due to a large number of cells and long simulation time.")
+    }
+
     result <- .Call("_STADyUM_simulate_polymerase_cpp",
         k, ksd, kMin, kMax, geneLen, alpha, beta, zeta, zetaSd,
         zetaMin, zetaMax, cellNum, polSize, addSpace, time, timesToRecord,
@@ -276,6 +280,9 @@ simulatePolymerase <- function(
 
     return(obj)
 }
+
+#' @note The `simulatePolymerase` function can take a few minutes to run for
+#' large numbers of cells (> 1000) and long simulation times (> 200).
 
 #' @rdname SimulatePolymerase-class
 #' @title Sample Read Counts from SimulatePolymerase Object
