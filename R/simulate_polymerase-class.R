@@ -112,7 +112,7 @@ validateSimulatePolymeraseParams <- function(
     if (length(errors) > 0) stop(sprintf("%s", paste(errors, collapse = "\n")))
 }
 
-validateTimesToRecord <- function(timesToRecord, time) {
+validateTimesToRecord <- function(timesToRecord, time, geneLen, cellNum) {
     errors <- character()
 
     if (!is.numeric(time) || time < 1e-4) {
@@ -246,7 +246,7 @@ simulatePolymerase <- function(
         k, ksd, kMin, kMax, geneLen, alpha, beta,
         zeta, zetaSd, zetaMin, zetaMax, cellNum, polSize, addSpace
     )
-    validateTimesToRecord(timesToRecord, time)
+    validateTimesToRecord(timesToRecord, time, geneLen, cellNum)
 
     zeta_vec <- validateAndLoadZetaVec(zetaVec, geneLen)
 
@@ -793,11 +793,11 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
     pauseMean <- mean(df$pauseSite)
     pauseSd <- sd(df$pauseSite)
 
-    p <- ggplot(df, aes(x = pauseSite)) +
-        geom_histogram(
-            bins = 30, alpha = 0.7, fill = "steelblue",
-            color = "black"
-        ) +
+    p <- gghistogram(
+        df, x = "pauseSite",
+        bins = 30, alpha = 0.7, fill = "steelblue",
+        color = "black"
+    ) +
         # Add vertical line for mean
         geom_vline(
             xintercept = pauseMean, color = "red",
@@ -812,7 +812,7 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
             xintercept = pauseMean - pauseSd, color = "orange",
             linetype = "dotted", size = 0.8
         ) +
-        theme_minimal() +
+        theme_pubr() +
         labs(
             title = "Distribution of Pause Sites",
             subtitle = sprintf("Mean: %.1f, SD: %.1f", pauseMean, pauseSd),
@@ -1078,7 +1078,7 @@ setMethod(
         p <- ggplot(df, aes(x=position, y=count)) +
         geom_segment( aes(x=position, xend=position, y=0, yend=count), color="lightgrey", size = 0.5) +
         geom_point( color="steelblue", size=3) +
-        theme_classic() +
+        theme_pubr() +
         theme(
             plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
         ) +

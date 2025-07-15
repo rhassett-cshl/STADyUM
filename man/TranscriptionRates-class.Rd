@@ -24,7 +24,7 @@ plotChiDistrib(object, file = NULL, width = 8, height = 6, dpi = 300)
 
 plotBetaVsChi(
   object,
-  beta_type = "betaAdp",
+  betaType = "betaAdp",
   file = NULL,
   width = 8,
   height = 6,

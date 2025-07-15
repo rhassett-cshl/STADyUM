@@ -17,9 +17,9 @@
   bigwigMinus,
   pauseRegions,
   geneBodyRegions,
+  name,
   stericHindrance = FALSE,
-  omegaScale = NULL,
-  ...
+  omegaScale = NULL
 )
 
 \S4method{rates}{ExperimentTranscriptionRates}(object)
@@ -52,9 +52,9 @@ landing-pad occupancy or not. Defaults to FALSE.}
 
 \item{omegaScale}{a numeric value for scaling omega. Defaults to NULL.}
 
-\item{...}{Additional arguments (not used)}
-
 \item{object}{an \code{ExperimentTranscriptionRates} object}
+
+\item{...}{Additional arguments (not used)}
 }
 \value{
 an \code{\link{ExperimentTranscriptionRates-class}} object
@@ -141,6 +141,8 @@ holds the pause regions coordinates}
 \item{\code{geneBodyRegions}}{a \code{\link[GenomicRanges]{GRanges-class}} object
 that holds the gene body regions coordinates}
 
+\item{\code{name}}{a character value for the name of the experiment}
+
 \item{\code{stericHindrance}}{a logical value indicating whether to infer
 landing-pad occupancy}
 
@@ -185,6 +187,7 @@ expRates <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
     stericHindrance = TRUE,
     omegaScale = 1000,
 )
@@ -197,6 +200,7 @@ expRates <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
 )
 
 # Get the rates from the object
@@ -209,6 +213,7 @@ expRates <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
 )
 pauseRegions(expRates)
 # Create an ExperimentTranscriptionRates object
@@ -219,6 +224,7 @@ expRates <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
 )
 geneBodyRegions(expRates)
 # Create an ExperimentTranscriptionRates object
@@ -229,6 +235,7 @@ expRates <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
 )
 omegaScale(expRates)
 # Create an ExperimentTranscriptionRates object
@@ -239,6 +246,7 @@ expRates <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
 )
 stericHindrance(expRates)
 }

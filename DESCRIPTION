@@ -49,7 +49,8 @@ Imports:
     Rcpp,
     data.table,
     purrr,
-    rtracklayer
+    rtracklayer,
+    ggpubr
 LinkingTo:
     Rcpp
 Suggests: 

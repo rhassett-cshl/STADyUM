@@ -16,6 +16,7 @@
 #' holds the pause regions coordinates
 #' @slot geneBodyRegions a \code{\link[GenomicRanges]{GRanges-class}} object
 #' that holds the gene body regions coordinates
+#' @slot name a character value for the name of the experiment
 #' @slot stericHindrance a logical value indicating whether to infer
 #' landing-pad occupancy
 #' @slot omegaScale a numeric value for scaling omega, or NULL if steric
@@ -68,7 +69,8 @@ methods::setClass("ExperimentTranscriptionRates",
         pauseRegions = "GRanges",
         geneBodyRegions = "GRanges",
         stericHindrance = "logical",
-        omegaScale = "ANY"
+        omegaScale = "ANY",
+        name = "character" 
     ),
     contains = "TranscriptionRates"
 )
@@ -373,6 +375,7 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
 #'     stericHindrance = TRUE,
 #'     omegaScale = 1000,
 #' )
@@ -382,8 +385,7 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 setMethod(
     "estimateTranscriptionRates", "character",
     function(
-        x, bigwigMinus, pauseRegions, geneBodyRegions, stericHindrance = FALSE,
-        omegaScale = NULL, ...) {
+        x, bigwigMinus, pauseRegions, geneBodyRegions, name, stericHindrance = FALSE, omegaScale = NULL) { 
         bigwigPlus <- x # x is the first bigwig file path
         inputValidationChecks(
             bigwigPlus, bigwigMinus, pauseRegions,
@@ -428,7 +430,8 @@ setMethod(
             bigwigMinus = bigwigMinus, pauseRegions = pauseRegions,
             geneBodyRegions = geneBodyRegions, 
             stericHindrance = stericHindrance, omegaScale = omegaScale, 
-            rates = emRate
+            rates = emRate,
+            name = name  
         ))
     }
 )
@@ -515,6 +518,7 @@ methods::setMethod("show", "ExperimentTranscriptionRates", function(object) {
 #'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
 #' )
 #'
 #' # Get the rates from the object
@@ -559,6 +563,7 @@ setMethod("counts", "ExperimentTranscriptionRates", function(object) {
 #'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
 #' )
 #' pauseRegions(expRates)
 #' @export
@@ -584,6 +589,7 @@ setMethod("pauseRegions", "ExperimentTranscriptionRates", function(object) {
 #'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
 #' )
 #' geneBodyRegions(expRates)
 #' @export
@@ -614,6 +620,7 @@ setMethod(
 #'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
 #' )
 #' omegaScale(expRates)
 #' @export
@@ -640,6 +647,7 @@ setMethod("omegaScale", "ExperimentTranscriptionRates", function(object) {
 #'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
 #' )
 #' stericHindrance(expRates)
 #' @export

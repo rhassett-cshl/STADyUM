@@ -29,28 +29,110 @@ It provides tools for:
 - Estimating transcription rates
 - Analyzing pause site distributions
 - Visualizing transcription dynamics
+- Comparing transcription rates under different conditions
 
 # Installation
 
 ```{r install, eval = FALSE}
 # Install from GitHub
 devtools::install_github("yourusername/STADyUM")
+library(STADyUM)
 ```
 
 # Basic Usage
 
 ## Estimating Transcription Rates from Experimental Data
 
-## Creating a Simulate Polymerase Object
+First estimate transcription rates from experimental data bigwig files containing proseq read counts without steric hindrance. Then estimate with steric hindrance taken into consideration. Uses Expectation Maximization algorithm to estimate transcription rates such as gene body RNAP density (chi) and the ratio of gene body RNAP density to pause region RNAP density under models of fixed pause sites (betaOrg) and variable pause sites (betaAdp). Under the model of steric hindrance, additional rates are estimated such as the pause-escape rate (betaZeta), the potential initiation rate (alphaZeta), and omegaZeta (effective initiation rate).
 
-First, let's create a simulate_polymerase object with some parameters:
+The example data used throughout this package is derived from Vihervaara et al. (2021). The data is from the raw PRO-Seq read counts for human K562 cells treated with heat shock as well as a control without heat shock. The raw fastq files were processed with https://github.com/Danko-Lab/proseq2.0. 
 
-```{r create_simpol}
-library(STADyUM)
+```{r estimate_experiment_rates}
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+
+controlRates <- estimateTranscriptionRates("inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw", "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Control")
+
+show(controlRates)
+
+treatedRates <- estimateTranscriptionRates("inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw", "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Treated")
+
+show(treatedRates)
+
+controlRatesTbl <- rates(controlRates)
+
+head(controlRatesTbl)
 ```
 
-# Session Info
+Plotting functionality for TranscriptionRates objects
+
+```{r plot_exp_rates}
+plotMeanPauseSiteDistrib(controlRates)
+
+plotBetaVsChi(controlRates, betaType="betaAdp", file="controlBetaAdpVsChi.png")
+```
+
+Estimate transcription rates under model that includes steric hindrance
+```{r estimate_experiment_rates_steric_hindrance}
+controlRatesSH <- estimateTranscriptionRates("inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw", "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Control", stericHindrance=TRUE, omegaScale=12.3768278981277)
+
+show(controlRatesSH)
+
+treatedRatesSH <- estimateTranscriptionRates("inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw", "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", bw_pause_21_subset, bw_gb_21_subset, "Treated", stericHindrance=TRUE, omegaScale=11.0318379571379)
+
+show(treatedRatesSH)
+```
+
+
+## Likelihood Ratio Tests
+
+Compare samples treated with heat shock to the control samples using the likelihood ratio test functionality
+```{r likelihood_ratio_tests}
+lrt <- likelihoodRatioTest(controlRates, treatRates, spikeInScalingFactor="inst/extdata/spikein_scaling_factor.csv")
+
+show(lrt)
+```
+
+Plot results from likelihood ratio test
+```{r plot_lrt_results}
+
+plotPauseSiteContourMapTwoConditions(lrt, file="lrtPauseSiteContourMap.png")
+
+BetaViolinPlot(lrt)
+
+ChiViolinPlot(lrt, file="lrtChiViolinPlot.png)
+```
+
+## Simulate Polymerase
+Simulate read counts by running simulations of polymerase movement along the gene at user-specified rates and gene lengths
+
+```{r create_simpol}
+simpol <- simulatePolymerase(k=50, ksd=25, kMin=17, kMax=200, geneLen=1950, alpha=2, beta=0.5, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500, cellNum=1000, polSize=33, addSpace=17, time=40, timesToRecord=c(10, 20, 30))
+
+show(simpol)
+
+plotPauseSites(simpol, "simpolPauseSites.png")
+plotPositionHeatMap(simpol)
+plotCombinedCells(simpol, "combinedCellsLollipopPlot.png)
+```
+
+## Estimate Transcription Rates from Simualted Data
+```{r estimate_simulated_rates}
+simRates <- estimateTranscriptionRates(simpol, stericHindrance=TRUE)
+
+show(simRates)
+
+plotExpectedVsActualPauseSiteCounts(simRates, file="simExpActPauseSites.png")
+plotChiDistrib(simRates, file="simChis.png")
+```
+
+## Session Info
 
 ```{r session_info}
 sessionInfo()
 ``` 
+
+# References
+- Vihervaara A, Mahat DB, Himanen SV, Blom MAH, Lis JT, Sistonen L. Stress-induced transcriptional memory accelerates promoter-proximal pause release and decelerates termination over mitotic divisions. Mol Cell. 2021 Apr 15;81(8):1715-1731.e6. doi: 10.1016/j.molcel.2021.03.007. Epub 2021 Mar 29. PMID: 33784494; PMCID: PMC8054823.
+- Yixin Zhao, Lingjie Liu, Rebecca Hassett, Adam Siepel, Model-based characterization of the equilibrium dynamics of transcription initiation and promoter-proximal pausing in human cells, Nucleic Acids Research, Volume 51, Issue 21, 27 November 2023, Page e106, https://doi.org/10.1093/nar/gkad843
+- Chu, T., Wang, Z., Chou, S. P., & Danko, C. G. (2018). Discovering Transcriptional Regulatory Elements From Run‐On and Sequencing Data Using the Web‐Based dREG Gateway. Current protocols in bioinformatics, e70.
+- Lingjie Liu, Yixin Zhao, Rebecca Hassett, Shushan Toneyan, Peter K Koo, Adam Siepel, Probabilistic and machine-learning methods for predicting local rates of transcription elongation from nascent RNA sequencing data, Nucleic Acids Research, Volume 53, Issue 4, 28 February 2025, gkaf092, https://doi.org/10.1093/nar/gkaf092

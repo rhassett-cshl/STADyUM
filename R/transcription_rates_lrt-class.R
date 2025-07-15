@@ -50,13 +50,13 @@ computeBetaLRTParams <- function(rc1, rc2, kmin, kmax) {
     fkInt <- fkInt / sum(fkInt)
     s1 <- rc1$totalGbRc
     s2 <- rc2$totalGbRc
-    t1H1 <- map_dbl(rc1$Yk, sum)
-    t2H1 <- map_dbl(rc2$Yk, sum)
-    Xk1 <- rc1$Xk
-    Xk2 <- rc2$Xk
+    t1H1 <- map_dbl(rc1$expectedPauseSiteCounts, sum)
+    t2H1 <- map_dbl(rc2$expectedPauseSiteCounts, sum)
+    Xk1 <- rc1$actualPauseSiteCounts
+    Xk2 <- rc2$actualPauseSiteCounts
     M <- rc1$gbLength
     chiHat <- (s1 + s2) / M
-    betaInt <- chiHat / (map_dbl(rc1$Xk, sum) + map_dbl(rc2$Xk, sum))
+    betaInt <- chiHat / (map_dbl(rc1$actualPauseSiteCounts, sum) + map_dbl(rc2$actualPauseSiteCounts, sum))
     chiHat1 <- rc1$chi
     chiHat2 <- rc2$chi
     chiHat2 <- rc2$chi
@@ -236,6 +236,7 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
 #' )
 #' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = 
@@ -244,6 +245,7 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_treated",
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
@@ -318,6 +320,7 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 #'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
 #' )
 #' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = 
@@ -326,6 +329,7 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 #'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_treated",
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
@@ -354,6 +358,7 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
 #'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
 #' )
 #' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = 
@@ -362,6 +367,7 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
 #'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_treated",
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
@@ -390,6 +396,7 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
 #'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
 #' )
 #' expData2 <- estimateTranscriptionRates(
 #'     bigwigPlus = 
@@ -398,6 +405,7 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
 #'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
 #'     pauseRegions = bw_pause_21_subset,
 #'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_treated",
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
@@ -409,4 +417,316 @@ setGeneric("spikeInScalingFactor", function(object) {
 setMethod(
     "spikeInScalingFactor", "TranscriptionRatesLRT",
     function(object) slot(object, "spikeInScalingFactor")
+)
+
+#' @rdname TranscriptionRatesLRT-class
+#' @title Accessor for Omega Table
+#'
+#' @description
+#' Accessor for the omega table from a TranscriptionRatesLRT object.
+#'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
+#'
+#' @return tbl_df 
+#'
+#' @examples
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expData1 <- estimateTranscriptionRates(
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
+#' )
+#' expData2 <- estimateTranscriptionRates(
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_treated",
+#' )
+#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
+#' omegaTbl(lrts)
+#' @export
+setGeneric("omegaTbl", function(object) {
+    standardGeneric("omegaTbl")
+})
+setMethod(
+    "omegaTbl", "TranscriptionRatesLRT",
+    function(object) slot(object, "omegaTbl")
+)
+
+
+#' @rdname TranscriptionRatesLRT-class
+#' @title Accessor for Beta Table
+#'
+#' @description
+#' Accessor for the beta table from a TranscriptionRatesLRT object.
+#'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
+#'
+#' @return tbl_df 
+#'
+#' @examples
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expData1 <- estimateTranscriptionRates(
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_control",
+#' )
+#' expData2 <- estimateTranscriptionRates(
+#'     bigwigPlus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     name = "K562_treated",
+#' )
+#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
+#' betaTbl(lrts)
+#' @export
+setGeneric("betaTbl", function(object) {
+    standardGeneric("betaTbl")
+})
+setMethod(
+    "betaTbl", "TranscriptionRatesLRT",
+    function(object) slot(object, "betaTbl")
+)
+
+# Plotting Utilities
+
+#' @title Plot pause site contour map comparison between two conditions
+#'
+#' @description
+#' Plot a contour map with mean pause site position on the x-axis and pause site
+#' standard deviation on the y-axis. The plot is a comparison between two
+#' conditions.
+#'
+#' @param object an \code{\link{TranscriptionRates}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#'
+#' @return an \code{\link{ggplot2}} object
+#'
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#'     name = "K562_control",
+#' )
+#' plotPauseSiteContourMap(expRates, file="pause_sites_contour_map.png")
+#'
+#' @rdname TranscriptionRatesLRT-class
+#' @export
+setGeneric("plotPauseSiteContourMapTwoConditions", function(
+    object, file = NULL, width = 8,
+    height = 6, dpi = 300) {
+    standardGeneric("plotPauseSiteContourMapTwoConditions")
+})
+
+setMethod(
+    "plotPauseSiteContourMapTwoConditions", "TranscriptionRatesLRT",
+    function(object, file = NULL, width = 8,
+            height = 6, dpi = 300) {
+
+        betaTbl <- betaTbl(object)
+        name1 <- slot(expData1(object), "name")
+        name2 <- slot(expData2(object), "name")
+
+        # Calculate standard deviation from variance
+        betaTbl$fkSd1 <- sqrt(betaTbl$fkVar1)
+        betaTbl$fkSd2 <- sqrt(betaTbl$fkVar2)
+
+        # Determine the limits for the plot with a buffer
+        buffer <- 0.05
+        x_min <- min(betaTbl$fkMean1, betaTbl$fkMean2, na.rm = TRUE)
+        x_max <- max(betaTbl$fkMean1, betaTbl$fkMean2, na.rm = TRUE)
+        y_min <- min(betaTbl$fkSd1, betaTbl$fkSd2, na.rm = TRUE)
+        y_max <- max(betaTbl$fkSd1, betaTbl$fkSd2, na.rm = TRUE)
+
+        x_range <- x_max - x_min
+        y_range <- y_max - y_min
+
+        p <- ggplot(betaTbl) +
+            geom_density_2d(aes(x = fkMean1, y = fkSd1, color = name1)) +
+            geom_density_2d(aes(x = fkMean2, y = fkSd2, color = name2)) +
+            geom_point(aes(x = fkMean1, y = fkSd1, color = name1), alpha = 0.6, size = 1.5) +
+            geom_point(aes(x = fkMean2, y = fkSd2, color = name2), alpha = 0.6, size = 1.5) +
+            labs(
+                x = "Mean Pause Site Position (bp)",
+                y = "Pause Site Standard Deviation (bp)",
+                title = "Pause Site Mean vs Standard Deviation Distributions",
+                color = "Condition"
+            ) +
+            theme_bw() +
+            theme(plot.title = element_text(hjust = 0.5)) +
+            xlim(x_min - buffer * x_range, x_max + buffer * x_range) +
+            ylim(0, y_max + buffer * y_range)  # Set lower limit to 0
+
+        if (!is.null(file)) {
+            ggsave(file, p,
+                width = width, height = height,
+                dpi = dpi
+            )
+        }
+        return(p)
+    }
+)
+
+#' @title Plot Beta Violin Plot
+#'
+#' @description
+#' Plot a violin plot comparing the beta values between two conditions.
+#'
+#' @param object an \code{\link{TranscriptionRates}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#'
+#' @return an \code{\link{ggplot2}} object
+#'
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#'     name = "K562_control",
+#' )
+#' BetaViolinPlot(expRates, file="boxplot.png")
+#'
+#' @rdname TranscriptionRatesLRT-class
+#' @export
+setGeneric("BetaViolinPlot", function(
+    object, file = NULL, width = 8,
+    height = 6, dpi = 300) {
+    standardGeneric("BetaViolinPlot")
+})
+
+setMethod(
+    "BetaViolinPlot", "TranscriptionRatesLRT",
+    function(object, file = NULL, width = 8,
+            height = 6, dpi = 300) {
+
+        betaTbl <- betaTbl(object)
+        name1 <- slot(expData1(object), "name")
+        name2 <- slot(expData2(object), "name")
+
+        p <- betaTbl %>%
+            dplyr::select(beta1, beta2) %>%
+            tidyr::pivot_longer(cols = c(beta1, beta2),
+                                names_to = "Condition",
+                                values_to = "Beta",
+                                names_prefix = "beta") %>%
+            dplyr::mutate(Condition = dplyr::recode(Condition, "1" = name1, "2" = name2)) %>%
+            ggpubr::ggviolin(x = "Condition", y = "Beta", fill = "Condition",
+                             palette = c("#00AFBB", "#E7B800"),
+                             add = "boxplot", add.params = list(fill = "white")) +
+            labs(title = "Beta Values Comparison", x = "Condition", y = "Beta Value") +
+            theme_minimal() +
+            theme(plot.title = element_text(hjust = 0.5))
+
+        if (!is.null(file)) {
+            ggsave(file, p,
+                width = width, height = height,
+                dpi = dpi
+            )
+        }
+        return(p)
+    }
+)
+
+#' @title Plot Chi Violin Plot
+#'
+#' @description
+#' Plot a violin plot comparing the chi values between two conditions.
+#'
+#' @param object an \code{\link{TranscriptionRates}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#'
+#' @return an \code{\link{ggplot2}} object
+#'
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#'     name = "K562_control",
+#' )
+#' ChiViolinPlot(expRates, file="boxplot.png")
+#'
+#' @rdname TranscriptionRatesLRT-class
+#' @export
+setGeneric("ChiViolinPlot", function(
+    object, file = NULL, width = 8,
+    height = 6, dpi = 300) {
+    standardGeneric("ChiViolinPlot")
+})
+
+setMethod(
+    "ChiViolinPlot", "TranscriptionRatesLRT",
+    function(object, file = NULL, width = 8,
+            height = 6, dpi = 300) {
+
+        omegaTbl <- omegaTbl(object)
+        name1 <- slot(expData1(object), "name")
+        name2 <- slot(expData2(object), "name")
+
+        p <- omegaTbl %>%
+            dplyr::select(chi1, chi2) %>%
+            tidyr::pivot_longer(cols = c(chi1, chi2),
+                                names_to = "Condition",
+                                values_to = "Chi",
+                                names_prefix = "chi") %>%
+            dplyr::mutate(Condition = dplyr::recode(Condition, "1" = name1, "2" = name2)) %>%
+            ggpubr::ggviolin(x = "Condition", y = "Chi", fill = "Condition",
+                             palette = c("#00AFBB", "#E7B800"),
+                             add = "boxplot", add.params = list(fill = "white")) +
+            labs(title = "Chi Values Comparison", x = "Condition", y = "Chi Value") +
+            theme_minimal() +
+            theme(plot.title = element_text(hjust = 0.5))
+
+        if (!is.null(file)) {
+            ggsave(file, p,
+                width = width, height = height,
+                dpi = dpi
+            )
+        }
+        return(p)
+    }
 )

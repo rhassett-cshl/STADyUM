@@ -7,6 +7,11 @@
 \alias{expData1}
 \alias{expData2}
 \alias{spikeInScalingFactor}
+\alias{omegaTbl}
+\alias{betaTbl}
+\alias{plotPauseSiteContourMapTwoConditions}
+\alias{BetaViolinPlot}
+\alias{ChiViolinPlot}
 \title{Constructor for TranscriptionRatesLRT object}
 \usage{
 likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
@@ -16,6 +21,22 @@ expData1(object)
 expData2(object)
 
 spikeInScalingFactor(object)
+
+omegaTbl(object)
+
+betaTbl(object)
+
+plotPauseSiteContourMapTwoConditions(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+BetaViolinPlot(object, file = NULL, width = 8, height = 6, dpi = 300)
+
+ChiViolinPlot(object, file = NULL, width = 8, height = 6, dpi = 300)
 }
 \arguments{
 \item{expData1}{an \code{\linkS4class{ExperimentTranscriptionRates}} object}
@@ -27,10 +48,28 @@ based on total or spike-in reads
 
 Note: Gene body length assumed to be the same between conditions}
 
-\item{object}{a \code{\linkS4class{TranscriptionRatesLRT}} object}
+\item{object}{an \code{\link{TranscriptionRates}} object}
+
+\item{file}{the path to a file to save the plot to}
+
+\item{width}{the width of the plot in inches}
+
+\item{height}{the height of the plot in inches}
+
+\item{dpi}{the resolution of the plot in dpi}
 }
 \value{
 a \code{\linkS4class{TranscriptionRatesLRT}} object
+
+tbl_df
+
+tbl_df
+
+an \code{\link{ggplot2}} object
+
+an \code{\link{ggplot2}} object
+
+an \code{\link{ggplot2}} object
 }
 \description{
 Constructs results of likelihood ratio test comparing transcription data
@@ -55,6 +94,18 @@ TranscriptionRatesLRT object.
 
 Accessor for the spike-in scaling factor from a
 TranscriptionRatesLRT object.
+
+Accessor for the omega table from a TranscriptionRatesLRT object.
+
+Accessor for the beta table from a TranscriptionRatesLRT object.
+
+Plot a contour map with mean pause site position on the x-axis and pause site
+standard deviation on the y-axis. The plot is a comparison between two
+conditions.
+
+Plot a violin plot comparing the beta values between two conditions.
+
+Plot a violin plot comparing the chi values between two conditions.
 }
 \examples{
 load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
@@ -65,6 +116,7 @@ expData1 <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
 )
 expData2 <- estimateTranscriptionRates(
     bigwigPlus = 
@@ -73,6 +125,7 @@ expData2 <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_treated",
 )
 spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
@@ -86,6 +139,7 @@ expData1 <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
 )
 expData2 <- estimateTranscriptionRates(
     bigwigPlus = 
@@ -94,6 +148,7 @@ expData2 <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_treated",
 )
 spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
@@ -106,6 +161,7 @@ expData1 <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
 )
 expData2 <- estimateTranscriptionRates(
     bigwigPlus = 
@@ -114,6 +170,7 @@ expData2 <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_treated",
 )
 spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
@@ -126,6 +183,7 @@ expData1 <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
 )
 expData2 <- estimateTranscriptionRates(
     bigwigPlus = 
@@ -134,8 +192,95 @@ expData2 <- estimateTranscriptionRates(
      "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
     pauseRegions = bw_pause_21_subset,
     geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_treated",
 )
 spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
 spikeInScalingFactor(lrts)
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+expData1 <- estimateTranscriptionRates(
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
+)
+expData2 <- estimateTranscriptionRates(
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_treated",
+)
+spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
+omegaTbl(lrts)
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+expData1 <- estimateTranscriptionRates(
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_control",
+)
+expData2 <- estimateTranscriptionRates(
+    bigwigPlus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-treated-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
+    name = "K562_treated",
+)
+spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
+betaTbl(lrts)
+# Create an ExperimentTranscriptionRates object
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+expRates <- estimateTranscriptionRates(
+    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
+    stericHindrance = TRUE,
+    omegaScale = 1000,
+    name = "K562_control",
+)
+plotPauseSiteContourMap(expRates, file="pause_sites_contour_map.png")
+
+# Create an ExperimentTranscriptionRates object
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+expRates <- estimateTranscriptionRates(
+    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
+    stericHindrance = TRUE,
+    omegaScale = 1000,
+    name = "K562_control",
+)
+BetaViolinPlot(expRates, file="boxplot.png")
+
+# Create an ExperimentTranscriptionRates object
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+expRates <- estimateTranscriptionRates(
+    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
+    stericHindrance = TRUE,
+    omegaScale = 1000,
+    name = "K562_control",
+)
+ChiViolinPlot(expRates, file="boxplot.png")
+
 }

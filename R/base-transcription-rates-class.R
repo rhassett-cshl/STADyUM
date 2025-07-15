@@ -15,6 +15,7 @@
 #' @importFrom methods slot
 #' @import ggplot2
 #' @importFrom grDevices nclass.Sturges
+#' @import ggpubr
 #' @exportClass TranscriptionRates
 methods::setClass("TranscriptionRates",
     slots = c(
@@ -147,19 +148,20 @@ setMethod(
     "plotMeanPauseDistrib", "TranscriptionRates",
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
-        p <- ggplot(cr, aes(x = fkMean)) +
-            geom_histogram(
-                bins = nclass.Sturges(cr$fkMean),
-                fill = "#56B4E9", alpha = 0.8,
-                color = "white", size = 0.1
-            ) +
+        p <- gghistogram(
+            cr, x = "fkMean",
+            add = "mean",
+            bins = nclass.Sturges(cr$fkMean),
+            fill = "#56B4E9", alpha = 0.8,
+            color = "white", size = 0.1
+        ) +
             labs(
                 x = "Mean Pause Site Position (bp)",
                 y = "Count",
                 title = "Distribution of Mean Pause Site Positions",
                 subtitle = paste("n =", nrow(cr), "genes")
             ) +
-            theme_classic() +
+            theme_pubr() +
             theme(
                 plot.title = element_text(size = 14, face = "bold", 
                 hjust = 0.5), plot.subtitle = element_text(size = 10, 
@@ -310,14 +312,19 @@ setMethod(
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
 
-        p <- ggplot(cr, aes(x = chi)) +
-            geom_density(fill = "#56B4E9", alpha = 0.7) +
+        p <- ggdensity(
+            cr, x = "chi",
+            fill = "#56B4E9", alpha = 0.7
+        ) +
             labs(
                 x = "RNAP Density (chi)",
                 y = "Density",
                 title = "Distribution of Gene Body RNAP Density"
             ) +
-            theme_classic()
+            theme_pubr() +
+            theme(
+                plot.title = element_text(hjust = 0.5)
+            )
 
         if (!is.null(file)) {
             ggsave(file, p,
@@ -364,7 +371,7 @@ setMethod(
 #' @rdname TranscriptionRates-class
 #' @export
 setGeneric("plotBetaVsChi", function(
-    object, beta_type = "betaAdp",
+    object, betaType = "betaAdp",
     file = NULL, width = 8, height = 6, dpi = 300, ...) {
     standardGeneric("plotBetaVsChi")
 })
@@ -374,9 +381,8 @@ setMethod("plotBetaVsChi", "TranscriptionRates",
         width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
 
-        # Validate beta_type parameter
         if (!betaType %in% c("betaAdp", "betaOrg")) {
-            stop("beta_type must be either 'betaAdp' or 'betaOrg'")
+            stop("betaType must be either 'betaAdp' or 'betaOrg'")
         }
 
         # Set y-axis label based on beta type
@@ -392,7 +398,7 @@ setMethod("plotBetaVsChi", "TranscriptionRates",
             "Gene Activity vs Pause Escape Rate (Single Pause Site)"
         }
 
-        p <- ggplot(cr, aes(x = chi, y = !!sym(beta_type))) +
+        p <- ggplot(cr, aes(x = chi, y = !!sym(betaType))) +
             geom_point(alpha = 0.7, color = "#CC79A7") +
             geom_smooth(method = "loess", se = TRUE, color = "red") +
             labs(
