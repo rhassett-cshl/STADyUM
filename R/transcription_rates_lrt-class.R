@@ -1,4 +1,4 @@
-#' @importFrom dplyr mutate bind_rows bind_cols
+#' @importFrom dplyr mutate bind_rows bind_cols case_when
 #' @importFrom tibble tibble
 #' @importFrom purrr map2 pmap map_dbl
 #' @importFrom stats pchisq p.adjust
@@ -648,13 +648,15 @@ setMethod(
                                 values_to = "Beta",
                                 names_prefix = "beta") %>%
             dplyr::mutate(Condition = 
-            dplyr::recode(Condition, "1" = name1, "2" = name2)) %>%
-            ggpubr::ggviolin(x = "Condition", y = "Beta", fill = "Condition",
-                            palette = c("#00AFBB", "#E7B800"),
-                            add = "boxplot", add.params = list(fill = "white")) +
-            labs(title = "Beta Values Comparison", x = "Condition", 
-            y = "Beta Value") +
-            theme_minimal() +
+            dplyr::recode(Condition, "1" = name1, "2" = name2),
+                  ScaledBeta = Beta * 2000,  # Scale by zeta
+                  LogScaledBeta = log(ScaledBeta)) %>%  # Log of scaled beta
+            ggpubr::ggviolin(x = "Condition", y = "LogScaledBeta", fill = "Condition",
+                    palette = c("#00AFBB", "#E7B800"),
+                    add = "boxplot", add.params = list(fill = "white")) +
+            labs(title = "Log of Scaled Beta Values Comparison", x = "Condition", 
+            y = expression(log(beta * zeta))) +  # Use Greek letters
+            theme_pubr() +
             theme(plot.title = element_text(hjust = 0.5))
 
         if (!is.null(file)) {
@@ -719,14 +721,96 @@ setMethod(
                                 values_to = "Chi",
                                 names_prefix = "chi") %>%
             dplyr::mutate(Condition = 
-            dplyr::recode(Condition, "1" = name1, "2" = name2)) %>%
-            ggpubr::ggviolin(x = "Condition", y = "Chi", fill = "Condition",
-                            palette = c("#00AFBB", "#E7B800"),
-                            add = "boxplot", add.params = list(fill = "white")) +
-            labs(title = "Chi Values Comparison", x = "Condition", 
-            y = "Chi Value") +
-            theme_minimal() +
+            dplyr::recode(Condition, "1" = name1, "2" = name2),
+                  ScaledChi = Chi * 2000,  # Scale by zeta
+                  LogScaledChi = log(ScaledChi)) %>%  # Log of scaled chi
+            ggpubr::ggviolin(x = "Condition", y = "LogScaledChi", fill = "Condition",
+                    palette = c("#00AFBB", "#E7B800"),
+                    add = "boxplot", add.params = list(fill = "white")) +
+            labs(title = "Log of Scaled Chi Values Comparison", x = "Condition", 
+            y = expression(log(chi * zeta))) +  # Use Greek letters
+            theme_pubr() +
             theme(plot.title = element_text(hjust = 0.5))
+
+        if (!is.null(file)) {
+            ggsave(file, p,
+                width = width, height = height,
+                dpi = dpi
+            )
+        }
+        return(p)
+    }
+)
+
+#' @title MA plot for log fold change treated/control vs log mean beta*zeta
+#'
+#' @description
+#' Plot a MA plot for log fold change treated/control vs log mean beta*zeta.
+#'
+#' @param object an \code{\link{TranscriptionRates}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#'
+#' @return an \code{\link{ggplot2}} object
+#'
+#' @examples
+#' # Create an ExperimentTranscriptionRates object
+#' load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+#' expRates <- estimateTranscriptionRates(
+#'     "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+#'     bigwigMinus = 
+#'      "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+#'     pauseRegions = bw_pause_21_subset,
+#'     geneBodyRegions = bw_gene_body_21_subset,
+#'     stericHindrance = TRUE,
+#'     omegaScale = 1000,
+#'     name = "K562_control",
+#' )
+#' plotLfcMa(expRates, file="lfc_ma_plot.png")
+#'
+#' @rdname TranscriptionRatesLRT-class
+#' @export
+setGeneric("plotLfcMa", function(
+    object, file = NULL, width = 8,
+    height = 6, dpi = 300) {
+    standardGeneric("plotLfcMa")
+})
+
+setMethod(
+    "plotLfcMa", "TranscriptionRatesLRT",
+    function(object, file = NULL, width = 8,
+            height = 6, dpi = 300) {
+
+        betaTbl <- betaTbl(object)
+        name1 <- slot(expData1(object), "name")
+        name2 <- slot(expData2(object), "name")
+        zeta <- 2000
+
+        betaTbl <- betaTbl %>%
+        mutate(beta = (beta1 + beta2) / 2,
+                logbeta_zeta = log2(beta * zeta),
+                category =
+                case_when(
+                    (padj < 0.05) & (lfc > log2(1.2)) ~ "Up",
+                    (padj < 0.05) & (lfc < log2(0.8)) ~ "Down",
+                    TRUE ~ "Others"
+                ),
+                category = factor(category, levels = c("Up", "Down", "Others")))
+
+            p <- betaTbl %>%
+            ggplot(aes(x = logbeta_zeta, y = lfc, color = category)) +
+            geom_point(alpha = 0.5, size = 0.5) +
+            scale_color_manual(values=c("#E41A1C", "#377EB8", "gray")) +
+            geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+            ylim(-6, 6) +
+            xlim(-10, 10) +
+            labs(y = bquote(log[2]*"("*beta[.(name1)]/beta[.(name2)]*")"),
+                x = expr(log[2]*bar(beta*zeta)),
+                color = "Category") +
+            theme_pubr()
+
 
         if (!is.null(file)) {
             ggsave(file, p,

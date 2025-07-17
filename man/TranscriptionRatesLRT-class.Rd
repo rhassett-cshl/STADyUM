@@ -12,6 +12,7 @@
 \alias{plotPauseSiteContourMapTwoConditions}
 \alias{BetaViolinPlot}
 \alias{ChiViolinPlot}
+\alias{plotLfcMa}
 \title{Constructor for TranscriptionRatesLRT object}
 \usage{
 likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
@@ -37,6 +38,8 @@ plotPauseSiteContourMapTwoConditions(
 BetaViolinPlot(object, file = NULL, width = 8, height = 6, dpi = 300)
 
 ChiViolinPlot(object, file = NULL, width = 8, height = 6, dpi = 300)
+
+plotLfcMa(object, file = NULL, width = 8, height = 6, dpi = 300)
 }
 \arguments{
 \item{expData1}{an \code{\linkS4class{ExperimentTranscriptionRates}} object}
@@ -64,6 +67,8 @@ a \code{\linkS4class{TranscriptionRatesLRT}} object
 tbl_df
 
 tbl_df
+
+an \code{\link{ggplot2}} object
 
 an \code{\link{ggplot2}} object
 
@@ -106,6 +111,8 @@ conditions.
 Plot a violin plot comparing the beta values between two conditions.
 
 Plot a violin plot comparing the chi values between two conditions.
+
+Plot a MA plot for log fold change treated/control vs log mean beta*zeta.
 }
 \examples{
 load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
@@ -282,5 +289,19 @@ expRates <- estimateTranscriptionRates(
     name = "K562_control",
 )
 ChiViolinPlot(expRates, file="boxplot.png")
+
+# Create an ExperimentTranscriptionRates object
+load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+expRates <- estimateTranscriptionRates(
+    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    bigwigMinus = 
+     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
+    pauseRegions = bw_pause_21_subset,
+    geneBodyRegions = bw_gene_body_21_subset,
+    stericHindrance = TRUE,
+    omegaScale = 1000,
+    name = "K562_control",
+)
+plotLfcMa(expRates, file="lfc_ma_plot.png")
 
 }
