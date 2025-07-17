@@ -651,8 +651,7 @@ setMethod(
             dplyr::recode(Condition, "1" = name1, "2" = name2)) %>%
             ggpubr::ggviolin(x = "Condition", y = "Beta", fill = "Condition",
                             palette = c("#00AFBB", "#E7B800"),
-                            add = "boxplot", add.params = list(fill = "white"))
-                            +
+                            add = "boxplot", add.params = list(fill = "white")) +
             labs(title = "Beta Values Comparison", x = "Condition", 
             y = "Beta Value") +
             theme_minimal() +
@@ -723,8 +722,7 @@ setMethod(
             dplyr::recode(Condition, "1" = name1, "2" = name2)) %>%
             ggpubr::ggviolin(x = "Condition", y = "Chi", fill = "Condition",
                             palette = c("#00AFBB", "#E7B800"),
-                            add = "boxplot", add.params = list(fill = "white"))
-                            +
+                            add = "boxplot", add.params = list(fill = "white")) +
             labs(title = "Chi Values Comparison", x = "Condition", 
             y = "Chi Value") +
             theme_minimal() +
