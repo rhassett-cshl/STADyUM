@@ -385,7 +385,8 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 setMethod(
     "estimateTranscriptionRates", "character",
     function(
-        x, bigwigMinus, pauseRegions, geneBodyRegions, name, stericHindrance = FALSE, omegaScale = NULL) { 
+        x, bigwigMinus, pauseRegions, geneBodyRegions, name, 
+        stericHindrance = FALSE, omegaScale = NULL) { 
         bigwigPlus <- x # x is the first bigwig file path
         inputValidationChecks(
             bigwigPlus, bigwigMinus, pauseRegions,
@@ -430,8 +431,7 @@ setMethod(
             bigwigMinus = bigwigMinus, pauseRegions = pauseRegions,
             geneBodyRegions = geneBodyRegions, 
             stericHindrance = stericHindrance, omegaScale = omegaScale, 
-            rates = emRate,
-            name = name  
+            rates = emRate, name = name  
         ))
     }
 )

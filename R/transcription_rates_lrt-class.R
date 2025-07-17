@@ -56,7 +56,8 @@ computeBetaLRTParams <- function(rc1, rc2, kmin, kmax) {
     Xk2 <- rc2$actualPauseSiteCounts
     M <- rc1$gbLength
     chiHat <- (s1 + s2) / M
-    betaInt <- chiHat / (map_dbl(rc1$actualPauseSiteCounts, sum) + map_dbl(rc2$actualPauseSiteCounts, sum))
+    betaInt <- chiHat / (map_dbl(rc1$actualPauseSiteCounts, sum) 
+    + map_dbl(rc2$actualPauseSiteCounts, sum))
     chiHat1 <- rc1$chi
     chiHat2 <- rc2$chi
     chiHat2 <- rc2$chi
@@ -570,8 +571,10 @@ setMethod(
         p <- ggplot(betaTbl) +
             geom_density_2d(aes(x = fkMean1, y = fkSd1, color = name1)) +
             geom_density_2d(aes(x = fkMean2, y = fkSd2, color = name2)) +
-            geom_point(aes(x = fkMean1, y = fkSd1, color = name1), alpha = 0.6, size = 1.5) +
-            geom_point(aes(x = fkMean2, y = fkSd2, color = name2), alpha = 0.6, size = 1.5) +
+            geom_point(aes(x = fkMean1, y = fkSd1, color = name1), alpha = 0.6,
+            size = 1.5) +
+            geom_point(aes(x = fkMean2, y = fkSd2, color = name2), alpha = 0.6,
+            size = 1.5) +
             labs(
                 x = "Mean Pause Site Position (bp)",
                 y = "Pause Site Standard Deviation (bp)",
@@ -644,11 +647,14 @@ setMethod(
                                 names_to = "Condition",
                                 values_to = "Beta",
                                 names_prefix = "beta") %>%
-            dplyr::mutate(Condition = dplyr::recode(Condition, "1" = name1, "2" = name2)) %>%
+            dplyr::mutate(Condition = 
+            dplyr::recode(Condition, "1" = name1, "2" = name2)) %>%
             ggpubr::ggviolin(x = "Condition", y = "Beta", fill = "Condition",
-                             palette = c("#00AFBB", "#E7B800"),
-                             add = "boxplot", add.params = list(fill = "white")) +
-            labs(title = "Beta Values Comparison", x = "Condition", y = "Beta Value") +
+                            palette = c("#00AFBB", "#E7B800"),
+                            add = "boxplot", add.params = list(fill = "white"))
+                            +
+            labs(title = "Beta Values Comparison", x = "Condition", 
+            y = "Beta Value") +
             theme_minimal() +
             theme(plot.title = element_text(hjust = 0.5))
 
@@ -713,11 +719,14 @@ setMethod(
                                 names_to = "Condition",
                                 values_to = "Chi",
                                 names_prefix = "chi") %>%
-            dplyr::mutate(Condition = dplyr::recode(Condition, "1" = name1, "2" = name2)) %>%
+            dplyr::mutate(Condition = 
+            dplyr::recode(Condition, "1" = name1, "2" = name2)) %>%
             ggpubr::ggviolin(x = "Condition", y = "Chi", fill = "Condition",
-                             palette = c("#00AFBB", "#E7B800"),
-                             add = "boxplot", add.params = list(fill = "white")) +
-            labs(title = "Chi Values Comparison", x = "Condition", y = "Chi Value") +
+                            palette = c("#00AFBB", "#E7B800"),
+                            add = "boxplot", add.params = list(fill = "white"))
+                            +
+            labs(title = "Chi Values Comparison", x = "Condition", 
+            y = "Chi Value") +
             theme_minimal() +
             theme(plot.title = element_text(hjust = 0.5))
 

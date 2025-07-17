@@ -5,7 +5,8 @@ citEntry(entry = "Article",
          author = personList(
            person(given = "Yixin", family = "Zhao", role = c("aut", "cre")),
            person(given = "Lingjie", family = "Liu", role = "ctb"),
-           person(given = "Rebecca", family = "Hassett", email = "hassett@cshl.edu", role = "ctb"),
+           person(given = "Rebecca", family = "Hassett", email = "hassett@cshl
+           edu", role = "ctb"),
            person(given = "Adam", family = "Siepel", role = "ctb")
          ),
          journal = "Nucleic Acids Research",
@@ -16,4 +17,6 @@ citEntry(entry = "Article",
          doi = "10.1093/nar/gkad843",
          textVersion = 
 "This is the recommended citation for the STADyUM Bioconductor package:\n
-Yixin Zhao, Lingjie Liu, Rebecca Hassett, Adam Siepel, Model-based characterization of the equilibrium dynamics of transcription initiation and promoter-proximal pausing in human cells, Nucleic Acids Research, Volume 51, Issue 21, 27 November 2023, Page e106, https://doi.org/10.1093/nar/gkad843")
+Yixin Zhao, Lingjie Liu, Rebecca Hassett, Adam Siepel, Model-based
+characterization of the equilibrium dynamics of transcription initiation and 
+Issue 21, 27 November 2023, Page e106, https://doi.org/10.1093/nar/gkad843")

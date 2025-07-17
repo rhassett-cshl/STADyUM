@@ -251,7 +251,8 @@ simulatePolymerase <- function(
     zeta_vec <- validateAndLoadZetaVec(zetaVec, geneLen)
 
     if (cellNum > 1000 && time > 200) {
-        message("Note: The simulation may take a few minutes to run due to a large number of cells and long simulation time.")
+        message("Note: The simulation may take a few minutes to run due to a
+        large number of cells and long simulation time.")
     }
 
     result <- .Call("_STADyUM_simulate_polymerase_cpp",
@@ -871,11 +872,13 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
 #' file="position_heatmap.png")
 #' @export
 setGeneric("plotPositionHeatmap", function(
-    object, timePoint = NULL, maxCells = NULL, file = NULL, width = 10, height = 8, dpi = 300) {
+    object, timePoint = NULL, maxCells = NULL, file = NULL, width = 10, 
+    height = 8, dpi = 300) {
     standardGeneric("plotPositionHeatmap")
 })
 setMethod("plotPositionHeatmap", "SimulatePolymerase", function(
-    object, timePoint = NULL, maxCells = NULL, file = NULL, width = 10, height = 8, dpi = 300) {
+    object, timePoint = NULL, maxCells = NULL, file = NULL, width = 10, 
+    height = 8, dpi = 300) {
     if (is.null(timePoint)) {
         matrix <- slot(object, "finalPositionMatrix")
         plotTitle <- "Final Polymerase Positions Heatmap"
@@ -896,13 +899,15 @@ setMethod("plotPositionHeatmap", "SimulatePolymerase", function(
     }
 
     kMax <- slot(object, "kMax")
-    matrix <- matrix[1:kMax, ]
-    df <- expand.grid(Site = 1:nrow(matrix), Cell = 1:ncol(matrix))
+    matrix <- matrix[seq_len(kMax), ]
+    df <- expand.grid(Site = seq_len(nrow(matrix)), 
+                        Cell = seq_len(ncol(matrix)))
     df$Polymerase <- as.vector(matrix)
 
     p <- ggplot(df, aes(x = Cell, y = Site, fill = factor(Polymerase))) +
         geom_tile(color = "grey80") + 
-        scale_fill_manual(values = c("0" = "white", "1" = "red"), name = "Polymerase") +
+        scale_fill_manual(values = c("0" = "white", "1" = "red"), 
+        name = "Polymerase") +
         labs(title = plotTitle, x = "Cell", y = "Site") +
         theme_minimal() +
         theme(
@@ -966,22 +971,17 @@ setMethod(
 
         # Transpose: cells as rows, sites as features
         pca <- prcomp(t(mat), center = TRUE, scale. = FALSE)
-        
-        # Calculate explained variance
         varExplained <- round(100 * pca$sdev^2 / sum(pca$sdev^2), 1)
         
         df <- data.frame(
-            PC1 = pca$x[, 1], 
-            PC2 = pca$x[, 2], 
-            Cell = seq_len(ncol(mat)), 
+            PC1 = pca$x[, 1], PC2 = pca$x[, 2], Cell = seq_len(ncol(mat)), 
             PolymeraseCount = colSums(mat)
         )
 
         p <- ggplot(df, aes(x = PC1, y = PC2, color = PolymeraseCount)) +
             geom_point(size = 3, alpha = 0.8) +
             scale_color_gradient(
-                low = "lightblue", high = "darkred",
-                name = "Polymerase\nCount"
+                low = "lightblue", high = "darkred", name = "Polymerase\nCount"
             ) +
             labs(
                 title = plotTitle,
@@ -989,10 +989,8 @@ setMethod(
                 y = sprintf("PC2 (%.1f%% variance)", varExplained[2])
             ) +
             theme_minimal() +
-            theme(
-                plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
-                legend.position = "right"
-            )
+            theme(plot.title = element_text(size = 14, face = "bold", 
+                hjust = 0.5), legend.position = "right")
 
         if (!is.null(file)) {
             ggsave(file, p, width = width, height = height, dpi = dpi)
@@ -1083,13 +1081,15 @@ setMethod(
 
         df <- subset(df, count > 0)
         p <- ggplot(df, aes(x=position, y=count)) +
-        geom_segment( aes(x=position, xend=position, y=0, yend=count), color="lightgrey", size = 0.5) +
+        geom_segment( aes(x=position, xend=position, y=0, yend=count),
+        color="lightgrey", size = 0.5) +
         geom_point( color="steelblue", size=3) +
         theme_pubr() +
         theme(
             plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
         ) +
-        labs(title = title, x = "Gene Site/Position", y = "Number of Polymerases") +
+        labs(title = title, x = "Gene Site/Position", 
+        y = "Number of Polymerases") +
         scale_y_continuous(expand = expansion(mult = c(0, .01))) +
         scale_x_continuous(expand = expansion(mult = c(.01, .05)))
 
