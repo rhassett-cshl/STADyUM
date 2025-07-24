@@ -212,7 +212,7 @@ bwCov, geneIds) {
     return(validIndices)
 }
 
-prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
+prepareEmData <- function(rc1, bw1P3, pauseRegions,
                             stericHindrance, omegaScale, zeta) {
     emRate <- DataFrame(
         geneId = rc1$gene_id,
@@ -241,6 +241,11 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
     Xk <- splitAsList(Xk$signal, Xk$region)
     emRate$Xk <- Xk[emRate$geneId]
     emRate$XkSum <- vapply(emRate$Xk, sum, numeric(1))
+    emRate$fkInt <- lapply(emRate$Xk, function(xk) {
+        fk <- dnorm(seq_len(length(xk)), mean = 50, sd = 100)
+        fk <- fk / sum(fk)
+        return(fk)
+    })
     emRate$betaInt <- emRate$chi / emRate$XkSum
     if (stericHindrance) {
         emRate$omegaZeta <- emRate$chi * omegaScale
@@ -249,21 +254,27 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions, kmin, kmax,
     return(emRate)
 }
 
-experimentRunEmAlgorithm <- function(emRate, kmin, kmax, fkInt,
-                                        stericHindrance, zeta, lambda = NULL) {
+experimentRunEmAlgorithm <- function(emRate, stericHindrance, zeta,
+                                     lambda = NULL) {
     emLs <- list()
+    fkInt <- emRate$fkInt
+    kmax <- lapply(emRate$Xk, function(xk) {
+        length(xk)
+    })
+    kmax <- unlist(kmax)
+    kmin <- rep(1, length(kmax))
     for (i in seq_len(NROW(emRate))) {
         rc <- emRate[i, ]
         if (!stericHindrance) {
             emLs[[i]] <- pauseEscapeEM(
-                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
-                fkInt = fkInt, betaInt = rc$betaInt[[1]],
+                Xk = rc$Xk[[1]], kmin = kmin[i], kmax = kmax[i],
+                fkInt = rc$fkInt[[1]], betaInt = rc$betaInt[[1]],
                 chiHat = rc$chi, maxItr = 500, tor = 1e-4
             )
         } else {
             emLs[[i]] <- stericHindranceEM(
-                Xk = rc$Xk[[1]], kmin = kmin, kmax = kmax,
-                f1 = 0.517, f2 = 0.024, fkInt = fkInt,
+                Xk = rc$Xk[[1]], kmin = kmin[i], kmax = kmax[i],
+                f1 = 0.517, f2 = 0.024, fkInt = rc$fkInt[[1]],
                 betaInt = rc$betaInt[[1]], phiInt = 0.5,
                 chiHat = rc$chi, lambda = lambda, zeta = zeta,
                 maxItr = 500, tor = 1e-4
@@ -302,17 +313,13 @@ experimentProcessEmResults <- function(emRate, emLs, stericHindrance, zeta) {
     return(emRate)
 }
 
-estimateEmRates <- function(rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
+estimateEmRates <- function(rc1, bw1P3, pauseRegions,
                             stericHindrance, omegaScale, zeta) {
     emRate <- prepareEmData(
-        rc1, bw1P3, pauseRegions, kmin, kmax,
-        stericHindrance, omegaScale, zeta
+        rc1, bw1P3, pauseRegions, stericHindrance, omegaScale, zeta
     )
     lambda <- if (stericHindrance) zeta^2 / omegaScale else NULL
-    emLs <- experimentRunEmAlgorithm(
-        emRate, kmin, kmax, fkInt,
-        stericHindrance, zeta, lambda
-    )
+    emLs <- experimentRunEmAlgorithm(emRate, stericHindrance, zeta, lambda)
     emRate <- experimentProcessEmResults(emRate, emLs, stericHindrance, zeta)
     return(emRate)
 }
@@ -402,7 +409,7 @@ setMethod(
             keep.extra.columns = TRUE
         )
 
-        kmin <- 1; kmax <- 200; rnapSize <- 50; zeta <- 2000
+        rnapSize <- 50; zeta <- 2000
         processedData <- prepareReadCountTable(
             bigwigPlus, bigwigMinus,
             pauseRegions, geneBodyRegions, kmax
@@ -417,11 +424,8 @@ setMethod(
                 (rc1$summarizedPauseCounts /
                     rc1$pauseLength)
         )
-        fkInt <- dnorm(kmin:kmax, mean = 50, sd = 100)
-        fkInt <- fkInt / sum(fkInt)
         emRate <- estimateEmRates(
-            rc1, bw1P3, pauseRegions, kmin, kmax, fkInt,
-            stericHindrance, omegaScale, zeta
+            rc1, bw1P3, pauseRegions, stericHindrance, omegaScale, zeta
         )
         emRate <- prepareRateTable(emRate, analyticalRateTbl, stericHindrance)
 

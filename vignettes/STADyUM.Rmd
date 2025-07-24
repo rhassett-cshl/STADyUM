@@ -79,7 +79,7 @@ head(controlRatesTbl)
 
 Plotting functionality for TranscriptionRates objects
 
-```{r plot_exp_rates, fig.width=10, fig.height=8}
+```{r plot_exp_rates, fig.width=5, fig.height=5}
 plotMeanPauseDistrib(controlRates, file="mean_pause_site_distribution.png")
 
 plotBetaVsChi(controlRates, betaType="betaAdp", file="controlBetaAdpVsChi.png")
@@ -124,7 +124,7 @@ show(lrt)
 ```
 
 Plot results from likelihood ratio test
-```{r plot_lrt_results, fig.width=10, fig.height=8}
+```{r plot_lrt_results, fig.width=5, fig.height=5}
 
 plotPauseSiteContourMapTwoConditions(lrt, file="lrtPauseSiteContourMap.png")
 
