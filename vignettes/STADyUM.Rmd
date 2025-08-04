@@ -50,25 +50,27 @@ algorithm to estimate transcription rates such as gene body RNAP density (chi)
 and the ratio of gene body RNAP density to pause region RNAP density under
 models of fixed pause sites (betaOrg) and variable pause sites (betaAdp).
 
-The example data used throughout this package is derived from Vihervaara et al.
-(2021). The data is from the raw PRO-Seq read counts for human K562 cells
-treated with heat shock as well as a control without heat shock. The raw fastq
-files were processed with https://github.com/Danko-Lab/proseq2.0. 
+The example data used throughout this package is derived from Aoi et al.
+(2020). The data is from the raw PRO-Seq read counts for human cells
+treated with auxin-induced acute depletion of NELF(negative elongation factor). Raw PRO-seq data is located at GEO: GSE144786. The raw fastq files were processed with https://github.com/Danko-Lab/proseq2.0. 
+
+Estimates of transcription rates, such as $\Chi$ and $\Beta$, are calculated given Expectation Maximization with likelihood formulas derived in (Siepel 2022, Section "Stationary Distribution and Inference at Steady-State") and stated in (Zhao 2023, Section "Inference at Steady State"). Note that $\Chi$ is the estimator for the average read depth, excluding the pause peak and $\Beta$ is the estimator for the ratio of $\Chi$ to the read depth in the pause peak region. The estimator for $\Beta$ is also given for a model adapted for varying pause sites across cells and is denoted by variable beta_adp whereas the fixed pause site estimate is denoted by beta_org, refer to (Zhao 2023, Section "Allowing for variation in pause site"). Pause site statistics such as the mean position of pause sites and the variance of pause sites (fkMean and fkVar) are also reported.
+
 
 ```{r estimate_experiment_rates}
-load("../inst/extdata/granges_for_read_counting_chr21_subset.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1.RData")
 
 controlRates <- estimateTranscriptionRates(
-"../inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
-"../inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-bw_pause_21_subset, bw_gb_21_subset, "Control")
+"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+bw_pause_filtered, bw_gb_filtered, "Control")
 
 show(controlRates)
 
 treatedRates <- estimateTranscriptionRates(
-"../inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw", 
-"../inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", 
-bw_pause_21_subset, bw_gb_21_subset, "Treated")
+"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin-SE_plus_chr21.bw", 
+"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin-SE_minus_chr21.bw", 
+bw_pause_filtered, bw_gb_filtered, "Auxin Treated")
 
 show(treatedRates)
 
@@ -77,7 +79,7 @@ controlRatesTbl <- rates(controlRates)
 head(controlRatesTbl)
 ```
 
-Plotting functionality for TranscriptionRates objects
+## Plotting functionality for TranscriptionRates objects
 
 ```{r plot_exp_rates, fig.width=5, fig.height=5}
 plotMeanPauseDistrib(controlRates, file="mean_pause_site_distribution.png")
@@ -88,24 +90,23 @@ plotExpectedVsActualPauseSiteCounts(treatedRates,
                                     file="treatedExpActPauseSites.png")
 ```
 
-## Estimate transcription rates under model that includes steric hindrance
-Under the model of steric hindrance, additional rates are estimated such as the
-pause-escape rate (betaZeta), the potential initiation rate (alphaZeta), and
-omegaZeta (effective initiation rate).
+## Estimate Transcription Rates for Experimental Data under Steric Hindrance
+
+Under the model of steric hindrance, additional rates are estimated such as the landing pad occupancy (phi), pause-escape rate (betaZeta), the potential initiation rate (alphaZeta), and omegaZeta (effective initiation rate). The likelihood functions differ under the model of steric hindrance and are derived in (Zhao 2023, Section "Fitting the Steric Hindrance Model to the Data"). Note the omega parameter is a scaling factor.
 
 ```{r estimate_experiment_rates_steric_hindrance}
 controlRatesSH <- estimateTranscriptionRates(
-"../inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw", 
-"../inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", 
-bw_pause_21_subset, bw_gb_21_subset, "Control", stericHindrance=TRUE, 
+"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+bw_pause_filtered, bw_gb_filtered, "Control", stericHindrance=TRUE, 
 omegaScale=12.3768278981277)
 
 show(controlRatesSH)
 
 treatedRatesSH <- estimateTranscriptionRates(
-"../inst/extdata/PROseq-K562-vihervaara-treated-SE_plus_chr21_subset.bw", 
-"../inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw", 
-bw_pause_21_subset, bw_gb_21_subset, "Treated", stericHindrance=TRUE, 
+"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin-SE_plus_chr21.bw", 
+"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin-SE_minus_chr21.bw", 
+bw_pause_filtered, bw_gb_filtered, "Auxin Treated" stericHindrance=TRUE, 
 omegaScale=11.0318379571379)
 
 show(treatedRatesSH)
@@ -114,8 +115,9 @@ show(treatedRatesSH)
 
 ## Likelihood Ratio Tests
 
-Compare samples treated with heat shock to the control samples using the 
-likelihood ratio test functionality
+Compare samples treated with auxin to control samples using the 
+likelihood ratio test functionality derived in (Siepel 2022, Section "Likelihood Ratio Tests for Differences Between Transcription Units, Conditions, or Species")
+
 ```{r likelihood_ratio_tests}
 lrt <- likelihoodRatioTest(controlRates, treatedRates, 
 spikeInScalingFactor="../inst/extdata/spikein_scaling_factor.csv")
@@ -123,19 +125,27 @@ spikeInScalingFactor="../inst/extdata/spikein_scaling_factor.csv")
 show(lrt)
 ```
 
-Plot results from likelihood ratio test
+## Plot Results from Likelihood Ratio Tests
+
+As expected given reports from (??), RNAPs tend to pause more downstream when NELF is absent due to Auxin treatment. As shown in the plot, the majority of treated genes have average pause locations of more than 100bp downstream of the TSS. Strikingly, few RNAPs could enter productive elongation after NELF depletion and treated samples had a signficantly lower pause-escape rate than the control samples exemplified by the $\Beta$ violin plots.
+
 ```{r plot_lrt_results, fig.width=5, fig.height=5}
 
 plotPauseSiteContourMapTwoConditions(lrt, file="lrtPauseSiteContourMap.png")
 
+plotMeanPauseDistrib(controlRates, file="pause_site_distrib_control.png")
+plotMeanPauseDistrib(treatedRates, file="mean_pause_site_treated.png")
+
 BetaViolinPlot(lrt, file="lrtBetaViolinPlot.png")
 
 ChiViolinPlot(lrt, file="lrtChiViolinPlot.png")
+
+plotLfcMa(lrt, file="lrtMAplot.png")
 ```
 
 ## Simulate Polymerase
 Simulate read counts by running simulations of polymerase movement along the
-gene at user-specified rates and gene lengths
+gene at user-specified rates and gene lengths. Our simulator models the movement of RNAPs along a set of transcription units given a continuous-time Markov model. Nascent RNA sequencing read counts are then generated under steady-state conditions by sampling based on a Poisson distribution with mean equal to the simulated RNAP frequency multiplied by a user-specified sequencing depth. A graphical model representation (Figure B) with unobserved continuous-time Markov chain (Z_i) in which user-specified paramters for transcription initiation (alpha), pause-escape, and elongation (zeta) are included as well as the observed read counts (Xi). The initial model is extended to allow for variability across cells in promoter-proximal pause site locations and steric hindrance of transcription initiation from paused RNAPs (Figure C). More information on the simulator can be found in (Zhao 2023, Sections "A simple probabilistic model for transcription initiation, promoter-proximal pausing, and elongation", "SimPol Simulator", "Generation of synthetic NRS data")
 
 ```{r create_simpol, fig.width=10, fig.height=8}
 simpol <- simulatePolymerase(k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
@@ -152,6 +162,7 @@ plotCombinedCells(simpol, file="combinedCellsLollipopPlot.png")
 ```
 
 ## Estimate Transcription Rates from Simualted Data
+
 ```{r estimate_simulated_rates, fig.width=10, fig.height=8}
 simRates <- estimateTranscriptionRates(simpol, stericHindrance=TRUE)
 
@@ -167,11 +178,11 @@ sessionInfo()
 ```
 
 # References
-- Vihervaara A, Mahat DB, Himanen SV, Blom MAH, Lis JT, Sistonen L. 
-Stress-induced transcriptional memory accelerates promoter-proximal pause
-release and decelerates termination over mitotic divisions. Mol Cell. 2021 Apr
-15;81(8):1715-1731.e6. doi: 10.1016/j.molcel.2021.03.007. Epub 2021 Mar 29.
-PMID: 33784494; PMCID: PMC8054823.
+- Yuki Aoi, Edwin R. Smith, Avani P. Shah, Emily J. Rendleman, Stacy A. 
+Marshall, Ashley R. Woodfin, Fei X. Chen, Ramin Shiekhattar, Ali Shilatifard,
+NELF Regulates a Promoter-Proximal Step Distinct from RNA Pol II Pause-Release,
+Molecular Cell,Volume 78, Issue 2,2020,Pages 261-274.e5,ISSN 1097-2765,
+https://doi.org/10.1016/j.molcel.2020.02.014. 
 - Yixin Zhao, Lingjie Liu, Rebecca Hassett, Adam Siepel, Model-based 
 characterization of the equilibrium dynamics of transcription initiation and 
 promoter-proximal pausing in human cells, Nucleic Acids Research, Volume 51, 
@@ -184,3 +195,4 @@ Siepel, Probabilistic and machine-learning methods for predicting local rates
 of transcription elongation from nascent RNA sequencing data, Nucleic Acids
 Research, Volume 53, Issue 4, 28 February 2025, gkaf092, 
 https://doi.org/10.1093/nar/gkaf092
+- Adam Siepel, A Unified Probabilistic Modeling Framework for Eukaryotic Transcription Based on Nascent RNA Sequencing Data, bioRxiv, 1, January, 2022
