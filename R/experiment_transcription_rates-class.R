@@ -136,8 +136,7 @@ inputValidationChecks <- function(
     }
 }
 
-prepareReadCountTable <- function(bwPlus, bwMinus, pauseRegions, gbRegions,   
-                                    kmax) {
+prepareReadCountTable <- function(bwPlus, bwMinus, pauseRegions, gbRegions) {
     pb <- progress::progress_bar$new(
         format = "Processing [:bar] :percent eta: :eta", total = 4
     )
@@ -160,6 +159,7 @@ prepareReadCountTable <- function(bwPlus, bwMinus, pauseRegions, gbRegions,
     bwm1P3 <- processBw(bw = bwm1P3, strand = "-")
     bw1P3 <- c(bwp1P3, bwm1P3)
     rm(bwp1P3, bwm1P3)
+    kmax <- 200
     pauseRegions <- promoters(pauseRegions, upstream = 0, downstream = kmax)
     pb$tick(); message("\nSummarizing pause and gene body regions...")
     rc1Pause <- summariseBw(
@@ -411,8 +411,7 @@ setMethod(
 
         rnapSize <- 50; zeta <- 2000
         processedData <- prepareReadCountTable(
-            bigwigPlus, bigwigMinus,
-            pauseRegions, geneBodyRegions, kmax
+            bigwigPlus, bigwigMinus, pauseRegions, geneBodyRegions
         )
         rc1 <- processedData$rc1; bw1P3 <- processedData$bw1P3
 
