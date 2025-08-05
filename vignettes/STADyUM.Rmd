@@ -58,7 +58,7 @@ Estimates of transcription rates, such as $\Chi$ and $\Beta$, are calculated giv
 
 
 ```{r estimate_experiment_rates}
-load("../inst/extdata/granges_for_read_counting_DLD1.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 
 controlRates <- estimateTranscriptionRates(
 "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
@@ -144,6 +144,9 @@ plotLfcMa(lrt, file="lrtMAplot.png")
 ```
 
 ## Simulate Polymerase
+
+![(A) Conceptual illustration of model focusing on the kinetic model for RNAP movement on the DNA template. (B) Graphical model representation with unobserved continuous-time Markov chain (Z) and observed read counts (X). Read counts at each site are conditionally independent and Poisson distributed. (C) Design of SimPol simulator tracking the movement of in silico RNAPs across N-bp DNA templates in C cells, then samples the synthetic read counts based on RNAP positions. (D) Example of synthetic nascent RNA sequencing data from SimPol alongside matched real PRO-seq data from the DNAJA1 gene on chromosome 9 of the human genome](simpol_figures.png)
+
 Simulate read counts by running simulations of polymerase movement along the
 gene at user-specified rates and gene lengths. Our simulator models the movement of RNAPs along a set of transcription units given a continuous-time Markov model. Nascent RNA sequencing read counts are then generated under steady-state conditions by sampling based on a Poisson distribution with mean equal to the simulated RNAP frequency multiplied by a user-specified sequencing depth. A graphical model representation (Figure B) with unobserved continuous-time Markov chain (Z_i) in which user-specified paramters for transcription initiation (alpha), pause-escape, and elongation (zeta) are included as well as the observed read counts (Xi). The initial model is extended to allow for variability across cells in promoter-proximal pause site locations and steric hindrance of transcription initiation from paused RNAPs (Figure C). More information on the simulator can be found in (Zhao 2023, Sections "A simple probabilistic model for transcription initiation, promoter-proximal pausing, and elongation", "SimPol Simulator", "Generation of synthetic NRS data")
 

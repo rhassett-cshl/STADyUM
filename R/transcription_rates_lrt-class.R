@@ -28,7 +28,7 @@ computeOmegaLRT <- function(lambda1, lambda2, rc1, rc2) {
 
     chi1 <- rc1$chi
     chi2 <- rc2$chi * lambda1 / lambda2
-    p <- numeric(length(rc1$geneId)) # is this correct?
+    p <- numeric(length(rc1$geneId)) 
 
     omegaTbl <-
         tibble(
