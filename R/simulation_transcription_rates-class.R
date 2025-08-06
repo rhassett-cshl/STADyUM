@@ -9,6 +9,7 @@
 #' under a model with or without steric hindrance.
 #'
 #' @slot simpol a \code{\linkS4class{SimulatePolymerase}} object
+#' @slot name a character value for the name of the experiment
 #' @slot stericHindrance a logical value to determine whether to infer
 #' landing-pad occupancy or not. Defaults to FALSE.
 #' @slot rates a \code{\link[tibble]{tbl_df}} containing the estimated rates
@@ -51,6 +52,7 @@
 #' maximization algorithm. "normal": converged normally, "single_site":
 #' converged to single pause site, "max_iterations": reached maximum
 #' iterations without convergence. Note max # of iterations is 500.}
+#' \item{likelihood}{a numeric vector of the likelihood of the model}
 #' }
 #'
 #' @name SimulationTranscriptionRates-class
@@ -71,6 +73,7 @@
 methods::setClass("SimulationTranscriptionRates",
     slots = c(
         simpol = "SimulatePolymerase",
+        name = "character",
         stericHindrance = "logical",
         rates = "tbl_df"
     ),
@@ -350,6 +353,10 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
     bwDfs$fkMean <- map_dbl(emLs, "fkMean", .default = NA)
     bwDfs$fkVar <- map_dbl(emLs, "fkVar", .default = NA)
     bwDfs$flag <- map_chr(emLs, "flag", .default = NA)
+    bwDfs$likelihood <- map_dbl(
+        emLs,
+        ~ .x$likelihoods[[length(.x$likelihoods)]]
+    )
 
     if (stericHindrance) {
         bwDfs$phi <- map_dbl(emLs, "phi", .default = NA)
@@ -378,7 +385,7 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
 #'     addSpace = 17, time = 1)
 #' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 #' # Print the estimated rates
 #' print(estRates)
 #'
@@ -386,7 +393,7 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
 #' @export
 setMethod(
     "estimateTranscriptionRates", "SimulatePolymerase",
-    function(x, stericHindrance = FALSE, ...) {
+    function(x, name, stericHindrance = FALSE, ...) {
         simpol <- x # x is the SimulatePolymerase object
         if (!is(simpol, "SimulatePolymerase")) {
             stop("simpol parameter must be a SimulatePolymerase object")
@@ -417,7 +424,8 @@ setMethod(
             avgLandingRcPerCell = bwDfs$rnapProp,
             actualPauseSiteCounts = bwDfs$Xk, 
             expectedPauseSiteCounts = bwDfs$Yk,
-            expectationMaximizationStatus = bwDfs$flag
+            expectationMaximizationStatus = bwDfs$flag,
+            likelihood = bwDfs$likelihood
         )
 
         if (stericHindrance && "phi" %in% colnames(bwDfs)) {
@@ -425,7 +433,7 @@ setMethod(
         }
 
         new("SimulationTranscriptionRates",
-            simpol = simpol, stericHindrance = stericHindrance, 
+            simpol = simpol, name = name, stericHindrance = stericHindrance, 
             rates = rates_tibble
         )
     }
@@ -450,7 +458,7 @@ showEmStatus <- function(emStatus) {
 #'     addSpace = 17, time = 1
 #' )
 #' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 #' # Show the object
 #' show(estRates)
 #' @export
@@ -523,7 +531,7 @@ setMethod("show", "SimulationTranscriptionRates", function(object) {
 #'     addSpace = 17, time = 1
 #' )
 #' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 #' # Get simpol
 #' simpol <- simpol(estRates)
 #' # Print the simpol
@@ -551,7 +559,7 @@ setMethod(
 #'     addSpace = 17, time = 1
 #' )
 #' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 #' # Get steric hindrance
 #' stericHindrance <- stericHindrance(estRates)
 #' # Print the steric hindrance
@@ -577,7 +585,7 @@ setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
 #'     addSpace = 17, time = 1
 #' )
 #' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim)
+#' estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 #' # Get rates
 #' rates <- rates(estRates)
 #' # Print the rates
@@ -586,5 +594,3 @@ setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
 setMethod("rates", "SimulationTranscriptionRates", function(object) {
     slot(object, "rates")
 })
-
-# Plotting utilities

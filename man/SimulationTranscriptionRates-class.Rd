@@ -10,7 +10,7 @@
 \alias{rates,SimulationTranscriptionRates-method}
 \title{Constructor for SimulationTranscriptionRates object}
 \usage{
-\S4method{estimateTranscriptionRates}{SimulatePolymerase}(x, stericHindrance = FALSE, ...)
+\S4method{estimateTranscriptionRates}{SimulatePolymerase}(x, name, stericHindrance = FALSE, ...)
 
 \S4method{show}{SimulationTranscriptionRates}(object)
 
@@ -61,6 +61,8 @@ SimulationTranscriptionRates object.
 \describe{
 \item{\code{simpol}}{a \code{\linkS4class{SimulatePolymerase}} object}
 
+\item{\code{name}}{a character value for the name of the experiment}
+
 \item{\code{stericHindrance}}{a logical value to determine whether to infer
 landing-pad occupancy or not. Defaults to FALSE.}
 
@@ -104,6 +106,7 @@ cell estimated from the EM algorithm}
 maximization algorithm. "normal": converged normally, "single_site":
 converged to single pause site, "max_iterations": reached maximum
 iterations without convergence. Note max # of iterations is 500.}
+\item{likelihood}{a numeric vector of the likelihood of the model}
 }}
 }}
 
@@ -115,7 +118,7 @@ sim <- simulatePolymerase(
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
     addSpace = 17, time = 1)
 # Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 # Print the estimated rates
 print(estRates)
 
@@ -127,7 +130,7 @@ sim <- simulatePolymerase(
     addSpace = 17, time = 1
 )
 # Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 # Show the object
 show(estRates)
 # Create a SimulatePolymerase object
@@ -138,7 +141,7 @@ sim <- simulatePolymerase(
     addSpace = 17, time = 1
 )
 # Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 # Get simpol
 simpol <- simpol(estRates)
 # Print the simpol
@@ -151,7 +154,7 @@ sim <- simulatePolymerase(
     addSpace = 17, time = 1
 )
 # Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 # Get steric hindrance
 stericHindrance <- stericHindrance(estRates)
 # Print the steric hindrance
@@ -164,7 +167,7 @@ sim <- simulatePolymerase(
     addSpace = 17, time = 1
 )
 # Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim)
+estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 # Get rates
 rates <- rates(estRates)
 # Print the rates

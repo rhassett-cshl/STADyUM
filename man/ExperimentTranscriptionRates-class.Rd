@@ -47,6 +47,8 @@ contain a gene_id}
 \item{geneBodyRegions}{a \link[GenomicRanges]{GRanges-class} object that
 must contain a gene_id}
 
+\item{name}{a character value for the name of the experiment}
+
 \item{stericHindrance}{a logical value to determine whether to infer
 landing-pad occupancy or not. Defaults to FALSE.}
 
@@ -180,73 +182,75 @@ hindrance is enabled)}
 
 \examples{
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    name = "K562_control",
+     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+    pauseRegions = bw_pause_filtered,
+    geneBodyRegions = bw_gb_filtered,
+    name = "Control",
     stericHindrance = TRUE,
-    omegaScale = 1000,
+    omegaScale = 1000
 )
 
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    name = "K562_control",
+     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+    pauseRegions = bw_pause_filtered,
+    geneBodyRegions = bw_gb_filtered,
+    name = "Control"
 )
 
 # Get the rates from the object
 rates(expRates)
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    name = "K562_control",
+     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+    pauseRegions = bw_pause_filtered,
+    geneBodyRegions = bw_gb_filtered,
+    name = "Control"
 )
 pauseRegions(expRates)
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    name = "K562_control",
+     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+    pauseRegions = bw_pause_filtered,
+    geneBodyRegions = bw_gb_filtered,
+    name = "Control"
 )
 geneBodyRegions(expRates)
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    name = "K562_control",
+     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+    pauseRegions = bw_pause_filtered,
+    geneBodyRegions = bw_gb_filtered,
+    name = "Control",
+    stericHindrance = TRUE,
+    omegaScale = 1000
 )
 omegaScale(expRates)
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_chr21_subset.RData")
+load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-K562-vihervaara-control-SE_plus_chr21_subset.bw",
+    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-K562-vihervaara-control-SE_minus_chr21_subset.bw",
-    pauseRegions = bw_pause_21_subset,
-    geneBodyRegions = bw_gene_body_21_subset,
-    name = "K562_control",
+     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+    pauseRegions = bw_pause_filtered,
+    geneBodyRegions = bw_gb_filtered,
+    name = "Control"
 )
 stericHindrance(expRates)
 }
