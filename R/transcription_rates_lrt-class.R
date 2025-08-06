@@ -14,15 +14,15 @@
 #' @exportClass TranscriptionRatesLRT
 methods::setClass("TranscriptionRatesLRT",
     slots = c(
-        expData1 = "TranscriptionRates",
-        expData2 = "TranscriptionRates",
+        transcriptionRates1 = "TranscriptionRates",
+        transcriptionRates2 = "TranscriptionRates",
         spikeInScalingFactor = "character",
-        omegaTbl = "tbl_df",
+        chiTbl = "tbl_df",
         betaTbl = "tbl_df"
     )
 )
 
-computeOmegaLRT <- function(lambda1, lambda2, rc1, rc2) {
+computeChiLRT <- function(lambda1, lambda2, rc1, rc2) {
     tao1 <- lambda1 / (lambda1 + lambda2)
     tao2 <- 1 - tao1
 
@@ -35,24 +35,23 @@ computeOmegaLRT <- function(lambda1, lambda2, rc1, rc2) {
     }
 
     if(is(rc1, "ExperimentTranscriptionRates")) {
-        omegaTbl <- tibble(
+        chiTbl <- tibble(
             geneId = rc1$geneId, chi1 = chi1, chi2 = chi2,
             lfc = log2(chi2 / chi1)
         )
     } else {
-        omegaTbl <- tibble(
+        chiTbl <- tibble(
             trial = rc1$trial, chi1 = chi1, chi2 = chi2,
             lfc = log2(chi2 / chi1)
         )
     }
 
-    omegaTbl <- omegaTbl %>%
-        bind_cols(bind_rows(map2(rc1$totalGbRc, rc2$totalGbRc, omegaLRT,
-            tao1 = tao1, tao2 = tao2
-        )))
+    chiTbl <- chiTbl %>%
+        bind_cols(bind_rows(map2(rc1$totalGbRc, rc2$totalGbRc, chiLRT,
+        tao1 = tao1, tao2 = tao2)))
 
-    omegaTbl <- omegaTbl %>% mutate(padj = p.adjust(p, method = "BH"))
-    return(omegaTbl)
+    chiTbl <- chiTbl %>% mutate(padj = p.adjust(p, method = "BH"))
+    return(chiTbl)
 }
 
 computeBetaLRTParams <- function(rc1, rc2, kmin, kmax) {
@@ -163,27 +162,24 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
 }
 
 constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results) {
-    beta1 <- rc1$betaAdp
-    beta2 <- rc2$betaAdp
+    beta1 <- rc1$betaAdp; beta2 <- rc2$betaAdp
     tStats <- rc1$likelihood + rc2$likelihood - h0Results$h0Likelihood
-    if(is(rc1, "ExperimentTranscriptionRates")) {
-        p <- numeric(length(rc1$geneId))
-    } else {
-        p <- numeric(length(rc1$trial))
-    }
+    if(is(rc1, "ExperimentTranscriptionRates")) p <- numeric(length(rc1$geneId))
+    else p <- numeric(length(rc1$trial))
 
     if(is(rc1, "ExperimentTranscriptionRates")) {
-        betaTbl <- tibble(
-            geneId = rc1$geneId, beta1 = beta1, beta2 = beta2,
-            lfc = log2(beta2 / beta1), fkMean1 = rc1$fkMean, fkMean2 = rc2$fkMean, fkVar1 = rc1$fkVar, fkVar2 = rc2$fkVar, tStats = tStats)
+        betaTbl <- tibble(geneId = rc1$geneId, beta1 = beta1, beta2 = beta2,
+            lfc = log2(beta2 / beta1), fkMean1 = rc1$fkMean, 
+            fkMean2 = rc2$fkMean, fkVar1 = rc1$fkVar, fkVar2 = rc2$fkVar,
+            tStats = tStats)
     } else {
-        betaTbl <- tibble(
-            trial = rc1$trial, beta1 = beta1, beta2 = beta2,
-            lfc = log2(beta2 / beta1), fkMean1 = rc1$fkMean, fkMean2 = rc2$fkMean, fkVar1 = rc1$fkVar, fkVar2 = rc2$fkVar, tStats = tStats)
+        betaTbl <- tibble(trial = rc1$trial, beta1 = beta1, beta2 = beta2,
+            lfc = log2(beta2 / beta1), fkMean1 = rc1$fkMean, 
+            fkMean2 = rc2$fkMean, fkVar1 = rc1$fkVar, fkVar2 = rc2$fkVar,
+            tStats = tStats)
     }
 
     idx <- betaTbl$tStats < 0
-
     betaTblIdx <- tibble(
         geneId = names(h1Results$emHc),
         beta1 = map_dbl(h1Results$emHc, "beta"),
@@ -198,13 +194,9 @@ constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results) {
     )
 
     betaTbl <- bind_rows(betaTbl[!idx, ], betaTblIdx)
-
     betaTbl <- betaTbl %>%
-        mutate(
-            p = pchisq(2 * tStats,
-                df = 1, ncp = 0, lower.tail = FALSE,
-                log.p = FALSE
-            )
+        mutate(p = pchisq(2 * tStats, df = 1, ncp = 0, lower.tail = FALSE,
+                log.p = FALSE)
         ) %>%
         mutate(padj = p.adjust(p, method = "BH"))
 
@@ -237,8 +229,8 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #' log 2 fold change in beta estimates between conditions, the t-statistics for
 #' the likelihood ratio tests, and the adjusted p-values based on the "BH"
 #' method.
-#' @param expData1 an \code{\linkS4class{ExperimentTranscriptionRates}} object
-#' @param expData2 an \code{\linkS4class{ExperimentTranscriptionRates}} object
+#' @param transcriptionRates1 an \code{\linkS4class{TranscriptionRates}} object
+#' @param transcriptionRates2 an \code{\linkS4class{TranscriptionRates}} object
 #' @param spikeInScalingFactor path to a csv file containing scale factors
 #' based on total or spike-in reads
 #'
@@ -248,7 +240,7 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #'
 #' @examples
 #' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates1 <- estimateTranscriptionRates(
+#' transcriptionRates1 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -256,7 +248,7 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' expRates2 <- estimateTranscriptionRates(
+#' transcriptionRates2 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -265,24 +257,25 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #'     name = "Treated"
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
-#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
+#' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+#' spikeInScalingFactor)
 #' # Print the likelihood ratio test object
 #' print(lrts)
 #' @export
-likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
-    if (!is(expData1, "TranscriptionRates")) {
-        stop("expData1 must be an TranscriptionRates object")
+likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
+    spikeInScalingFactor) {
+    if (!is(transcriptionRates1, "TranscriptionRates")) {
+        stop("transcriptionRates1 must be an TranscriptionRates object")
     }
-    if (!is(expData2, "TranscriptionRates")) {
-        stop("expData2 must be an TranscriptionRates object")
+    if (!is(transcriptionRates2, "TranscriptionRates")) {
+        stop("transcriptionRates2 must be an TranscriptionRates object")
     }
-    k <- 50; rnapSize <- 50; zeta <- 2000; sigP <- 0.05
-    lfc1 <- 0; lfc2 <- 0; maxItr <- 500; tor <- 1e-6
-    rc1 <- rates(expData1); rc2 <- rates(expData2)
+    k <- 50; rnapSize <- 50; zeta <- 2000; sigP <- 0.05; lfc1 <- 0; lfc2 <- 0;
+    maxItr <- 500; tor <- 1e-6; rc1 <- rates(transcriptionRates1); 
+    rc2 <- rates(transcriptionRates2)
     kmin <- 1; kmax <- length(rc1$actualPauseSiteCounts[[1]])
 
-    ## Get union set of genes being analyzed
-    if(is(expData1, "ExperimentTranscriptionRates")) {
+    if(is(transcriptionRates1, "ExperimentTranscriptionRates")) {
         gnUnion <- intersect(rc1$geneId, rc2$geneId)
         rc1 <- rc1[match(gnUnion, rc1$geneId), ]
         rc2 <- rc2[match(gnUnion, rc2$geneId), ]
@@ -291,33 +284,27 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
     ## Poisson-based Likelihood Ratio Tests
     ## Use # of spike-in or total # of mappable reads as scaling factor
     scaleTbl <- read.csv(spikeInScalingFactor)
-
     required_cols <- c("control_1", "control_2", "treated_1", "treated_2")
     missing_cols <- setdiff(required_cols, colnames(scaleTbl))
     if (length(missing_cols) > 0) {
-        stop(
-            "scaleTbl is missing required columns: ",
+        stop("scaleTbl is missing required columns: ",
             paste(missing_cols, collapse = ", "),
-            "\nExpected columns: ", paste(required_cols, collapse = ", ")
-        )
+            "\nExpected columns: ", paste(required_cols, collapse = ", "))
     }
 
     ## Cancel out M and zeta since they are the same between conditions
     lambda1 <- scaleTbl$control_1 + ifelse(is.na(scaleTbl$control_2), 0,
-        scaleTbl$control_2
-    )
+        scaleTbl$control_2)
     lambda2 <- scaleTbl$treated_1 + ifelse(is.na(scaleTbl$treated_2), 0,
-        scaleTbl$treated_2
-    )
+        scaleTbl$treated_2)
 
-    omegaTbl <- computeOmegaLRT(lambda1, lambda2, rc1, rc2)
+    chiTbl <- computeChiLRT(lambda1, lambda2, rc1, rc2)
     betaTbl <- computeBetaLRT(rc1, rc2, kmin, kmax)
 
     return(new("TranscriptionRatesLRT",
-        expData1 = expData1,
-        expData2 = expData2,
-        spikeInScalingFactor = spikeInScalingFactor,
-        omegaTbl = omegaTbl,
+        transcriptionRates1 = transcriptionRates1,
+        transcriptionRates2 = transcriptionRates2,
+        spikeInScalingFactor = spikeInScalingFactor, chiTbl = chiTbl,
         betaTbl = betaTbl
     ))
 }
@@ -333,7 +320,7 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 #'
 #' @examples
 #' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates1 <- estimateTranscriptionRates(
+#' transcriptionRates1 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -341,7 +328,7 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' expRates2 <- estimateTranscriptionRates(
+#' transcriptionRates2 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -350,12 +337,13 @@ likelihoodRatioTest <- function(expData1, expData2, spikeInScalingFactor) {
 #'     name = "Treated"
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
-#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
-#' expData1(lrts)
+#' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+#' spikeInScalingFactor)
+#' transcriptionRates1(lrts)
 #' @export
-setGeneric("expData1", function(object) standardGeneric("expData1"))
-setMethod("expData1", "TranscriptionRatesLRT", function(object) {
-    slot(object, "expData1")
+setGeneric("transcriptionRates1", function(object) standardGeneric("transcriptionRates1"))
+setMethod("transcriptionRates1", "TranscriptionRatesLRT", function(object) {
+    slot(object, "transcriptionRates1")
 })
 
 #' @rdname TranscriptionRatesLRT-class
@@ -369,7 +357,7 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
 #'
 #' @examples
 #' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates1 <- estimateTranscriptionRates(
+#' transcriptionRates1 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -377,7 +365,7 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' expRates2 <- estimateTranscriptionRates(
+#' transcriptionRates2 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -386,12 +374,13 @@ setMethod("expData1", "TranscriptionRatesLRT", function(object) {
 #'     name = "Treated"
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
-#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
-#' expData2(lrts)
+#' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+#' spikeInScalingFactor)
+#' transcriptionRates2(lrts)
 #' @export
-setGeneric("expData2", function(object) standardGeneric("expData2"))
-setMethod("expData2", "TranscriptionRatesLRT", function(object) {
-    slot(object, "expData2")
+setGeneric("transcriptionRates2", function(object) standardGeneric("transcriptionRates2"))
+setMethod("transcriptionRates2", "TranscriptionRatesLRT", function(object) {
+    slot(object, "transcriptionRates2")
 })
 
 #' @rdname TranscriptionRatesLRT-class
@@ -405,7 +394,7 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
 #'
 #' @examples
 #' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates1 <- estimateTranscriptionRates(
+#' transcriptionRates1 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -413,7 +402,7 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' expRates2 <- estimateTranscriptionRates(
+#' transcriptionRates2 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -422,7 +411,8 @@ setMethod("expData2", "TranscriptionRatesLRT", function(object) {
 #'     name = "Treated"
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
-#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
+#' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+#' spikeInScalingFactor)
 #' spikeInScalingFactor(lrts)
 #' @export
 setGeneric("spikeInScalingFactor", function(object) {
@@ -434,10 +424,10 @@ setMethod(
 )
 
 #' @rdname TranscriptionRatesLRT-class
-#' @title Accessor for Omega Table
+#' @title Accessor for Chi Table
 #'
 #' @description
-#' Accessor for the omega table from a TranscriptionRatesLRT object.
+#' Accessor for the chi table from a TranscriptionRatesLRT object.
 #'
 #' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
@@ -445,7 +435,7 @@ setMethod(
 #'
 #' @examples
 #' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates1 <- estimateTranscriptionRates(
+#' transcriptionRates1 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -453,7 +443,7 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' expRates2 <- estimateTranscriptionRates(
+#' transcriptionRates2 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -462,15 +452,16 @@ setMethod(
 #'     name = "Treated"
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
-#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
-#' omegaTbl(lrts)
+#' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+#' spikeInScalingFactor)
+#' chiTbl(lrts)
 #' @export
-setGeneric("omegaTbl", function(object) {
-    standardGeneric("omegaTbl")
+setGeneric("chiTbl", function(object) {
+    standardGeneric("chiTbl")
 })
 setMethod(
-    "omegaTbl", "TranscriptionRatesLRT",
-    function(object) slot(object, "omegaTbl")
+    "chiTbl", "TranscriptionRatesLRT",
+    function(object) slot(object, "chiTbl")
 )
 
 
@@ -486,7 +477,7 @@ setMethod(
 #'
 #' @examples
 #' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates1 <- estimateTranscriptionRates(
+#' transcriptionRates1 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -494,7 +485,7 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' expRates2 <- estimateTranscriptionRates(
+#' transcriptionRates2 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -503,7 +494,8 @@ setMethod(
 #'     name = "Treated"
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
-#' lrts <- likelihoodRatioTest(expData1, expData2, spikeInScalingFactor)
+#' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+#' spikeInScalingFactor)
 #' betaTbl(lrts)
 #' @export
 setGeneric("betaTbl", function(object) {
@@ -534,7 +526,7 @@ setMethod(
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
 #' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates1 <- estimateTranscriptionRates(
+#' transcriptionRates1 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -542,7 +534,7 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' expRates2 <- estimateTranscriptionRates(
+#' transcriptionRates2 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -551,7 +543,8 @@ setMethod(
 #'     name = "Treated"
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
-#' lrts <- likelihoodRatioTest(expRates1, expRates2, spikeInScalingFactor)
+#' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+#' spikeInScalingFactor)
 #' plotPauseSiteContourMapTwoConditions(lrts,
 #' file="pause_sites_contour_map.png")
 #'
@@ -569,8 +562,8 @@ setMethod(
             height = 6, dpi = 300) {
 
         betaTbl <- betaTbl(object)
-        name1 <- slot(expData1(object), "name")
-        name2 <- slot(expData2(object), "name")
+        name1 <- slot(transcriptionRates1(object), "name")
+        name2 <- slot(transcriptionRates2(object), "name")
 
         # Calculate standard deviation from variance
         betaTbl$fkSd1 <- sqrt(betaTbl$fkVar1)
@@ -630,7 +623,7 @@ setMethod(
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
 #' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates1 <- estimateTranscriptionRates(
+#' transcriptionRates1 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -638,7 +631,7 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' expRates2 <- estimateTranscriptionRates(
+#' transcriptionRates2 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -647,7 +640,8 @@ setMethod(
 #'     name = "Treated"
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
-#' lrts <- likelihoodRatioTest(expRates1, expRates2, spikeInScalingFactor)
+#' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+#' spikeInScalingFactor)
 #' BetaViolinPlot(lrts, file="boxplot.png")
 #'
 #' @rdname TranscriptionRatesLRT-class
@@ -664,8 +658,8 @@ setMethod(
             height = 6, dpi = 300) {
 
         betaTbl <- betaTbl(object)
-        name1 <- slot(expData1(object), "name")
-        name2 <- slot(expData2(object), "name")
+        name1 <- slot(transcriptionRates1(object), "name")
+        name2 <- slot(transcriptionRates2(object), "name")
 
         p <- betaTbl %>%
             dplyr::select(beta1, beta2) %>%
@@ -675,13 +669,15 @@ setMethod(
                                 names_prefix = "beta") %>%
             dplyr::mutate(Condition = 
             dplyr::recode(Condition, "1" = name1, "2" = name2),
-                  ScaledBeta = Beta * 2000,  # Scale by zeta
-                  LogScaledBeta = log(ScaledBeta)) %>%  # Log of scaled beta
-            ggpubr::ggviolin(x = "Condition", y = "LogScaledBeta", fill = "Condition",
+                ScaledBeta = Beta * 2000,  # Scale by zeta
+                LogScaledBeta = log(ScaledBeta)) %>%  # Log of scaled beta
+            ggpubr::ggviolin(x = "Condition", y = "LogScaledBeta", 
+            fill = "Condition",
                     palette = c("#00AFBB", "#E7B800"),
                     add = "boxplot", add.params = list(fill = "white")) +
-            labs(title = "Log of Scaled Beta Values Comparison", x = "Condition", 
-            y = expression(log(beta * zeta))) +  # Use Greek letters
+            labs(title = "Log of Scaled Beta Values Comparison", 
+            x = "Condition", 
+            y = expression(log(beta * zeta))) +  
             theme_pubr() +
             theme(plot.title = element_text(hjust = 0.5))
 
@@ -711,7 +707,7 @@ setMethod(
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
 #' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates1 <- estimateTranscriptionRates(
+#' transcriptionRates1 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -719,7 +715,7 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' expRates2 <- estimateTranscriptionRates(
+#' transcriptionRates2 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -728,7 +724,8 @@ setMethod(
 #'     name = "Treated"
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
-#' lrts <- likelihoodRatioTest(expRates1, expRates2, spikeInScalingFactor)
+#' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+#' spikeInScalingFactor)
 #' ChiViolinPlot(lrts, file="boxplot.png")
 #'
 #' @rdname TranscriptionRatesLRT-class
@@ -744,11 +741,11 @@ setMethod(
     function(object, file = NULL, width = 8,
             height = 6, dpi = 300) {
 
-        omegaTbl <- omegaTbl(object)
-        name1 <- slot(expData1(object), "name")
-        name2 <- slot(expData2(object), "name")
+        chiTbl <- chiTbl(object)
+        name1 <- slot(transcriptionRates1(object), "name")
+        name2 <- slot(transcriptionRates2(object), "name")
 
-        p <- omegaTbl %>%
+        p <- chiTbl %>%
             dplyr::select(chi1, chi2) %>%
             tidyr::pivot_longer(cols = c(chi1, chi2),
                                 names_to = "Condition",
@@ -756,13 +753,15 @@ setMethod(
                                 names_prefix = "chi") %>%
             dplyr::mutate(Condition = 
             dplyr::recode(Condition, "1" = name1, "2" = name2),
-                  ScaledChi = Chi * 2000,  # Scale by zeta
-                  LogScaledChi = log(ScaledChi)) %>%  # Log of scaled chi
-            ggpubr::ggviolin(x = "Condition", y = "LogScaledChi", fill = "Condition",
+                ScaledChi = Chi * 2000,  # Scale by zeta
+                LogScaledChi = log(ScaledChi)) %>%  # Log of scaled chi
+            ggpubr::ggviolin(x = "Condition", y = "LogScaledChi", 
+            fill = "Condition",
                     palette = c("#00AFBB", "#E7B800"),
                     add = "boxplot", add.params = list(fill = "white")) +
-            labs(title = "Log of Scaled Chi Values Comparison", x = "Condition", 
-            y = expression(log(chi * zeta))) +  # Use Greek letters
+            labs(title = "Log of Scaled Chi Values Comparison", 
+            x = "Condition", 
+            y = expression(log(chi * zeta))) +  
             theme_pubr() +
             theme(plot.title = element_text(hjust = 0.5))
 
@@ -792,7 +791,7 @@ setMethod(
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
 #' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates1 <- estimateTranscriptionRates(
+#' transcriptionRates1 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -800,7 +799,7 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' expRates2 <- estimateTranscriptionRates(
+#' transcriptionRates2 <- estimateTranscriptionRates(
 #'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
 #'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -809,7 +808,8 @@ setMethod(
 #'     name = "Treated"
 #' )
 #' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
-#' lrts <- likelihoodRatioTest(expRates1, expRates2, spikeInScalingFactor)
+#' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+#' spikeInScalingFactor)
 #' plotLfcMa(lrts, file="lfc_ma_plot.png")
 #'
 #' @rdname TranscriptionRatesLRT-class
@@ -826,8 +826,8 @@ setMethod(
             height = 6, dpi = 300) {
 
         betaTbl <- betaTbl(object)
-        name1 <- slot(expData1(object), "name")
-        name2 <- slot(expData2(object), "name")
+        name1 <- slot(transcriptionRates1(object), "name")
+        name2 <- slot(transcriptionRates2(object), "name")
         zeta <- 2000
 
         betaTbl <- betaTbl %>%

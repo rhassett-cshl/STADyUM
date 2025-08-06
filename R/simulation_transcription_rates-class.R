@@ -398,6 +398,9 @@ setMethod(
         if (!is(simpol, "SimulatePolymerase")) {
             stop("simpol parameter must be a SimulatePolymerase object")
         }
+        if (is.null(name) || !is.character(name) || length(name) < 1) {
+            stop("name must be a string")
+        }
         if (!is.logical(stericHindrance)) {
             stop("stericHindrance parameter must be a logical value")
         }

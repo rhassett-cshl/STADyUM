@@ -94,8 +94,8 @@ checkForOverlappingRegions <- function(pauseRegions, gbRegions) {
 }
 
 inputValidationChecks <- function(
-    bwPlus, bwMinus, pauseRegions,
-    gbRegions, stericHindrance, omegaScale) {
+    bwPlus, bwMinus, pauseRegions, gbRegions, 
+    name, stericHindrance, omegaScale) {
     if (!file.exists(bwPlus) || !file.access(bwPlus, 4) == 0) {
         stop("bigwigPlus file does not exist or is not readable")
     }
@@ -107,6 +107,9 @@ inputValidationChecks <- function(
     }
     if (!methods::is(gbRegions, "GRanges") || length(gbRegions) == 0) {
         stop("geneBodyRegions must be GRanges object with at least one region")
+    }
+    if (is.null(name) || !is.character(name) || length(name) < 1) {
+        stop("name must be a string")
     }
     if (!is.logical(stericHindrance)) {
         stop("stericHindrance must be a single logical value")
@@ -255,7 +258,7 @@ prepareEmData <- function(rc1, bw1P3, pauseRegions,
 }
 
 experimentRunEmAlgorithm <- function(emRate, stericHindrance, zeta,
-                                     lambda = NULL) {
+                                    lambda = NULL) {
     emLs <- list()
     fkInt <- emRate$fkInt
     kmax <- lapply(emRate$Xk, function(xk) {
@@ -397,7 +400,7 @@ setMethod(
         bigwigPlus <- x # x is the first bigwig file path
         inputValidationChecks(
             bigwigPlus, bigwigMinus, pauseRegions,
-            geneBodyRegions, stericHindrance, omegaScale
+            geneBodyRegions, name, stericHindrance, omegaScale
         )
         ## Force copy underlying GRanges obj to prevent side effects
         pauseRegions <- GenomicRanges::makeGRangesFromDataFrame(
