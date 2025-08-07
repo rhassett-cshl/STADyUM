@@ -232,7 +232,7 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #' @param transcriptionRates1 an \code{\linkS4class{TranscriptionRates}} object
 #' @param transcriptionRates2 an \code{\linkS4class{TranscriptionRates}} object
 #' @param spikeInScalingFactor path to a csv file containing scale factors
-#' based on total or spike-in reads
+#' based on total or spike-in reads or NULL if not provided. Defaults to NULL.
 #'
 #' Note: Gene body length assumed to be the same between conditions
 #'
@@ -263,7 +263,7 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
 #' print(lrts)
 #' @export
 likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
-    spikeInScalingFactor) {
+    spikeInScalingFactor = NULL) {
     if (!is(transcriptionRates1, "TranscriptionRates")) {
         stop("transcriptionRates1 must be an TranscriptionRates object")
     }
@@ -283,13 +283,19 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
 
     ## Poisson-based Likelihood Ratio Tests
     ## Use # of spike-in or total # of mappable reads as scaling factor
-    scaleTbl <- read.csv(spikeInScalingFactor)
-    required_cols <- c("control_1", "control_2", "treated_1", "treated_2")
-    missing_cols <- setdiff(required_cols, colnames(scaleTbl))
-    if (length(missing_cols) > 0) {
-        stop("scaleTbl is missing required columns: ",
-            paste(missing_cols, collapse = ", "),
-            "\nExpected columns: ", paste(required_cols, collapse = ", "))
+    if(!is.null(spikeInScalingFactor)) {
+        scaleTbl <- read.csv(spikeInScalingFactor)
+        required_cols <- c("control_1", "control_2", "treated_1", "treated_2")
+        missing_cols <- setdiff(required_cols, colnames(scaleTbl))
+        if (length(missing_cols) > 0) {
+            stop("scaleTbl is missing required columns: ",
+                paste(missing_cols, collapse = ", "),
+                "\nExpected columns: ", paste(required_cols, collapse = ", "))
+        }
+    }
+    else {
+        scaleTbl <- tibble(control_1 = 0, control_2 = 0,
+            treated_1 = 0, treated_2 = 0)
     }
 
     ## Cancel out M and zeta since they are the same between conditions

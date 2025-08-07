@@ -139,8 +139,7 @@ likelihood ratio test functionality derived in (Siepel 2022, Section
 or Species")
 
 ```{r likelihood_ratio_tests}
-lrt <- likelihoodRatioTest(controlRates, treatedRates, 
-spikeInScalingFactor="../inst/extdata/spikein_scaling_factor.csv")
+lrt <- likelihoodRatioTest(controlRates, treatedRates")
 
 show(lrt)
 ```
