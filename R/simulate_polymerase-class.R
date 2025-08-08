@@ -47,6 +47,8 @@
 #' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
 #' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave geom_histogram
 #' @importFrom dplyr %>%
+#' @importFrom stats prcomp sd
+#' @importFrom utils head
 #' @exportClass SimulatePolymerase
 methods::setClass("SimulatePolymerase",
     slots = c(

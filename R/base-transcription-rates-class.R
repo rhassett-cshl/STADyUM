@@ -16,6 +16,7 @@
 #' @importFrom methods slot
 #' @import ggplot2
 #' @importFrom grDevices nclass.Sturges
+#' @importFrom stats cor
 #' @import ggpubr
 #' @exportClass TranscriptionRates
 methods::setClass("TranscriptionRates",
@@ -119,7 +120,7 @@ setGeneric("stericHindrance",
 #' shape of pause site positions
 #'
 #'
-#' @param object an \code{\link{TranscriptionRates}} object
+#' @param object an \code{\linkS4class{TranscriptionRates}} object
 #' @param file the path to a file to save the plot to
 #' @param width the width of the plot in inches
 #' @param height the height of the plot in inches
@@ -192,13 +193,13 @@ setMethod(
 #' the number of polymerase at the pause site expected by the model. This
 #' visualization assesses the goodness-of-fit of the pause site model by
 #' showing how well the model predictions align with the actual data. A perfect
-#' fit would show all points on the diagonal line (y=x). The R² value is
+#' fit would show all points on the diagonal line (y=x). The R^2 value is
 #' calculated and displayed on the plot to quantify the model fit quality. This
 #' plot is useful for validating the accuracy of the pause site estimation and
 #' identifying any systematic biases in the model predictions.
 #'
 #'
-#' @param object an \code{\link{TranscriptionRates}} object
+#' @param object an \code{\linkS4class{TranscriptionRates}} object
 #' @param file the path to a file to save the plot to
 #' @param width the width of the plot in inches
 #' @param height the height of the plot in inches
@@ -239,7 +240,7 @@ setMethod(
         )
 
         rSquared <- cor(allData$actual, allData$expected)^2
-        r2Text <- paste("R² =", round(rSquared, 3))
+        r2Text <- paste("R^2 =", round(rSquared, 3))
 
         p <- ggplot(allData, aes(x = actual, y = expected)) +
             geom_point(alpha = 0.6, size = 0.8) +
@@ -280,7 +281,7 @@ setMethod(
 #' transcriptional activity.
 #'
 #'
-#' @param object an \code{\link{TranscriptionRates}} object
+#' @param object an \code{\linkS4class{TranscriptionRates}} object
 #' @param file the path to a file to save the plot to
 #' @param width the width of the plot in inches
 #' @param height the height of the plot in inches
@@ -346,7 +347,7 @@ setMethod(
 #' linear model to the data and plots the line. Can plot beta for either the
 #' adapted model or the single pause site model.
 #'
-#' @param object an \code{\link{TranscriptionRates}} object
+#' @param object an \code{\linkS4class{TranscriptionRates}} object
 #' @param betaType the type of beta to plot. Can be "betaAdp" for the adapted
 #' model or "betaOrg" for the single pause site model. Defaults to "betaAdp".
 #' @param file the path to a file to save the plot to
@@ -426,7 +427,7 @@ setMethod("plotBetaVsChi", "TranscriptionRates",
 #' Plot a contour map with mean pause site position on the x-axis and pause site
 #' variance on the y-axis.
 #'
-#' @param object an \code{\link{TranscriptionRates}} object
+#' @param object an \code{\linkS4class{TranscriptionRates}} object
 #' @param file the path to a file to save the plot to
 #' @param width the width of the plot in inches
 #' @param height the height of the plot in inches
@@ -466,7 +467,7 @@ setMethod(
             geom_point(alpha = 0.6, size = 1.5, color = "#E69F00") +
             labs(
                 x = "Mean Pause Site Position (bp)",
-                y = "Pause Site Variance (bp²)",
+                y = "Pause Site Variance (bp^2)",
                 title = "Pause Site Mean vs Variance Distribution"
             ) +
             theme_bw()

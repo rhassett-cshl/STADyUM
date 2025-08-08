@@ -26,7 +26,7 @@
 #' \describe{
 #' \item{geneId}{Character. Gene identifier}
 #' \item{chi}{Numeric. RNAP density along gene body given as estimate for the
-#' gene body elongation rate [RNAPs/bp]}
+#' gene body elongation rate \verb{[RNAPs/bp]}}
 #' \item{betaOrg}{Numeric. Ratio of gene body RNAP density to pause region
 #' RNAP density with fixed pause sites given as an estimate for the
 #' pause-escape rate}

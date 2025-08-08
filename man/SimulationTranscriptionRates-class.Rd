@@ -71,7 +71,7 @@ with columns:
 \describe{
 \item{trial}{Numeric. Trial number, each trial samples 5000 cells}
 \item{chi}{Numeric. RNAP density along gene body given as estimate for the
-gene body elongation rate \link{RNAPs/bp}}
+gene body elongation rate \verb{[RNAPs/bp]}}
 \item{betaOrg}{Numeric. Ratio of gene body RNAP density to pause region
 RNAP density with fixed pause sites given as an estimate for the
 pause-escape rate}

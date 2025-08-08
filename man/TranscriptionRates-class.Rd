@@ -35,7 +35,7 @@ plotBetaVsChi(
 plotPauseSiteContourMap(object, file = NULL, width = 8, height = 6, dpi = 300)
 }
 \arguments{
-\item{object}{an \code{\link{TranscriptionRates}} object}
+\item{object}{an \code{\linkS4class{TranscriptionRates}} object}
 
 \item{file}{the path to a file to save the plot to}
 
@@ -74,7 +74,7 @@ of polymerase at the pause site in the simulated/experimental data against
 the number of polymerase at the pause site expected by the model. This
 visualization assesses the goodness-of-fit of the pause site model by
 showing how well the model predictions align with the actual data. A perfect
-fit would show all points on the diagonal line (y=x). The R² value is
+fit would show all points on the diagonal line (y=x). The R^2 value is
 calculated and displayed on the plot to quantify the model fit quality. This
 plot is useful for validating the accuracy of the pause site estimation and
 identifying any systematic biases in the model predictions.

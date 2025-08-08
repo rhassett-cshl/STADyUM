@@ -213,7 +213,7 @@ plotCombinedCells(simpol, file="combinedCellsLollipopPlot.png")
 ## Estimate Transcription Rates from Simualted Data
 
 ```{r estimate_simulated_rates, fig.width=10, fig.height=8}
-simRates <- estimateTranscriptionRates(simpol, stericHindrance=TRUE)
+simRates <- estimateTranscriptionRates(simpol, name="simRates1a2b0.5", stericHindrance=TRUE)
 
 show(simRates)
 

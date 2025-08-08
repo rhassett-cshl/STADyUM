@@ -10,7 +10,6 @@
 \alias{chiTbl}
 \alias{betaTbl}
 \alias{plotPauseSiteContourMapTwoConditions}
-\alias{BetaViolinPlot}
 \alias{ChiViolinPlot}
 \alias{plotLfcMa}
 \title{Constructor for TranscriptionRatesLRT object}
@@ -39,8 +38,6 @@ plotPauseSiteContourMapTwoConditions(
   dpi = 300
 )
 
-BetaViolinPlot(object, file = NULL, width = 8, height = 6, dpi = 300)
-
 ChiViolinPlot(object, file = NULL, width = 8, height = 6, dpi = 300)
 
 plotLfcMa(object, file = NULL, width = 8, height = 6, dpi = 300)
@@ -53,7 +50,7 @@ plotLfcMa(object, file = NULL, width = 8, height = 6, dpi = 300)
 \item{spikeInFile}{path to a csv file containing scale factors
 based on total or spike-in reads or NULL if not provided. Defaults to NULL.}
 
-\item{object}{an \code{\link{LikelihoodRatioTest}} object}
+\item{object}{an \code{\linkS4class{TranscriptionRatesLRT}} object}
 
 \item{file}{the path to a file to save the plot to}
 
@@ -69,8 +66,6 @@ a \code{\linkS4class{TranscriptionRatesLRT}} object
 tbl_df
 
 tbl_df
-
-an \code{\link{ggplot2}} object
 
 an \code{\link{ggplot2}} object
 
@@ -109,8 +104,6 @@ Accessor for the beta table from a TranscriptionRatesLRT object.
 Plot a contour map with mean pause site position on the x-axis and pause site
 standard deviation on the y-axis. The plot is a comparison between two
 conditions.
-
-Plot a violin plot comparing the beta values between two conditions.
 
 Plot a violin plot comparing the chi values between two conditions.
 
@@ -267,29 +260,6 @@ lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 spikeInFile)
 plotPauseSiteContourMapTwoConditions(lrts,
 file="pause_sites_contour_map.png")
-
-# Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-transcriptionRates1 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-    bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
-    pauseRegions = bw_pause_filtered,
-    geneBodyRegions = bw_gb_filtered,
-    name = "Control"
-)
-transcriptionRates2 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-    bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
-    pauseRegions = bw_pause_filtered,
-    geneBodyRegions = bw_gb_filtered,
-    name = "Treated"
-)
-spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
-lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInFile)
-BetaViolinPlot(lrts, file="boxplot.png")
 
 # Create an ExperimentTranscriptionRates object
 load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")

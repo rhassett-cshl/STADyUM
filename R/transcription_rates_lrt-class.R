@@ -3,6 +3,7 @@
 #' @importFrom purrr map2 pmap map_dbl
 #' @importFrom stats pchisq p.adjust
 #' @importFrom methods slot is slot<- validObject
+#' @importFrom utils read.csv
 #' @title Constructor for TranscriptionRatesLRT object
 #'
 #' @description
@@ -519,7 +520,7 @@ setMethod(
 #' standard deviation on the y-axis. The plot is a comparison between two
 #' conditions.
 #'
-#' @param object an \code{\link{LikelihoodRatioTest}} object
+#' @param object an \code{\linkS4class{TranscriptionRatesLRT}} object
 #' @param file the path to a file to save the plot to
 #' @param width the width of the plot in inches
 #' @param height the height of the plot in inches
@@ -611,12 +612,12 @@ setMethod(
     }
 )
 
-#' @title Plot Beta Violin Plot
+#' @title BetaViolinPlot
 #'
 #' @description
 #' Plot a violin plot comparing the beta values between two conditions.
 #'
-#' @param object an \code{\link{LikelihoodRatioTest}} object
+#' @param object an \code{\linkS4class{TranscriptionRatesLRT}} object
 #' @param file the path to a file to save the plot to
 #' @param width the width of the plot in inches
 #' @param height the height of the plot in inches
@@ -648,7 +649,8 @@ setMethod(
 #' spikeInFile)
 #' BetaViolinPlot(lrts, file="boxplot.png")
 #'
-#' @rdname TranscriptionRatesLRT-class
+#' @rdname BetaViolinPlot
+#' @name BetaViolinPlot
 #' @export
 setGeneric("BetaViolinPlot", function(
     object, file = NULL, width = 8,
@@ -700,7 +702,7 @@ setMethod(
 #' @description
 #' Plot a violin plot comparing the chi values between two conditions.
 #'
-#' @param object an \code{\link{LikelihoodRatioTest}} object
+#' @param object an \code{\linkS4class{TranscriptionRatesLRT}} object
 #' @param file the path to a file to save the plot to
 #' @param width the width of the plot in inches
 #' @param height the height of the plot in inches
@@ -784,7 +786,7 @@ setMethod(
 #' @description
 #' Plot a MA plot for log fold change treated/control vs log mean beta*zeta.
 #'
-#' @param object an \code{\link{LikelihoodRatioTest}} object
+#' @param object an \code{\linkS4class{TranscriptionRatesLRT}} object
 #' @param file the path to a file to save the plot to
 #' @param width the width of the plot in inches
 #' @param height the height of the plot in inches

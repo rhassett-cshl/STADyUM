@@ -50,7 +50,8 @@ Imports:
     data.table,
     purrr,
     rtracklayer,
-    ggpubr
+    ggpubr,
+    tidyr
 LinkingTo:
     Rcpp
 Suggests: 
