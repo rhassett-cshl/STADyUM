@@ -16,7 +16,7 @@ methods::setClass("TranscriptionRatesLRT",
     slots = c(
         transcriptionRates1 = "TranscriptionRates",
         transcriptionRates2 = "TranscriptionRates",
-        spikeInScalingFactor = "character",
+        spikeInFile = "ANY",
         chiTbl = "tbl_df",
         betaTbl = "tbl_df"
     )
@@ -231,10 +231,9 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax, gbLength) {
 #' method.
 #' @param transcriptionRates1 an \code{\linkS4class{TranscriptionRates}} object
 #' @param transcriptionRates2 an \code{\linkS4class{TranscriptionRates}} object
-#' @param spikeInScalingFactor path to a csv file containing scale factors
+#' @param spikeInFile path to a csv file containing scale factors
 #' based on total or spike-in reads or NULL if not provided. Defaults to NULL.
 #'
-#' Note: Gene body length assumed to be the same between conditions
 #'
 #' @return a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
@@ -256,19 +255,18 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax, gbLength) {
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInScalingFactor)
+#' spikeInFile)
 #' # Print the likelihood ratio test object
 #' print(lrts)
 #' @export
 likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
-    spikeInScalingFactor = NULL) {
-    if (!is(transcriptionRates1, "TranscriptionRates")) {
-        stop("transcriptionRates1 must be an TranscriptionRates object")
-    }
-    if (!is(transcriptionRates2, "TranscriptionRates")) {
-        stop("transcriptionRates2 must be an TranscriptionRates object")
+    spikeInFile = NULL) {
+    if (!is(transcriptionRates1, "TranscriptionRates") ||
+        !is(transcriptionRates2, "TranscriptionRates")) {
+        stop("transcriptionRates1 and transcriptionRates2 must be an
+            TranscriptionRates object")
     }
     k <- 50; rnapSize <- 50; zeta <- 2000; sigP <- 0.05; lfc1 <- 0; lfc2 <- 0;
     maxItr <- 500; tor <- 1e-6; rc1 <- rates(transcriptionRates1); 
@@ -288,11 +286,8 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
             stop("Gene body length is not the same between conditions")
         }
     }
-
-    ## Poisson-based Likelihood Ratio Tests
-    ## Use # of spike-in or total # of mappable reads as scaling factor
-    if(!is.null(spikeInScalingFactor)) {
-        scaleTbl <- read.csv(spikeInScalingFactor)
+    if(!is.null(spikeInFile)) {
+        scaleTbl <- read.csv(spikeInFile)
         required_cols <- c("control_1", "control_2", "treated_1", "treated_2")
         missing_cols <- setdiff(required_cols, colnames(scaleTbl))
         if (length(missing_cols) > 0) {
@@ -302,24 +297,17 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
         }
     }
     else {
-        scaleTbl <- tibble(control_1 = 0, control_2 = 0,
-            treated_1 = 0, treated_2 = 0)
+        scaleTbl <- tibble(control_1 = 0, control_2 = 0, treated_1 = 0,
+        treated_2 = 0)
     }
-
-    ## Cancel out M and zeta since they are the same between conditions
-    lambda1 <- scaleTbl$control_1 + ifelse(is.na(scaleTbl$control_2), 0,
-        scaleTbl$control_2)
-    lambda2 <- scaleTbl$treated_1 + ifelse(is.na(scaleTbl$treated_2), 0,
-        scaleTbl$treated_2)
-
+    lambda1 <- scaleTbl$control_1 + scaleTbl$control_2
+    lambda2 <- scaleTbl$treated_1 + scaleTbl$treated_2
     chiTbl <- computeChiLRT(lambda1, lambda2, rc1, rc2)
     betaTbl <- computeBetaLRT(rc1, rc2, kmin, kmax, gbLength)
-
     return(new("TranscriptionRatesLRT",
         transcriptionRates1 = transcriptionRates1,
-        transcriptionRates2 = transcriptionRates2,
-        spikeInScalingFactor = spikeInScalingFactor, chiTbl = chiTbl,
-        betaTbl = betaTbl
+        transcriptionRates2 = transcriptionRates2, chiTbl = chiTbl,
+        spikeInFile = spikeInFile, betaTbl = betaTbl
     ))
 }
 
@@ -350,12 +338,13 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInScalingFactor)
+#' spikeInFile)
 #' transcriptionRates1(lrts)
 #' @export
-setGeneric("transcriptionRates1", function(object) standardGeneric("transcriptionRates1"))
+setGeneric("transcriptionRates1", 
+function(object) standardGeneric("transcriptionRates1"))
 setMethod("transcriptionRates1", "TranscriptionRatesLRT", function(object) {
     slot(object, "transcriptionRates1")
 })
@@ -387,12 +376,13 @@ setMethod("transcriptionRates1", "TranscriptionRatesLRT", function(object) {
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInScalingFactor)
+#' spikeInFile)
 #' transcriptionRates2(lrts)
 #' @export
-setGeneric("transcriptionRates2", function(object) standardGeneric("transcriptionRates2"))
+setGeneric("transcriptionRates2", 
+function(object) standardGeneric("transcriptionRates2"))
 setMethod("transcriptionRates2", "TranscriptionRatesLRT", function(object) {
     slot(object, "transcriptionRates2")
 })
@@ -424,17 +414,17 @@ setMethod("transcriptionRates2", "TranscriptionRatesLRT", function(object) {
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInScalingFactor)
-#' spikeInScalingFactor(lrts)
+#' spikeInFile)
+#' spikeInFile(lrts)
 #' @export
-setGeneric("spikeInScalingFactor", function(object) {
-    standardGeneric("spikeInScalingFactor")
+setGeneric("spikeInFile", function(object) {
+    standardGeneric("spikeInFile")
 })
 setMethod(
-    "spikeInScalingFactor", "TranscriptionRatesLRT",
-    function(object) slot(object, "spikeInScalingFactor")
+    "spikeInFile", "TranscriptionRatesLRT",
+    function(object) slot(object, "spikeInFile")
 )
 
 #' @rdname TranscriptionRatesLRT-class
@@ -465,9 +455,9 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInScalingFactor)
+#' spikeInFile)
 #' chiTbl(lrts)
 #' @export
 setGeneric("chiTbl", function(object) {
@@ -507,9 +497,9 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInScalingFactor)
+#' spikeInFile)
 #' betaTbl(lrts)
 #' @export
 setGeneric("betaTbl", function(object) {
@@ -556,9 +546,9 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInScalingFactor)
+#' spikeInFile)
 #' plotPauseSiteContourMapTwoConditions(lrts,
 #' file="pause_sites_contour_map.png")
 #'
@@ -653,9 +643,9 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInScalingFactor)
+#' spikeInFile)
 #' BetaViolinPlot(lrts, file="boxplot.png")
 #'
 #' @rdname TranscriptionRatesLRT-class
@@ -737,9 +727,9 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInScalingFactor)
+#' spikeInFile)
 #' ChiViolinPlot(lrts, file="boxplot.png")
 #'
 #' @rdname TranscriptionRatesLRT-class
@@ -821,9 +811,9 @@ setMethod(
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInScalingFactor)
+#' spikeInFile)
 #' plotLfcMa(lrts, file="lfc_ma_plot.png")
 #'
 #' @rdname TranscriptionRatesLRT-class

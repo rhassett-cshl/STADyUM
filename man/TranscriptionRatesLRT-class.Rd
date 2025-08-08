@@ -6,7 +6,7 @@
 \alias{likelihoodRatioTest}
 \alias{transcriptionRates1}
 \alias{transcriptionRates2}
-\alias{spikeInScalingFactor}
+\alias{spikeInFile}
 \alias{chiTbl}
 \alias{betaTbl}
 \alias{plotPauseSiteContourMapTwoConditions}
@@ -18,14 +18,14 @@
 likelihoodRatioTest(
   transcriptionRates1,
   transcriptionRates2,
-  spikeInScalingFactor
+  spikeInFile = NULL
 )
 
 transcriptionRates1(object)
 
 transcriptionRates2(object)
 
-spikeInScalingFactor(object)
+spikeInFile(object)
 
 chiTbl(object)
 
@@ -50,10 +50,8 @@ plotLfcMa(object, file = NULL, width = 8, height = 6, dpi = 300)
 
 \item{transcriptionRates2}{an \code{\linkS4class{TranscriptionRates}} object}
 
-\item{spikeInScalingFactor}{path to a csv file containing scale factors
-based on total or spike-in reads
-
-Note: Gene body length assumed to be the same between conditions}
+\item{spikeInFile}{path to a csv file containing scale factors
+based on total or spike-in reads or NULL if not provided. Defaults to NULL.}
 
 \item{object}{an \code{\link{LikelihoodRatioTest}} object}
 
@@ -136,9 +134,9 @@ transcriptionRates2 <- estimateTranscriptionRates(
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInScalingFactor)
+spikeInFile)
 # Print the likelihood ratio test object
 print(lrts)
 load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
@@ -158,9 +156,9 @@ transcriptionRates2 <- estimateTranscriptionRates(
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInScalingFactor)
+spikeInFile)
 transcriptionRates1(lrts)
 load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
@@ -179,9 +177,9 @@ transcriptionRates2 <- estimateTranscriptionRates(
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInScalingFactor)
+spikeInFile)
 transcriptionRates2(lrts)
 load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
@@ -200,10 +198,10 @@ transcriptionRates2 <- estimateTranscriptionRates(
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInScalingFactor)
-spikeInScalingFactor(lrts)
+spikeInFile)
+spikeInFile(lrts)
 load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
@@ -221,9 +219,9 @@ transcriptionRates2 <- estimateTranscriptionRates(
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInScalingFactor)
+spikeInFile)
 chiTbl(lrts)
 load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
@@ -242,9 +240,9 @@ transcriptionRates2 <- estimateTranscriptionRates(
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInScalingFactor)
+spikeInFile)
 betaTbl(lrts)
 # Create an ExperimentTranscriptionRates object
 load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
@@ -264,9 +262,9 @@ transcriptionRates2 <- estimateTranscriptionRates(
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInScalingFactor)
+spikeInFile)
 plotPauseSiteContourMapTwoConditions(lrts,
 file="pause_sites_contour_map.png")
 
@@ -288,9 +286,9 @@ transcriptionRates2 <- estimateTranscriptionRates(
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInScalingFactor)
+spikeInFile)
 BetaViolinPlot(lrts, file="boxplot.png")
 
 # Create an ExperimentTranscriptionRates object
@@ -311,9 +309,9 @@ transcriptionRates2 <- estimateTranscriptionRates(
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInScalingFactor)
+spikeInFile)
 ChiViolinPlot(lrts, file="boxplot.png")
 
 # Create an ExperimentTranscriptionRates object
@@ -334,9 +332,9 @@ transcriptionRates2 <- estimateTranscriptionRates(
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInScalingFactor <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInScalingFactor)
+spikeInFile)
 plotLfcMa(lrts, file="lfc_ma_plot.png")
 
 }

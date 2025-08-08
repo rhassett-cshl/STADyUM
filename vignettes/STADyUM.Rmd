@@ -139,7 +139,7 @@ likelihood ratio test functionality derived in (Siepel 2022, Section
 or Species")
 
 ```{r likelihood_ratio_tests}
-lrt <- likelihoodRatioTest(controlRates, treatedRates")
+lrt <- likelihoodRatioTest(controlRates, treatedRates)
 
 show(lrt)
 ```
@@ -157,8 +157,8 @@ the control samples exemplified by the $\Beta$ violin plots.
 
 plotPauseSiteContourMapTwoConditions(lrt, file="lrtPauseSiteContourMap.png")
 
-plotMeanPauseDistrib(controlRates, file="pause_site_distrib_control.png")
-plotMeanPauseDistrib(treatedRates, file="mean_pause_site_treated.png")
+plotMeanPauseDistrib(controlRates, file="meanPauseSitesControl.png")
+plotMeanPauseDistrib(treatedRates, file="meanPauseSitesTreated.png")
 
 BetaViolinPlot(lrt, file="lrtBetaViolinPlot.png")
 
