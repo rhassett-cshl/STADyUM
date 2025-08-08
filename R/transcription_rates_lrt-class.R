@@ -54,7 +54,7 @@ computeChiLRT <- function(lambda1, lambda2, rc1, rc2) {
     return(chiTbl)
 }
 
-computeBetaLRTParams <- function(rc1, rc2, kmin, kmax) {
+computeBetaLRTParams <- function(rc1, rc2, kmin, kmax, gbLength) {
     fkInt <- dnorm(kmin:kmax, mean = 50, sd = 100)
     fkInt <- fkInt / sum(fkInt)
     s1 <- rc1$totalGbRc
@@ -63,7 +63,7 @@ computeBetaLRTParams <- function(rc1, rc2, kmin, kmax) {
     t2H1 <- map_dbl(rc2$expectedPauseSiteCounts, sum)
     Xk1 <- rc1$actualPauseSiteCounts
     Xk2 <- rc2$actualPauseSiteCounts
-    M <- 1750#rc1$gbLength #geneLen - kMax?
+    M <- gbLength
     chiHat <- (s1 + s2) / M
     betaInt <- chiHat / (map_dbl(rc1$actualPauseSiteCounts, sum) 
     + map_dbl(rc2$actualPauseSiteCounts, sum))
@@ -203,11 +203,11 @@ constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results) {
     return(betaTbl)
 }
 
-computeBetaLRT <- function(rc1, rc2, kmin, kmax) {
+computeBetaLRT <- function(rc1, rc2, kmin, kmax, gbLength) {
     maxItr <- 500
     tor <- 1e-6
 
-    params <- computeBetaLRTParams(rc1, rc2, kmin, kmax)
+    params <- computeBetaLRTParams(rc1, rc2, kmin, kmax, gbLength)
     h0Results <- runEMH0BetaLRT(params, kmin, kmax, maxItr, tor)
     h1Results <- runEMH1BetaLRT(params, h0Results, kmin, kmax, maxItr, tor)
     betaTbl <- constructBetaLRTTable(rc1, rc2, h0Results, h1Results)
@@ -274,11 +274,19 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
     maxItr <- 500; tor <- 1e-6; rc1 <- rates(transcriptionRates1); 
     rc2 <- rates(transcriptionRates2)
     kmin <- 1; kmax <- length(rc1$actualPauseSiteCounts[[1]])
-
     if(is(transcriptionRates1, "ExperimentTranscriptionRates")) {
         gnUnion <- intersect(rc1$geneId, rc2$geneId)
         rc1 <- rc1[match(gnUnion, rc1$geneId), ]
         rc2 <- rc2[match(gnUnion, rc2$geneId), ]
+        gbLength <- rc1$gbLength
+    }
+    else {
+        simpol1_params <- parameters(transcriptionRates1)
+        simpol2_params <- parameters(transcriptionRates2)
+        gbLength <- simpol1_params$geneLen - simpol1_params$kMax
+        if(gbLength != simpol2_params$geneLen - simpol2_params$kMax) {
+            stop("Gene body length is not the same between conditions")
+        }
     }
 
     ## Poisson-based Likelihood Ratio Tests
@@ -305,7 +313,7 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
         scaleTbl$treated_2)
 
     chiTbl <- computeChiLRT(lambda1, lambda2, rc1, rc2)
-    betaTbl <- computeBetaLRT(rc1, rc2, kmin, kmax)
+    betaTbl <- computeBetaLRT(rc1, rc2, kmin, kmax, gbLength)
 
     return(new("TranscriptionRatesLRT",
         transcriptionRates1 = transcriptionRates1,
