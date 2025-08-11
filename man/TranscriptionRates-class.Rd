@@ -4,13 +4,20 @@
 \name{TranscriptionRates-class}
 \alias{TranscriptionRates-class}
 \alias{plotMeanPauseDistrib}
+\alias{plotMeanPauseDistrib,TranscriptionRates-method}
 \alias{plotExpectedVsActualPauseSiteCounts}
+\alias{plotExpectedVsActualPauseSiteCounts,TranscriptionRates-method}
 \alias{plotChiDistrib}
+\alias{plotChiDistrib,TranscriptionRates-method}
 \alias{plotBetaVsChi}
+\alias{plotBetaVsChi,TranscriptionRates-method}
 \alias{plotPauseSiteContourMap}
+\alias{plotPauseSiteContourMap,TranscriptionRates-method}
 \title{Base class for TranscriptionRates objects}
 \usage{
 plotMeanPauseDistrib(object, file = NULL, width = 8, height = 6, dpi = 300)
+
+\S4method{plotMeanPauseDistrib}{TranscriptionRates}(object, file = NULL, width = 8, height = 6, dpi = 300)
 
 plotExpectedVsActualPauseSiteCounts(
   object,
@@ -20,7 +27,17 @@ plotExpectedVsActualPauseSiteCounts(
   dpi = 300
 )
 
+\S4method{plotExpectedVsActualPauseSiteCounts}{TranscriptionRates}(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
 plotChiDistrib(object, file = NULL, width = 8, height = 6, dpi = 300)
+
+\S4method{plotChiDistrib}{TranscriptionRates}(object, file = NULL, width = 8, height = 6, dpi = 300)
 
 plotBetaVsChi(
   object,
@@ -28,11 +45,21 @@ plotBetaVsChi(
   file = NULL,
   width = 8,
   height = 6,
-  dpi = 300,
-  ...
+  dpi = 300
+)
+
+\S4method{plotBetaVsChi}{TranscriptionRates}(
+  object,
+  betaType = "betaAdp",
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300
 )
 
 plotPauseSiteContourMap(object, file = NULL, width = 8, height = 6, dpi = 300)
+
+\S4method{plotPauseSiteContourMap}{TranscriptionRates}(object, file = NULL, width = 8, height = 6, dpi = 300)
 }
 \arguments{
 \item{object}{an \code{\linkS4class{TranscriptionRates}} object}
@@ -105,11 +132,11 @@ was modeled}
 
 \examples{
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
@@ -117,11 +144,11 @@ expRates <- estimateTranscriptionRates(
 plotMeanPauseDistrib(expRates, file="mean_pause_distrib.png")
 
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
@@ -130,11 +157,11 @@ plotExpectedVsActualPauseSiteCounts(expRates,
 file="expected_vs_actual_pause_site_counts.png")
 
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
@@ -142,11 +169,11 @@ expRates <- estimateTranscriptionRates(
 plotChiDistrib(expRates, file="chi_distrib.png")
 
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
@@ -154,11 +181,11 @@ expRates <- estimateTranscriptionRates(
 plotBetaVsChi(expRates, betaType = "betaAdp", file="beta_vs_chi.png")
 
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"

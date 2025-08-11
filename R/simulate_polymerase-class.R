@@ -222,15 +222,14 @@ validateAndLoadZetaVec <- function(zetaVec, geneLen) {
 #' @return a \code{SimulatePolymerase} object
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, zetaMax
-#' = 2500,
-#'     zetaVec = NULL, cellNum = 1000, polSize = 33, addSpace = 17, time = 1,
-#'     timesToRecord = NULL
+#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500,
+#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
+#'     addSpace = 17, time = 1, timesToRecord = NULL
 #' )
 #' # Create a SimulatePolymerase object with specific time points recorded
-#' sim2 <- SimulatePolymerase(
+#' sim2 <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, zetaMax
 #' = 2500,
@@ -306,7 +305,7 @@ simulatePolymerase <- function(
 #' readDensity parameter used
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -322,6 +321,7 @@ setGeneric("sampleReadCounts", function(
     readDensity = 0.0489) {
     standardGeneric("sampleReadCounts")
 })
+#' @rdname SimulatePolymerase-class
 setMethod("sampleReadCounts", "SimulatePolymerase", function(
     object, readDensity = 0.0489) {
     cellNum <- slot(object, "cellNum")
@@ -351,7 +351,7 @@ setMethod("sampleReadCounts", "SimulatePolymerase", function(
 #' @param object a \code{SimulatePolymerase-class} object
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -418,7 +418,7 @@ setMethod("show", "SimulatePolymerase", function(object) {
 #' @param object a \code{SimulatePolymerase-class} object
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -430,6 +430,7 @@ setMethod("show", "SimulatePolymerase", function(object) {
 #' print(pauseSites)
 #' @export
 setGeneric("pauseSites", function(object) standardGeneric("pauseSites"))
+#' @rdname SimulatePolymerase-class
 setMethod("pauseSites", "SimulatePolymerase", function(object) {
     slot(object, "pauseSites")
 })
@@ -445,7 +446,7 @@ setMethod("pauseSites", "SimulatePolymerase", function(object) {
 #' @param object a \code{SimulatePolymerase-class} object
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -459,6 +460,7 @@ setMethod("pauseSites", "SimulatePolymerase", function(object) {
 setGeneric("siteProbabilities", function(object) {
     standardGeneric("siteProbabilities")
 })
+#' @rdname SimulatePolymerase-class
 setMethod("siteProbabilities", "SimulatePolymerase", function(object) {
     slot(object, "siteProbabilities")
 })
@@ -472,7 +474,7 @@ setMethod("siteProbabilities", "SimulatePolymerase", function(object) {
 #'
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'      zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -486,6 +488,7 @@ setMethod("siteProbabilities", "SimulatePolymerase", function(object) {
 setGeneric("combinedCellsData", function(object) {
     standardGeneric("combinedCellsData")
 })
+#' @rdname SimulatePolymerase-class
 setMethod("combinedCellsData", "SimulatePolymerase", function(object) {
     slot(object, "combinedCellsData")
 })
@@ -499,7 +502,7 @@ setMethod("combinedCellsData", "SimulatePolymerase", function(object) {
 #' @param object a \code{SimulatePolymerase-class} object
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -513,6 +516,7 @@ setMethod("combinedCellsData", "SimulatePolymerase", function(object) {
 setGeneric("positionMatrices", function(object) {
     standardGeneric("positionMatrices")
 })
+#' @rdname SimulatePolymerase-class
 setMethod("positionMatrices", "SimulatePolymerase", function(object) {
     slot(object, "positionMatrices")
 })
@@ -527,7 +531,7 @@ setMethod("positionMatrices", "SimulatePolymerase", function(object) {
 #' @param object a \code{SimulatePolymerase-class} object
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -541,6 +545,7 @@ setMethod("positionMatrices", "SimulatePolymerase", function(object) {
 setGeneric("finalPositionMatrix", function(object) {
     standardGeneric("finalPositionMatrix")
 })
+#' @rdname SimulatePolymerase-class
 setMethod("finalPositionMatrix", "SimulatePolymerase", function(object) {
     slot(object, "finalPositionMatrix")
 })
@@ -557,7 +562,7 @@ setMethod("finalPositionMatrix", "SimulatePolymerase", function(object) {
 #' polSize, addSpace, time, and stepsToRecord
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -569,6 +574,7 @@ setMethod("finalPositionMatrix", "SimulatePolymerase", function(object) {
 #' print(parameters)
 #' @export
 setGeneric("parameters", function(object) standardGeneric("parameters"))
+#' @rdname SimulatePolymerase-class
 setMethod("parameters", "SimulatePolymerase", function(object) {
     list(
         k = slot(object, "k"),
@@ -610,7 +616,7 @@ setMethod("parameters", "SimulatePolymerase", function(object) {
 #' @param object a \code{SimulatePolymerase} object
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
@@ -622,6 +628,7 @@ setMethod("parameters", "SimulatePolymerase", function(object) {
 #' print(readCounts)
 #' @export
 setGeneric("readCounts", function(object) standardGeneric("readCounts"))
+#' @rdname SimulatePolymerase-class
 setMethod("readCounts", "SimulatePolymerase", function(object) {
     slot(object, "readCounts")
 })
@@ -638,7 +645,7 @@ setMethod("readCounts", "SimulatePolymerase", function(object) {
 #' @return A 2D matrix of polymerase positions for the specified time point
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -652,6 +659,7 @@ setMethod("readCounts", "SimulatePolymerase", function(object) {
 setGeneric("getPositionMatrixAtTime", function(object, timePoint) {
     standardGeneric("getPositionMatrixAtTime")
 })
+#' @rdname SimulatePolymerase-class
 setMethod("getPositionMatrixAtTime", "SimulatePolymerase", function(
     object,
     timePoint) {
@@ -690,7 +698,7 @@ setMethod("getPositionMatrixAtTime", "SimulatePolymerase", function(
 #' @return A numeric vector of available time points
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -704,6 +712,7 @@ setMethod("getPositionMatrixAtTime", "SimulatePolymerase", function(
 setGeneric("getAvailableTimePoints", function(object) {
     standardGeneric("getAvailableTimePoints")
 })
+#' @rdname SimulatePolymerase-class
 setMethod("getAvailableTimePoints", "SimulatePolymerase", function(object) {
     matrices <- slot(object, "positionMatrices")
     if (length(matrices) == 0) {
@@ -729,7 +738,7 @@ setMethod("getAvailableTimePoints", "SimulatePolymerase", function(object) {
 #' each site across all cells for the specified time point
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -745,6 +754,7 @@ setMethod("getAvailableTimePoints", "SimulatePolymerase", function(object) {
 setGeneric("getCombinedCellsDataAtTime", function(object, timePoint = NULL) {
     standardGeneric("getCombinedCellsDataAtTime")
 })
+#' @rdname SimulatePolymerase-class
 setMethod("getCombinedCellsDataAtTime", "SimulatePolymerase", function(
     object,
     timePoint = NULL) {
@@ -777,7 +787,7 @@ setMethod("getCombinedCellsDataAtTime", "SimulatePolymerase", function(
 #' @return A ggplot object showing the distribution of pause sites
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -791,6 +801,7 @@ setGeneric("plotPauseSites", function(
     height = 6) {
     standardGeneric("plotPauseSites")
 })
+#' @rdname SimulatePolymerase-class
 setMethod("plotPauseSites", "SimulatePolymerase", function(
     object,
     file = NULL, width = 8, height = 6) {
@@ -859,12 +870,11 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
 #' @return A ggplot object showing heatmap of polymerase positions
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
-#'     addSpace = 17, time = 1, timesToRecord = NULL
-#' )
+#'     addSpace = 17, time = 1, timesToRecord = c(0.5, 1.0))
 #' # Plot final position matrix
 #' plotPositionHeatmap(sim, file="position_heatmap.png")
 #' # Plot position matrix at time 0.5
@@ -878,6 +888,7 @@ setGeneric("plotPositionHeatmap", function(
     height = 8, dpi = 300) {
     standardGeneric("plotPositionHeatmap")
 })
+#' @rdname SimulatePolymerase-class
 setMethod("plotPositionHeatmap", "SimulatePolymerase", function(
     object, timePoint = NULL, maxCells = NULL, file = NULL, width = 10, 
     height = 8, dpi = 300) {
@@ -944,16 +955,22 @@ setMethod("plotPositionHeatmap", "SimulatePolymerase", function(
 #' @return A ggplot object showing the PCA plot of cells
 #' @examples
 #' # Using a SimulatePolymerase object
+#' sim <- simulatePolymerase(
+#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500,
+#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
+#'     addSpace = 17, time = 1, timesToRecord = c(0.5, 1.0))
 #' plotPolymerasePCA(sim, timePoint = 0.5, file="pca.png")
 #' @export
 setGeneric("plotPolymerasePCA", function(
     object, timePoint = NULL, file = NULL, width = 8, height = 6, dpi = 300) {
     standardGeneric("plotPolymerasePCA")
 })
+#' @rdname SimulatePolymerase-class
 setMethod(
     "plotPolymerasePCA", "SimulatePolymerase",
-    function(object, timePoint = NULL, file = NULL) {
-
+    function(object, timePoint = NULL, file = NULL, width = 8, height = 6, 
+    dpi = 300) {
         if (inherits(object, "SimulatePolymerase")) {
             if (is.null(timePoint)) {
                 mat <- slot(object, "finalPositionMatrix")
@@ -1047,12 +1064,11 @@ validatePlotRange <- function(start, end, data) {
 #' @return A ggplot object
 #' @examples
 #' # Create a SimulatePolymerase object
-#' sim <- SimulatePolymerase(
+#' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-#'     addSpace = 17, time = 1, timesToRecord = NULL
-#' )
+#'     addSpace = 17, time = 1, timesToRecord = c(0.5, 1.0))
 #' # Plot final combined cells data
 #' plotCombinedCells(sim, file="combined_cells.html")
 #' # Plot specific time point data
@@ -1065,6 +1081,7 @@ setGeneric("plotCombinedCells", function(
     object, start = NULL, end = NULL, timePoint = NULL, file = NULL) {
     standardGeneric("plotCombinedCells")
 })
+#' @rdname SimulatePolymerase-class
 setMethod(
     "plotCombinedCells", "SimulatePolymerase",
     function(object, start = NULL, end = NULL, timePoint = NULL, file = NULL) {

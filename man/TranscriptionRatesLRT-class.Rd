@@ -5,13 +5,23 @@
 \alias{TranscriptionRatesLRT-class}
 \alias{likelihoodRatioTest}
 \alias{transcriptionRates1}
+\alias{transcriptionRates1,TranscriptionRatesLRT-method}
 \alias{transcriptionRates2}
+\alias{transcriptionRates2,TranscriptionRatesLRT-method}
 \alias{spikeInFile}
+\alias{spikeInFile,TranscriptionRatesLRT-method}
 \alias{chiTbl}
+\alias{chiTbl,TranscriptionRatesLRT-method}
 \alias{betaTbl}
+\alias{betaTbl,TranscriptionRatesLRT-method}
 \alias{plotPauseSiteContourMapTwoConditions}
+\alias{plotPauseSiteContourMapTwoConditions,TranscriptionRatesLRT-method}
+\alias{BetaViolinPlot}
+\alias{BetaViolinPlot,TranscriptionRatesLRT-method}
 \alias{ChiViolinPlot}
+\alias{ChiViolinPlot,TranscriptionRatesLRT-method}
 \alias{plotLfcMa}
+\alias{plotLfcMa,TranscriptionRatesLRT-method}
 \title{Constructor for TranscriptionRatesLRT object}
 \usage{
 likelihoodRatioTest(
@@ -22,13 +32,23 @@ likelihoodRatioTest(
 
 transcriptionRates1(object)
 
+\S4method{transcriptionRates1}{TranscriptionRatesLRT}(object)
+
 transcriptionRates2(object)
+
+\S4method{transcriptionRates2}{TranscriptionRatesLRT}(object)
 
 spikeInFile(object)
 
+\S4method{spikeInFile}{TranscriptionRatesLRT}(object)
+
 chiTbl(object)
 
+\S4method{chiTbl}{TranscriptionRatesLRT}(object)
+
 betaTbl(object)
+
+\S4method{betaTbl}{TranscriptionRatesLRT}(object)
 
 plotPauseSiteContourMapTwoConditions(
   object,
@@ -38,9 +58,25 @@ plotPauseSiteContourMapTwoConditions(
   dpi = 300
 )
 
+\S4method{plotPauseSiteContourMapTwoConditions}{TranscriptionRatesLRT}(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
+BetaViolinPlot(object, file = NULL, width = 8, height = 6, dpi = 300)
+
+\S4method{BetaViolinPlot}{TranscriptionRatesLRT}(object, file = NULL, width = 8, height = 6, dpi = 300)
+
 ChiViolinPlot(object, file = NULL, width = 8, height = 6, dpi = 300)
 
+\S4method{ChiViolinPlot}{TranscriptionRatesLRT}(object, file = NULL, width = 8, height = 6, dpi = 300)
+
 plotLfcMa(object, file = NULL, width = 8, height = 6, dpi = 300)
+
+\S4method{plotLfcMa}{TranscriptionRatesLRT}(object, file = NULL, width = 8, height = 6, dpi = 300)
 }
 \arguments{
 \item{transcriptionRates1}{an \code{\linkS4class{TranscriptionRates}} object}
@@ -66,6 +102,8 @@ a \code{\linkS4class{TranscriptionRatesLRT}} object
 tbl_df
 
 tbl_df
+
+an \code{\link{ggplot2}} object
 
 an \code{\link{ggplot2}} object
 
@@ -105,204 +143,229 @@ Plot a contour map with mean pause site position on the x-axis and pause site
 standard deviation on the y-axis. The plot is a comparison between two
 conditions.
 
+Plot a violin plot comparing the beta values between two conditions.
+
 Plot a violin plot comparing the chi values between two conditions.
 
 Plot a MA plot for log fold change treated/control vs log mean beta*zeta.
 }
 \examples{
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 spikeInFile)
 # Print the likelihood ratio test object
 print(lrts)
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 spikeInFile)
 transcriptionRates1(lrts)
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 spikeInFile)
 transcriptionRates2(lrts)
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 spikeInFile)
 spikeInFile(lrts)
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 spikeInFile)
 chiTbl(lrts)
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 spikeInFile)
 betaTbl(lrts)
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 spikeInFile)
 plotPauseSiteContourMapTwoConditions(lrts,
 file="pause_sites_contour_map.png")
 
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
+lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
+spikeInFile)
+BetaViolinPlot(lrts, file="boxplot.png")
+
+# Create an ExperimentTranscriptionRates object
+load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
+transcriptionRates1 <- estimateTranscriptionRates(
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    bigwigMinus = 
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+    pauseRegions = bw_pause_filtered,
+    geneBodyRegions = bw_gb_filtered,
+    name = "Control"
+)
+transcriptionRates2 <- estimateTranscriptionRates(
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    bigwigMinus = 
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+    pauseRegions = bw_pause_filtered,
+    geneBodyRegions = bw_gb_filtered,
+    name = "Treated"
+)
+spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 spikeInFile)
 ChiViolinPlot(lrts, file="boxplot.png")
 
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
 transcriptionRates1 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
 )
-spikeInFile <- "inst/extdata/spikein_scaling_factor.csv"
+spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 spikeInFile)
 plotLfcMa(lrts, file="lfc_ma_plot.png")

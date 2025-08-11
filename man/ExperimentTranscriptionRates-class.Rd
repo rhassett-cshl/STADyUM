@@ -6,9 +6,13 @@
 \alias{estimateTranscriptionRates,character-method}
 \alias{rates,ExperimentTranscriptionRates-method}
 \alias{counts}
+\alias{counts,ExperimentTranscriptionRates-method}
 \alias{pauseRegions}
+\alias{pauseRegions,ExperimentTranscriptionRates-method}
 \alias{geneBodyRegions}
+\alias{geneBodyRegions,ExperimentTranscriptionRates-method}
 \alias{omegaScale}
+\alias{omegaScale,ExperimentTranscriptionRates-method}
 \alias{stericHindrance,ExperimentTranscriptionRates-method}
 \title{Constructor for ExperimentTranscriptionRates object}
 \usage{
@@ -26,11 +30,19 @@
 
 counts(object)
 
+\S4method{counts}{ExperimentTranscriptionRates}(object)
+
 pauseRegions(object)
+
+\S4method{pauseRegions}{ExperimentTranscriptionRates}(object)
 
 geneBodyRegions(object)
 
+\S4method{geneBodyRegions}{ExperimentTranscriptionRates}(object)
+
 omegaScale(object)
+
+\S4method{omegaScale}{ExperimentTranscriptionRates}(object)
 
 \S4method{stericHindrance}{ExperimentTranscriptionRates}(object)
 }
@@ -55,8 +67,6 @@ landing-pad occupancy or not. Defaults to FALSE.}
 \item{omegaScale}{a numeric value for scaling omega. Defaults to NULL.}
 
 \item{object}{an \code{ExperimentTranscriptionRates} object}
-
-\item{...}{Additional arguments (not used)}
 }
 \value{
 an \code{\link{ExperimentTranscriptionRates-class}} object
@@ -182,11 +192,11 @@ hindrance is enabled)}
 
 \examples{
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control",
@@ -195,11 +205,11 @@ expRates <- estimateTranscriptionRates(
 )
 
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
@@ -208,33 +218,33 @@ expRates <- estimateTranscriptionRates(
 # Get the rates from the object
 rates(expRates)
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 pauseRegions(expRates)
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 geneBodyRegions(expRates)
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control",
@@ -243,11 +253,11 @@ expRates <- estimateTranscriptionRates(
 )
 omegaScale(expRates)
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"

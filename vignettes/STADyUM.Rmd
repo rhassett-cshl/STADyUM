@@ -56,15 +56,15 @@ treated with auxin-induced acute depletion of NELF(negative elongation factor).
 Raw PRO-seq data is located at GEO: GSE144786. The raw fastq files were 
 processed with https://github.com/Danko-Lab/proseq2.0. 
 
-Estimates of transcription rates, such as $\Chi$ and $\Beta$, are calculated 
+Estimates of transcription rates, such as chi and beta, are calculated 
 given Expectation Maximization with likelihood formulas derived in (Siepel 
 2022, Section "Stationary Distribution and Inference at Steady-State") and 
-stated in (Zhao 2023, Section "Inference at Steady State"). Note that $\Chi$ is 
-the estimator for the average read depth, excluding the pause peak and $\Beta$ 
-is the estimator for the ratio of $\Chi$ to the read depth in the pause peak 
-region. The estimator for $\Beta$ is also given for a model adapted for varying
-pause sites across cells and is denoted by variable beta_adp whereas the fixed 
-pause site estimate is denoted by beta_org, refer to (Zhao 2023, Section 
+stated in (Zhao 2023, Section "Inference at Steady State"). Note that chi is 
+the estimator for the average read depth, excluding the pause peak and beta 
+is the estimator for the ratio of chi to the read depth in the pause peak 
+region. The estimator for beta is also given for a model adapted for varying
+pause sites across cells and is denoted by variable betaAdp whereas the fixed 
+pause site estimate is denoted by betaOrg, refer to (Zhao 2023, Section 
 "Allowing for variation in pause site"). Pause site statistics such as the mean
 position of pause sites and the variance of pause sites (fkMean and fkVar) are 
 also reported.
@@ -94,7 +94,7 @@ head(controlRatesTbl)
 
 ## Plotting functionality for TranscriptionRates objects
 
-```{r plot_exp_rates, fig.width=5, fig.height=5}
+```{r plot_exp_rates, fig.width=7, fig.height=5, out.width="75%"}
 plotMeanPauseDistrib(controlRates, file="mean_pause_site_distribution.png")
 
 plotBetaVsChi(controlRates, betaType="betaAdp", file="controlBetaAdpVsChi.png")
@@ -146,14 +146,14 @@ show(lrt)
 
 ## Plot Results from Likelihood Ratio Tests
 
-As expected given reports from (??), RNAPs tend to pause more downstream when 
+As expected given current literature, RNAPs tend to pause more downstream when 
 NELF is absent due to Auxin treatment. As shown in the plot, the majority of 
 treated genes have average pause locations of more than 100bp downstream of the 
 TSS. Strikingly, few RNAPs could enter productive elongation after NELF 
 depletion and treated samples had a signficantly lower pause-escape rate than 
-the control samples exemplified by the $\Beta$ violin plots.
+the control samples exemplified by the beta violin plots.
 
-```{r plot_lrt_results, fig.width=5, fig.height=5}
+```{r plot_lrt_results,fig.width=7,fig.height=5,out.width="75%"}
 
 plotPauseSiteContourMapTwoConditions(lrt, file="lrtPauseSiteContourMap.png")
 
@@ -177,7 +177,7 @@ SimPol simulator tracking the movement of in silico RNAPs across N-bp DNA
 templates in C cells, then samples the synthetic read counts based on RNAP 
 positions. (D) Example of synthetic nascent RNA sequencing data from SimPol 
 alongside matched real PRO-seq data from the DNAJA1 gene on chromosome 9 of the 
-human genome](simpol_figures.png)
+human genome](simpol_figures.png){width=75%}
 
 Simulate read counts by running simulations of polymerase movement along the
 gene at user-specified rates and gene lengths. Our simulator models the movement
@@ -196,7 +196,7 @@ simple probabilistic model for transcription initiation, promoter-proximal
 pausing, and elongation", "SimPol Simulator", "Generation of synthetic NRS 
 data")
 
-```{r create_simpol, fig.width=10, fig.height=8}
+```{r create_simpol, fig.width=7,fig.height=5,out.width="70%",out.height="50%"}
 simpol <- simulatePolymerase(k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 alpha=2, beta=0.5, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
 cellNum=1000, polSize=33, addSpace=17, time=40, timesToRecord=c(10, 20, 30))
@@ -212,14 +212,38 @@ plotCombinedCells(simpol, file="combinedCellsLollipopPlot.png")
 
 ## Estimate Transcription Rates from Simualted Data
 
-```{r estimate_simulated_rates, fig.width=10, fig.height=8}
-simRates <- estimateTranscriptionRates(simpol, name="simRates1a2b0.5", stericHindrance=TRUE)
+```{r estimate_simulated_rates, fig.width=7, fig.height=5, out.width="75%"}
+simRates <- estimateTranscriptionRates(simpol, name="simRatesb0.5k50",
+stericHindrance=TRUE)
 
 show(simRates)
 
 plotChiDistrib(simRates, file="simChis.png")
 ```
 
+## Likelihood Ratio Tests for Simulated Data
+
+Likelihood ratio tests can also be applied to simulated data. In this example, 
+the simulated rates for the first simpol object is compared to the simulated 
+rates from the second simpol object. As expected given the simpol parameters, 
+the plots show that the second simulated rates have higher beta and higher mean
+pause sites
+
+```{r simulated_lrts, fig.width=7, fig.height=5, out.width="75%"}
+
+simpol2 <- simulatePolymerase(k=100, ksd=25, kMin=75, kMax=200, geneLen=1950,
+alpha=2, beta=10, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
+cellNum=1000, polSize=33, addSpace=17, time=40, timesToRecord=c(10, 20, 30))
+
+simRates2 <- estimateTranscriptionRates(simpol2, name="simRatesb10k100",
+stericHindrance=TRUE)
+
+simLRT <- likelihoodRatioTest(simRates, simRates2)
+
+plotPauseSiteContourMapTwoConditions(simLRT, file="simPauseSitesContourMap.png")
+BetaViolinPlot(simLRT, file="simBetaViolinPlot.png")
+
+```
 
 ## Session Info
 ```{r session_info}

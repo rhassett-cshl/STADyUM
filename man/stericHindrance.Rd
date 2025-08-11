@@ -18,16 +18,16 @@ object
 }
 \examples{
 # Create an ExperimentTranscriptionRates object
-load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 expRates <- estimateTranscriptionRates(
-    "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+    "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
     bigwigMinus = 
-     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control",
     stericHindrance = TRUE,
-    omegaScale = 1000,
+    omegaScale = 1000
 )
 stericHindrance(expRates)
 

@@ -40,16 +40,16 @@ methods::setClass("TranscriptionRates",
 #' @return An object containing estimated transcription rates
 #' 
 #' @examples
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control",
 #'     stericHindrance = TRUE,
-#'     omegaScale = 1000,
+#'     omegaScale = 1000
 #' )
 #' @export
 setGeneric("estimateTranscriptionRates", function(x, ...) {
@@ -66,16 +66,16 @@ setGeneric("estimateTranscriptionRates", function(x, ...) {
 #' 
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control",
 #'     stericHindrance = TRUE,
-#'     omegaScale = 1000,
+#'     omegaScale = 1000
 #' )
 #' rates(expRates)
 #' 
@@ -93,16 +93,16 @@ setGeneric("rates", function(object) standardGeneric("rates"))
 #' 
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control",
 #'     stericHindrance = TRUE,
-#'     omegaScale = 1000,
+#'     omegaScale = 1000
 #' )
 #' stericHindrance(expRates)
 #' 
@@ -130,11 +130,11 @@ setGeneric("stericHindrance",
 #'
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
@@ -148,7 +148,7 @@ setGeneric("plotMeanPauseDistrib", function(
     height = 6, dpi = 300) {
     standardGeneric("plotMeanPauseDistrib")
 })
-
+#' @rdname TranscriptionRates-class
 setMethod(
     "plotMeanPauseDistrib", "TranscriptionRates",
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
@@ -209,11 +209,11 @@ setMethod(
 #'
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
@@ -228,7 +228,7 @@ setGeneric("plotExpectedVsActualPauseSiteCounts", function(
     height = 6, dpi = 300) {
     standardGeneric("plotExpectedVsActualPauseSiteCounts")
 })
-
+#' @rdname TranscriptionRates-class
 setMethod(
     "plotExpectedVsActualPauseSiteCounts", "TranscriptionRates",
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
@@ -291,11 +291,11 @@ setMethod(
 #'
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
@@ -309,7 +309,7 @@ setGeneric("plotChiDistrib", function(
     height = 6, dpi = 300) {
     standardGeneric("plotChiDistrib")
 })
-
+#' @rdname TranscriptionRates-class
 setMethod(
     "plotChiDistrib", "TranscriptionRates",
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
@@ -359,11 +359,11 @@ setMethod(
 #'
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
@@ -374,10 +374,10 @@ setMethod(
 #' @export
 setGeneric("plotBetaVsChi", function(
     object, betaType = "betaAdp",
-    file = NULL, width = 8, height = 6, dpi = 300, ...) {
+    file = NULL, width = 8, height = 6, dpi = 300) {
     standardGeneric("plotBetaVsChi")
 })
-
+#' @rdname TranscriptionRates-class
 setMethod("plotBetaVsChi", "TranscriptionRates",
     function(object, betaType = "betaAdp", file = NULL,
         width = 8, height = 6, dpi = 300) {
@@ -437,11 +437,11 @@ setMethod("plotBetaVsChi", "TranscriptionRates",
 #'
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
@@ -455,7 +455,7 @@ setGeneric("plotPauseSiteContourMap", function(
     height = 6, dpi = 300) {
     standardGeneric("plotPauseSiteContourMap")
 })
-
+#' @rdname TranscriptionRates-class
 setMethod(
     "plotPauseSiteContourMap", "TranscriptionRates",
     function(object, file = NULL, width = 8,

@@ -5,21 +5,36 @@
 \alias{SimulatePolymerase-class}
 \alias{simulatePolymerase}
 \alias{sampleReadCounts}
+\alias{sampleReadCounts,SimulatePolymerase-method}
 \alias{show,SimulatePolymerase-method}
 \alias{pauseSites}
+\alias{pauseSites,SimulatePolymerase-method}
 \alias{siteProbabilities}
+\alias{siteProbabilities,SimulatePolymerase-method}
 \alias{combinedCellsData}
+\alias{combinedCellsData,SimulatePolymerase-method}
 \alias{positionMatrices}
+\alias{positionMatrices,SimulatePolymerase-method}
 \alias{finalPositionMatrix}
+\alias{finalPositionMatrix,SimulatePolymerase-method}
 \alias{parameters}
+\alias{parameters,SimulatePolymerase-method}
 \alias{readCounts}
+\alias{readCounts,SimulatePolymerase-method}
 \alias{getPositionMatrixAtTime}
+\alias{getPositionMatrixAtTime,SimulatePolymerase-method}
 \alias{getAvailableTimePoints}
+\alias{getAvailableTimePoints,SimulatePolymerase-method}
 \alias{getCombinedCellsDataAtTime}
+\alias{getCombinedCellsDataAtTime,SimulatePolymerase-method}
 \alias{plotPauseSites}
+\alias{plotPauseSites,SimulatePolymerase-method}
 \alias{plotPositionHeatmap}
+\alias{plotPositionHeatmap,SimulatePolymerase-method}
 \alias{plotPolymerasePCA}
+\alias{plotPolymerasePCA,SimulatePolymerase-method}
 \alias{plotCombinedCells}
+\alias{plotCombinedCells,SimulatePolymerase-method}
 \title{Constructor for SimulatePolymerase object}
 \usage{
 simulatePolymerase(
@@ -44,31 +59,65 @@ simulatePolymerase(
 
 sampleReadCounts(object, readDensity = 0.0489)
 
+\S4method{sampleReadCounts}{SimulatePolymerase}(object, readDensity = 0.0489)
+
 \S4method{show}{SimulatePolymerase}(object)
 
 pauseSites(object)
 
+\S4method{pauseSites}{SimulatePolymerase}(object)
+
 siteProbabilities(object)
+
+\S4method{siteProbabilities}{SimulatePolymerase}(object)
 
 combinedCellsData(object)
 
+\S4method{combinedCellsData}{SimulatePolymerase}(object)
+
 positionMatrices(object)
+
+\S4method{positionMatrices}{SimulatePolymerase}(object)
 
 finalPositionMatrix(object)
 
+\S4method{finalPositionMatrix}{SimulatePolymerase}(object)
+
 parameters(object)
+
+\S4method{parameters}{SimulatePolymerase}(object)
 
 readCounts(object)
 
+\S4method{readCounts}{SimulatePolymerase}(object)
+
 getPositionMatrixAtTime(object, timePoint)
+
+\S4method{getPositionMatrixAtTime}{SimulatePolymerase}(object, timePoint)
 
 getAvailableTimePoints(object)
 
+\S4method{getAvailableTimePoints}{SimulatePolymerase}(object)
+
 getCombinedCellsDataAtTime(object, timePoint = NULL)
+
+\S4method{getCombinedCellsDataAtTime}{SimulatePolymerase}(object, timePoint = NULL)
 
 plotPauseSites(object, file = NULL, width = 8, height = 6)
 
+\S4method{plotPauseSites}{SimulatePolymerase}(object, file = NULL, width = 8, height = 6)
+
 plotPositionHeatmap(
+  object,
+  timePoint = NULL,
+  maxCells = NULL,
+  file = NULL,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
+
+\S4method{plotPositionHeatmap}{SimulatePolymerase}(
   object,
   timePoint = NULL,
   maxCells = NULL,
@@ -87,7 +136,24 @@ plotPolymerasePCA(
   dpi = 300
 )
 
+\S4method{plotPolymerasePCA}{SimulatePolymerase}(
+  object,
+  timePoint = NULL,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+
 plotCombinedCells(
+  object,
+  start = NULL,
+  end = NULL,
+  timePoint = NULL,
+  file = NULL
+)
+
+\S4method{plotCombinedCells}{SimulatePolymerase}(
   object,
   start = NULL,
   end = NULL,
@@ -328,15 +394,14 @@ large numbers of cells (> 1000) and long simulation times (> 200).
 }
 \examples{
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, zetaMax
-= 2500,
-    zetaVec = NULL, cellNum = 1000, polSize = 33, addSpace = 17, time = 1,
-    timesToRecord = NULL
+    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500,
+    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
+    addSpace = 17, time = 1, timesToRecord = NULL
 )
 # Create a SimulatePolymerase object with specific time points recorded
-sim2 <- SimulatePolymerase(
+sim2 <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, zetaMax
 = 2500,
@@ -344,7 +409,7 @@ sim2 <- SimulatePolymerase(
     timesToRecord = c(0.5, 1.0)
 )
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -355,7 +420,7 @@ sim <- sampleReadCounts(sim)
 # Print the read counts per nucleotide
 print(readCounts(sim))
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -364,7 +429,7 @@ sim <- SimulatePolymerase(
 # Show the object
 show(sim)
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -375,7 +440,7 @@ pauseSites <- pauseSites(sim)
 # Print the pause sites
 print(pauseSites)
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -386,7 +451,7 @@ siteProbabilities <- siteProbabilities(sim)
 # Print the probability matrix dimensions
 print(dim(siteProbabilities))
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
      zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -397,7 +462,7 @@ combinedCellsData <- combinedCellsData(sim)
 # Print the combined cells data
 print(combinedCellsData)
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -408,7 +473,7 @@ positionMatrices <- positionMatrices(sim)
 # Print the position matrices
 print(positionMatrices)
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -419,7 +484,7 @@ finalMatrix <- finalPositionMatrix(sim)
 # Print the final position matrix
 print(finalMatrix)
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -430,7 +495,7 @@ parameters <- parameters(sim)
 # Print the parameters
 print(parameters)
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
@@ -441,7 +506,7 @@ readCounts <- readCounts(sim)
 # Print the read counts
 print(readCounts)
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -452,7 +517,7 @@ posMatrix <- getPositionMatrixAtTime(sim, 0.5)
 # Print the position matrix
 print(posMatrix)
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -463,7 +528,7 @@ availableTimes <- getAvailableTimePoints(sim)
 # Print the available time points
 print(availableTimes)
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -476,7 +541,7 @@ timeData <- getCombinedCellsDataAtTime(sim, timePoint = 0.5)
 # Print the data
 print(head(timeData))
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
@@ -485,12 +550,11 @@ sim <- SimulatePolymerase(
 # Plot pause site distribution
 plotPauseSites(sim, file="pause_sites.png")
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
-    addSpace = 17, time = 1, timesToRecord = NULL
-)
+    addSpace = 17, time = 1, timesToRecord = c(0.5, 1.0))
 # Plot final position matrix
 plotPositionHeatmap(sim, file="position_heatmap.png")
 # Plot position matrix at time 0.5
@@ -499,14 +563,18 @@ plotPositionHeatmap(sim, timePoint = 0.5, file="position_heatmap.png")
 plotPositionHeatmap(sim, timePoint = 0.5, maxCells = 100,
 file="position_heatmap.png")
 # Using a SimulatePolymerase object
+sim <- simulatePolymerase(
+    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
+    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500,
+    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33, 
+    addSpace = 17, time = 1, timesToRecord = c(0.5, 1.0))
 plotPolymerasePCA(sim, timePoint = 0.5, file="pca.png")
 # Create a SimulatePolymerase object
-sim <- SimulatePolymerase(
+sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-    addSpace = 17, time = 1, timesToRecord = NULL
-)
+    addSpace = 17, time = 1, timesToRecord = c(0.5, 1.0))
 # Plot final combined cells data
 plotCombinedCells(sim, file="combined_cells.html")
 # Plot specific time point data

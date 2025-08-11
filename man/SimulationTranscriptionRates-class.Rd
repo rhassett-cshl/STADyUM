@@ -6,29 +6,32 @@
 \alias{estimateTranscriptionRates,SimulatePolymerase-method}
 \alias{show,SimulationTranscriptionRates-method}
 \alias{simpol}
+\alias{simpol,SimulationTranscriptionRates-method}
 \alias{stericHindrance,SimulationTranscriptionRates-method}
 \alias{rates,SimulationTranscriptionRates-method}
 \title{Constructor for SimulationTranscriptionRates object}
 \usage{
-\S4method{estimateTranscriptionRates}{SimulatePolymerase}(x, name, stericHindrance = FALSE, ...)
+\S4method{estimateTranscriptionRates}{SimulatePolymerase}(x, name, stericHindrance = FALSE)
 
 \S4method{show}{SimulationTranscriptionRates}(object)
 
 simpol(object)
+
+\S4method{simpol}{SimulationTranscriptionRates}(object)
 
 \S4method{stericHindrance}{SimulationTranscriptionRates}(object)
 
 \S4method{rates}{SimulationTranscriptionRates}(object)
 }
 \arguments{
+\item{x}{a \code{\linkS4class{SimulatePolymerase}} object}
+
+\item{name}{a string providing information about the simulation}
+
 \item{stericHindrance}{a logical value to determine whether to infer
 landing-pad occupancy or not. Defaults to FALSE.}
 
-\item{...}{Additional arguments (not used)}
-
 \item{object}{a \code{SimulationTranscriptionRates} object}
-
-\item{simpol}{a \code{\linkS4class{SimulatePolymerase}} object}
 }
 \value{
 a \code{\linkS4class{SimulationTranscriptionRates}} object

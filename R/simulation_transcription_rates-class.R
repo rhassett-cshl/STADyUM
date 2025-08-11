@@ -371,10 +371,10 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
 #' Estimates transcription rates from a SimulatePolymerase object using
 #' Expectation Maximization likelihood formula.
 #'
-#' @param simpol a \code{\linkS4class{SimulatePolymerase}} object
+#' @param x a \code{\linkS4class{SimulatePolymerase}} object
+#' @param name a string providing information about the simulation
 #' @param stericHindrance a logical value to determine whether to infer
 #' landing-pad occupancy or not. Defaults to FALSE.
-#' @param ... Additional arguments (not used)
 #' @return a \code{\linkS4class{SimulationTranscriptionRates}} object
 #'
 #' @examples
@@ -393,7 +393,7 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
 #' @export
 setMethod(
     "estimateTranscriptionRates", "SimulatePolymerase",
-    function(x, name, stericHindrance = FALSE, ...) {
+    function(x, name, stericHindrance = FALSE) {
         simpol <- x # x is the SimulatePolymerase object
         if (!is(simpol, "SimulatePolymerase")) {
             stop("simpol parameter must be a SimulatePolymerase object")
@@ -541,6 +541,7 @@ setMethod("show", "SimulationTranscriptionRates", function(object) {
 #' print(simpol)
 #' @export
 setGeneric("simpol", function(object) standardGeneric("simpol"))
+#' @rdname SimulationTranscriptionRates-class
 setMethod(
     "simpol", "SimulationTranscriptionRates",
     function(object) slot(object, "simpol")

@@ -372,17 +372,16 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
 #' landing-pad occupancy or not. Defaults to FALSE.
 #' @param name a character value for the name of the experiment
 #' @param omegaScale a numeric value for scaling omega. Defaults to NULL.
-#' @param ... Additional arguments (not used)
 #'
 #' @return an \code{\link{ExperimentTranscriptionRates-class}} object
 #'
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control",
@@ -517,11 +516,11 @@ methods::setMethod("show", "ExperimentTranscriptionRates", function(object) {
 #' \item{likelihood}{a numeric vector of the likelihood of the model}
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
@@ -549,6 +548,7 @@ setMethod("rates", "ExperimentTranscriptionRates", function(object) {
 #' read counts}
 #' @export
 setGeneric("counts", function(object) standardGeneric("counts"))
+#' @rdname ExperimentTranscriptionRates-class
 setMethod("counts", "ExperimentTranscriptionRates", function(object) {
     slot(object, "counts")
 })
@@ -562,11 +562,11 @@ setMethod("counts", "ExperimentTranscriptionRates", function(object) {
 #' @return a \link[GenomicRanges]{GRanges-class} object with the pause regions
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
@@ -574,6 +574,7 @@ setMethod("counts", "ExperimentTranscriptionRates", function(object) {
 #' pauseRegions(expRates)
 #' @export
 setGeneric("pauseRegions", function(object) standardGeneric("pauseRegions"))
+#' @rdname ExperimentTranscriptionRates-class
 setMethod("pauseRegions", "ExperimentTranscriptionRates", function(object) {
     slot(object, "pauseRegions")
 })
@@ -588,11 +589,11 @@ setMethod("pauseRegions", "ExperimentTranscriptionRates", function(object) {
 #' regions
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
@@ -602,6 +603,7 @@ setMethod("pauseRegions", "ExperimentTranscriptionRates", function(object) {
 setGeneric("geneBodyRegions", function(object) {
     standardGeneric("geneBodyRegions")
 })
+#' @rdname ExperimentTranscriptionRates-class
 setMethod(
     "geneBodyRegions", "ExperimentTranscriptionRates",
     function(object) {
@@ -619,11 +621,11 @@ setMethod(
 #' @return a numeric value for the scaling factor for omega
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control",
@@ -633,6 +635,7 @@ setMethod(
 #' omegaScale(expRates)
 #' @export
 setGeneric("omegaScale", function(object) standardGeneric("omegaScale"))
+#' @rdname ExperimentTranscriptionRates-class
 setMethod("omegaScale", "ExperimentTranscriptionRates", function(object) {
     slot(object, "omegaScale")
 })
@@ -648,11 +651,11 @@ setMethod("omegaScale", "ExperimentTranscriptionRates", function(object) {
 #' or not
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
 #' expRates <- estimateTranscriptionRates(
-#'     "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
+#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 #'     bigwigMinus = 
-#'      "inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
