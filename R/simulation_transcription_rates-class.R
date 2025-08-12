@@ -382,7 +382,7 @@ processEmResults <- function(bwDfs, emLs, stericHindrance) {
 #' sim <- simulatePolymerase(
 #'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
 #'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500,
-#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+#'     zetaMax = 2500, zetaVec = NULL, cellNum = 100, polSize = 33,
 #'     addSpace = 17, time = 1)
 #' # Estimate transcription rates
 #' estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
@@ -451,19 +451,6 @@ showEmStatus <- function(emStatus) {
 #' @description
 #' Show method for SimulationTranscriptionRates object in human readable format
 #' including summary statistics
-#'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-#'     addSpace = 17, time = 1
-#' )
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
-#' # Show the object
-#' show(estRates)
 #' @export
 setMethod("show", "SimulationTranscriptionRates", function(object) {
     cat("A SimulationTranscriptionRates object with:\n")
@@ -525,20 +512,6 @@ setMethod("show", "SimulationTranscriptionRates", function(object) {
 #' SimulationTranscriptionRates object.
 #'
 #' @param object a \code{SimulationTranscriptionRates} object
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-#'     addSpace = 17, time = 1
-#' )
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
-#' # Get simpol
-#' simpol <- simpol(estRates)
-#' # Print the simpol
-#' print(simpol)
 #' @export
 setGeneric("simpol", function(object) standardGeneric("simpol"))
 #' @rdname SimulationTranscriptionRates-class
@@ -554,20 +527,6 @@ setMethod(
 #' Accessor for the steric hindrance flag from a
 #' SimulationTranscriptionRates object.
 #'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-#'     addSpace = 17, time = 1
-#' )
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
-#' # Get steric hindrance
-#' stericHindrance <- stericHindrance(estRates)
-#' # Print the steric hindrance
-#' print(stericHindrance)
 #' @export
 setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
     slot(object, "stericHindrance")
@@ -580,20 +539,6 @@ setMethod("stericHindrance", "SimulationTranscriptionRates", function(object) {
 #' Accessor for the tibble containing the estimated rates from a
 #' SimulationTranscriptionRates object.
 #'
-#' @examples
-#' # Create a SimulatePolymerase object
-#' sim <- simulatePolymerase(
-#'     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-#'     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-#'     zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-#'     addSpace = 17, time = 1
-#' )
-#' # Estimate transcription rates
-#' estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
-#' # Get rates
-#' rates <- rates(estRates)
-#' # Print the rates
-#' print(rates)
 #' @export
 setMethod("rates", "SimulationTranscriptionRates", function(object) {
     slot(object, "rates")

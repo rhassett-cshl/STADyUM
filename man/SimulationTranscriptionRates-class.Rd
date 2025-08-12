@@ -118,61 +118,11 @@ iterations without convergence. Note max # of iterations is 500.}
 sim <- simulatePolymerase(
     k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
     alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500,
-    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
+    zetaMax = 2500, zetaVec = NULL, cellNum = 100, polSize = 33,
     addSpace = 17, time = 1)
 # Estimate transcription rates
 estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
 # Print the estimated rates
 print(estRates)
 
-# Create a SimulatePolymerase object
-sim <- simulatePolymerase(
-    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-    addSpace = 17, time = 1
-)
-# Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
-# Show the object
-show(estRates)
-# Create a SimulatePolymerase object
-sim <- simulatePolymerase(
-    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-    addSpace = 17, time = 1
-)
-# Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
-# Get simpol
-simpol <- simpol(estRates)
-# Print the simpol
-print(simpol)
-# Create a SimulatePolymerase object
-sim <- simulatePolymerase(
-    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-    addSpace = 17, time = 1
-)
-# Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
-# Get steric hindrance
-stericHindrance <- stericHindrance(estRates)
-# Print the steric hindrance
-print(stericHindrance)
-# Create a SimulatePolymerase object
-sim <- simulatePolymerase(
-    k = 50, ksd = 25, kMin = 17, kMax = 200, geneLen = 1950,
-    alpha = 1, beta = 1, zeta = 2000, zetaSd = 1000, zetaMin = 1500, 
-    zetaMax = 2500, zetaVec = NULL, cellNum = 1000, polSize = 33,
-    addSpace = 17, time = 1
-)
-# Estimate transcription rates
-estRates <- estimateTranscriptionRates(sim, name="sim_beta1_k50")
-# Get rates
-rates <- rates(estRates)
-# Print the rates
-print(rates)
 }

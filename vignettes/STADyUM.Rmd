@@ -95,8 +95,6 @@ head(controlRatesTbl)
 ## Plotting functionality for TranscriptionRates objects
 
 ```{r plot_exp_rates, fig.width=7, fig.height=5, out.width="75%"}
-plotMeanPauseDistrib(controlRates, file="mean_pause_site_distribution.png")
-
 plotBetaVsChi(controlRates, betaType="betaAdp", file="controlBetaAdpVsChi.png")
 
 plotExpectedVsActualPauseSiteCounts(treatedRates, 
@@ -112,7 +110,7 @@ likelihood functions differ under the model of steric hindrance and are derived
 in (Zhao 2023, Section "Fitting the Steric Hindrance Model to the Data"). Note 
 the omega parameter is a scaling factor.
 
-```{r estimate_experiment_rates_steric_hindrance}
+```{r estimate_experiment_rates_steric_hindrance, eval=FALSE}
 controlRatesSH <- estimateTranscriptionRates(
 "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
 "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
@@ -155,16 +153,11 @@ the control samples exemplified by the beta violin plots.
 
 ```{r plot_lrt_results,fig.width=7,fig.height=5,out.width="75%"}
 
-plotPauseSiteContourMapTwoConditions(lrt, file="lrtPauseSiteContourMap.png")
-
 plotMeanPauseDistrib(controlRates, file="meanPauseSitesControl.png")
 plotMeanPauseDistrib(treatedRates, file="meanPauseSitesTreated.png")
 
 BetaViolinPlot(lrt, file="lrtBetaViolinPlot.png")
 
-ChiViolinPlot(lrt, file="lrtChiViolinPlot.png")
-
-plotLfcMa(lrt, file="lrtMAplot.png")
 ```
 
 ## Simulate Polymerase
@@ -199,14 +192,12 @@ data")
 ```{r create_simpol, fig.width=7,fig.height=5,out.width="70%",out.height="50%"}
 simpol <- simulatePolymerase(k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
 alpha=2, beta=0.5, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-cellNum=1000, polSize=33, addSpace=17, time=40, timesToRecord=c(10, 20, 30))
+cellNum=100, polSize=33, addSpace=17, time=39, timesToRecord=NULL)
 
 show(simpol)
 
 readCounts <- readCounts(simpol)
 
-plotPauseSites(simpol, file="simpolPauseSites.png")
-plotPositionHeatmap(simpol, file="polymerasePositionHeatmap.png")
 plotCombinedCells(simpol, file="combinedCellsLollipopPlot.png")
 ```
 
@@ -217,8 +208,6 @@ simRates <- estimateTranscriptionRates(simpol, name="simRatesb0.5k50",
 stericHindrance=TRUE)
 
 show(simRates)
-
-plotChiDistrib(simRates, file="simChis.png")
 ```
 
 ## Likelihood Ratio Tests for Simulated Data
@@ -228,12 +217,14 @@ the simulated rates for the first simpol object is compared to the simulated
 rates from the second simpol object. As expected given the simpol parameters, 
 the plots show that the second simulated rates have higher beta and higher mean
 pause sites
+![](simPauseSitesContourMap.png){width=75%}
+![](simBetaViolinPlot.png){width=75%}
 
-```{r simulated_lrts, fig.width=7, fig.height=5, out.width="75%"}
+```{r simulated_lrts, fig.width=7, fig.height=5, out.width="75%", eval=FALSE}
 
 simpol2 <- simulatePolymerase(k=100, ksd=25, kMin=75, kMax=200, geneLen=1950,
 alpha=2, beta=10, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-cellNum=1000, polSize=33, addSpace=17, time=40, timesToRecord=c(10, 20, 30))
+cellNum=100, polSize=33, addSpace=17, time=30, timesToRecord=NULL)
 
 simRates2 <- estimateTranscriptionRates(simpol2, name="simRatesb10k100",
 stericHindrance=TRUE)

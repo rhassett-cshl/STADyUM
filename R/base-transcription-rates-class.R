@@ -128,19 +128,6 @@ setGeneric("stericHindrance",
 #'
 #' @return an \code{\link{ggplot2}} object
 #'
-#' @examples
-#' # Create an ExperimentTranscriptionRates object
-#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates <- estimateTranscriptionRates(
-#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-#'     bigwigMinus = 
-#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
-#'     pauseRegions = bw_pause_filtered,
-#'     geneBodyRegions = bw_gb_filtered,
-#'     name = "Control"
-#' )
-#' plotMeanPauseDistrib(expRates, file="mean_pause_distrib.png")
-#'
 #' @rdname TranscriptionRates-class
 #' @export
 setGeneric("plotMeanPauseDistrib", function(
@@ -206,21 +193,6 @@ setMethod(
 #' @param dpi the resolution of the plot in dpi
 #'
 #' @return an \code{\link{ggplot2}} object
-#'
-#' @examples
-#' # Create an ExperimentTranscriptionRates object
-#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates <- estimateTranscriptionRates(
-#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-#'     bigwigMinus = 
-#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
-#'     pauseRegions = bw_pause_filtered,
-#'     geneBodyRegions = bw_gb_filtered,
-#'     name = "Control"
-#' )
-#' plotExpectedVsActualPauseSiteCounts(expRates,
-#' file="expected_vs_actual_pause_site_counts.png")
-#'
 #' @rdname TranscriptionRates-class
 #' @export
 setGeneric("plotExpectedVsActualPauseSiteCounts", function(
@@ -289,19 +261,6 @@ setMethod(
 #'
 #' @return an \code{\link{ggplot2}} object
 #'
-#' @examples
-#' # Create an ExperimentTranscriptionRates object
-#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates <- estimateTranscriptionRates(
-#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-#'     bigwigMinus = 
-#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
-#'     pauseRegions = bw_pause_filtered,
-#'     geneBodyRegions = bw_gb_filtered,
-#'     name = "Control"
-#' )
-#' plotChiDistrib(expRates, file="chi_distrib.png")
-#'
 #' @rdname TranscriptionRates-class
 #' @export
 setGeneric("plotChiDistrib", function(
@@ -356,19 +315,6 @@ setMethod(
 #' @param dpi the resolution of the plot in dpi
 #'
 #' @return an \code{\link{ggplot2}} object
-#'
-#' @examples
-#' # Create an ExperimentTranscriptionRates object
-#' load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' expRates <- estimateTranscriptionRates(
-#'     "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-#'     bigwigMinus = 
-#'      "../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
-#'     pauseRegions = bw_pause_filtered,
-#'     geneBodyRegions = bw_gb_filtered,
-#'     name = "Control"
-#' )
-#' plotBetaVsChi(expRates, betaType = "betaAdp", file="beta_vs_chi.png")
 #'
 #' @rdname TranscriptionRates-class
 #' @export
