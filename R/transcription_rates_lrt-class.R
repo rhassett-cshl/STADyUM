@@ -264,7 +264,7 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
 #' # Print the likelihood ratio test object
 #' print(lrts)
 #' @export
-likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
+likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2, scaleFactor,
     spikeInFile = NULL) {
     if (!is(transcriptionRates1, "TranscriptionRates") ||
         !is(transcriptionRates2, "TranscriptionRates")) {
@@ -307,7 +307,7 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
     lambda1 <- scaleTbl$control_1 + scaleTbl$control_2
     lambda2 <- scaleTbl$treated_1 + scaleTbl$treated_2
     chiTbl <- computeChiLRT(lambda1, lambda2, rc1, rc2, isExperiment)
-    betaTbl <- computeBetaLRT(rc1, rc2, kmin, kmax, gbLength, isExperiment)
+    betaTbl <- computeBetaLRT(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment)
     return(new("TranscriptionRatesLRT",
         transcriptionRates1 = transcriptionRates1,
         transcriptionRates2 = transcriptionRates2, chiTbl = chiTbl,
