@@ -55,7 +55,7 @@ computeChiLRT <- function(lambda1, lambda2, rc1, rc2, isExperiment) {
     return(chiTbl)
 }
 
-computeBetaLRTParams <- function(rc1, rc2, kmin, kmax, gbLength) {
+computeBetaLRTParams <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength) {
     fkInt <- dnorm(kmin:kmax, mean = 50, sd = 100)
     fkInt <- fkInt / sum(fkInt)
     s1 <- rc1$totalGbRc
@@ -65,7 +65,7 @@ computeBetaLRTParams <- function(rc1, rc2, kmin, kmax, gbLength) {
     Xk1 <- rc1$actualPauseSiteCounts
     Xk2 <- rc2$actualPauseSiteCounts
     M <- gbLength
-    chiHat <- (s1 + s2) / M
+    chiHat <- (s1 + s2 * scaleFactor) / M
     betaInt <- chiHat / (map_dbl(rc1$actualPauseSiteCounts, sum) 
     + map_dbl(rc2$actualPauseSiteCounts, sum))
     chiHat1 <- rc1$chi
@@ -209,7 +209,7 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
     maxItr <- 500
     tor <- 1e-6
 
-    params <- computeBetaLRTParams(rc1, rc2, kmin, kmax, gbLength)
+    params <- computeBetaLRTParams(rc1, rc2, kmin, kmax, gbLength, scaleFactor)
     h0Results <- runEMH0BetaLRT(params, kmin, kmax, scaleFactor, maxItr, tor)
     h1Results <- runEMH1BetaLRT(params, h0Results, kmin, kmax, maxItr, tor)
     betaTbl <- constructBetaLRTTable(rc1, rc2, scaleFactor, h0Results, h1Results,
