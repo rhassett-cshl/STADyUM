@@ -24,12 +24,12 @@ getFk <- function(Xk, Yk, fk, kmin, kmax) {
     return(list("t" = t, "fk" = fk))
 }
 
-getMaximizationH0 <- function(chiHat, Xk1, Xk2, Yk1, Yk2, fk1, fk2, kmin, kmax)
+getMaximizationH0 <- function(chiHat, Xk1, Xk2, Yk1, Yk2, fk1, fk2, scaleFactor, kmin, kmax)
 {
     fk1Ls <- getFk(Xk1, Yk1, fk1, kmin, kmax)
     fk2Ls <- getFk(Xk2, Yk2, fk2, kmin, kmax)
 
-    beta <- chiHat / (fk1Ls$t + fk2Ls$t)
+    beta <- chiHat / (fk1Ls$t + fk2Ls$t * scaleFactor)
 
     return(list("beta" = beta, "fk1" = fk1Ls$fk, "fk2" = fk2Ls$fk))
 }
@@ -37,7 +37,7 @@ getMaximizationH0 <- function(chiHat, Xk1, Xk2, Yk1, Yk2, fk1, fk2, kmin, kmax)
 # EM function to estimate parameters when assuming beta is the same between
 # conditions
 mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
-                                            chiHat, chiHat1, chiHat2, 
+                                            chiHat, chiHat1, chiHat2, scaleFactor,
                                             maxItr = 100, tor = 1e-3) {
     betas <- list(); likelihoods <- list(); yks <- list(); flag <- "normal"
     for (i in seq_len(maxItr)) {
@@ -46,7 +46,7 @@ mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
             Yk2 <- getExpectation(fkInt, Xk2, betaInt)
             hats <- getMaximizationH0(
                 chiHat, Xk1, Xk2, Yk1, Yk2,
-                fkInt, fkInt, kmin, kmax
+                fkInt, fkInt, scaleFactor, kmin, kmax
             )
         }
         if (i != 1) {
@@ -54,7 +54,7 @@ mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
             Yk2 <- getExpectation(hats$fk2, Xk2, hats$beta)
             hats <- getMaximizationH0(
                 chiHat, Xk1, Xk2, Yk1, Yk2,
-                hats$fk1, hats$fk2, kmin, kmax
+                hats$fk1, hats$fk2, scaleFactor, kmin, kmax
             )
         }
         likelihoods[[i]] <-
@@ -65,7 +65,7 @@ mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
             getLikelihood(
                 beta = hats$beta, chi = chiHat2, Xk = Xk2, Yk = Yk2,
                 fk = hats$fk2
-            )
+            ) * scaleFactor
         betas[[i]] <- hats$beta
         if (any(hats$fk1 == 1) & any(hats$fk2 == 1)) {
             hats$beta <- chiHat / (Xk1[which(hats$fk1 == 1)] +
