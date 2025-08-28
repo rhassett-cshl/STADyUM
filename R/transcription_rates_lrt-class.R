@@ -79,7 +79,7 @@ computeBetaLRTParams <- function(rc1, rc2, kmin, kmax, gbLength) {
     )
 }
 
-runEMH0BetaLRT <- function(params, kmin, kmax, maxItr, tor) {
+runEMH0BetaLRT <- function(params, kmin, kmax, scaleFactor, maxItr, tor) {
     emRes <- pmap(
         list(
             params$Xk1, params$Xk2, params$betaInt, params$chiHat,
@@ -90,7 +90,7 @@ runEMH0BetaLRT <- function(params, kmin, kmax, maxItr, tor) {
                 mainExpectationMaximizationH0(
                     params$fkInt,
                     Xk1 = x, Xk2 = y, kmin, kmax,
-                    betaInt = z, chiHat = k, chiHat1 = m, chiHat2 = n,
+                    betaInt = z, chiHat = k, chiHat1 = m, chiHat2 = n, scaleFactor=scaleFactor,
                     maxItr = maxItr, tor = tor
                 ),
                 error = function(err) {
@@ -162,7 +162,7 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
     )
 }
 
-constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results, isExperiment)
+constructBetaLRTTable <- function(rc1, rc2, scaleFactor, h0Results, h1Results, isExperiment)
 {
     beta1 <- rc1$betaAdp; beta2 <- rc2$betaAdp
     tStats <- rc1$likelihood + rc2$likelihood - h0Results$h0Likelihood
@@ -191,7 +191,7 @@ constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results, isExperiment)
         fkMean2 = map_dbl(h1Results$emHt, "fkMean"),
         fkVar1 = map_dbl(h1Results$emHc, "fkVar"),
         fkVar2 = map_dbl(h1Results$emHt, "fkVar"),
-        tStats = h1Results$h1Likelihood1 + h1Results$h1Likelihood2 -
+        tStats = h1Results$h1Likelihood1 + h1Results$h1Likelihood2 * scaleFactor -
             h0Results$h0Likelihood[idx]
     )
 
@@ -205,14 +205,14 @@ constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results, isExperiment)
     return(betaTbl)
 }
 
-computeBetaLRT <- function(rc1, rc2, kmin, kmax, gbLength, isExperiment) {
+computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment) {
     maxItr <- 500
     tor <- 1e-6
 
     params <- computeBetaLRTParams(rc1, rc2, kmin, kmax, gbLength)
-    h0Results <- runEMH0BetaLRT(params, kmin, kmax, maxItr, tor)
+    h0Results <- runEMH0BetaLRT(params, kmin, kmax, scaleFactor, maxItr, tor)
     h1Results <- runEMH1BetaLRT(params, h0Results, kmin, kmax, maxItr, tor)
-    betaTbl <- constructBetaLRTTable(rc1, rc2, h0Results, h1Results,
+    betaTbl <- constructBetaLRTTable(rc1, rc2, scaleFactor, h0Results, h1Results,
     isExperiment)
 
     return(betaTbl)
