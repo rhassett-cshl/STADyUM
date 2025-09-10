@@ -71,19 +71,22 @@ also reported.
 
 
 ```{r estimate_experiment_rates}
-load("../inst/extdata/granges_for_read_counting_DLD1_chr21.RData")
+load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData", 
+package = "STADyUM"))
 
-controlRates <- estimateTranscriptionRates(
-"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
-bw_pause_filtered, bw_gb_filtered, "Control")
+controlRates <- estimateTranscriptionRates(system.file("extdata",
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+package = "STADyUM"),
+    bw_pause_filtered, bw_gb_filtered, "Control")
 
 show(controlRates)
 
-treatedRates <- estimateTranscriptionRates(
-"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin-SE_plus_chr21.bw", 
-"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin-SE_minus_chr21.bw", 
-bw_pause_filtered, bw_gb_filtered, "Auxin Treated")
+treatedRates <- estimateTranscriptionRates(system.file("extdata",
+"PROseq-DLD1-aoi-NELFC_Auxin-SE_plus_chr21.bw", package = "STADyUM"),
+system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin-SE_minus_chr21.bw", 
+package = "STADyUM"),
+    bw_pause_filtered, bw_gb_filtered, "Auxin Treated")
 
 show(treatedRates)
 
@@ -111,19 +114,22 @@ in (Zhao 2023, Section "Fitting the Steric Hindrance Model to the Data"). Note
 the omega parameter is a scaling factor.
 
 ```{r estimate_experiment_rates_steric_hindrance, eval=FALSE}
-controlRatesSH <- estimateTranscriptionRates(
-"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
-bw_pause_filtered, bw_gb_filtered, "Control", stericHindrance=TRUE, 
-omegaScale=12.3768278981277)
+controlRatesSH <- estimateTranscriptionRates(system.file("extdata",
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+    system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+    package = "STADyUM"),
+    bw_pause_filtered, bw_gb_filtered, "Control", stericHindrance=TRUE, 
+    omegaScale=12.3768278981277)
 
 show(controlRatesSH)
 
 treatedRatesSH <- estimateTranscriptionRates(
-"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin-SE_plus_chr21.bw", 
-"../inst/extdata/PROseq-DLD1-aoi-NELFC_Auxin-SE_minus_chr21.bw", 
-bw_pause_filtered, bw_gb_filtered, "Auxin Treated", stericHindrance=TRUE, 
-omegaScale=11.0318379571379)
+    system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin-SE_plus_chr21.bw", 
+    package = "STADyUM"),
+    system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin-SE_minus_chr21.bw",
+    package = "STADyUM"),
+    bw_pause_filtered, bw_gb_filtered, "Auxin Treated", stericHindrance=TRUE, 
+    omegaScale=11.0318379571379)
 
 show(treatedRatesSH)
 ```
