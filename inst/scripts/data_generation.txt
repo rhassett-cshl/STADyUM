@@ -1,0 +1,19 @@
+DATA GENERATION STEPS:
+
+1 - Download PRO-seq read counts fastq files from SRA. 
+    * GEO Accession: GSE144786
+    * human reference genome hg19
+    * Control Sample ID: SRR11024616
+    * Auxin Treated Sample ID: SRR11024617
+
+2 - Process and align PRO-seq fastq single-end (SE) read data using proseq2.0 software to get bigwig files
+    * https://github.com/Danko-Lab/proseq2.0
+    * Refer to SRA experiment information for adapter sequences used and spike in scaling factor information
+        - https://www.ncbi.nlm.nih.gov/sra/SRX7677755
+        - https://www.ncbi.nlm.nih.gov/sra/SRX7677756
+
+3 - Generate GRanges objects for pause regions and gene body regions
+    * Used Ensembl version 75 to download hg19 GTF annotations file
+    * Import GTF file into GRanges object
+    * Extract pause regions and gene body regions into separate GRanges objects
+
