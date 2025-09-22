@@ -119,9 +119,9 @@ Likelihood ratio test comparing aspects of transcriptional
 dynamics of the same TU under different conditions using Likelihood Ratio
 Test Statistics. Uses read counts and rate estimates estimated from
 estimateTranscriptionRates. The method also requires
-scaling factors to determine changes in χ estimates. They can be the numbers
+scaling factors to determine changes in \eqn{\chi} estimates. They can be the numbers
 of total mapped reads or spike-in reads from the samples. Likelihood ratio
-test computes the log 2 fold change in χ estimates between conditions, the
+test computes the log 2 fold change in \eqn{\chi} estimates between conditions, the
 log 2 fold change in beta estimates between conditions, the t-statistics for
 the likelihood ratio tests, and the adjusted p-values based on the "BH"
 method.

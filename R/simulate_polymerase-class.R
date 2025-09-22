@@ -683,7 +683,7 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
             xintercept = pauseMean, color = "red",
             linetype = "dashed", size = 1
         ) +
-        # Add vertical lines for mean ± 1 SD
+        # Add vertical lines for mean \pm 1 SD
         geom_vline(
             xintercept = pauseMean + pauseSd, color = "orange",
             linetype = "dotted", size = 0.8
