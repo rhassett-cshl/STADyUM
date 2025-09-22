@@ -246,7 +246,7 @@ Rcpp::List simulate_polymerase_cpp(
     // Convert the recorded position matrices to a named list
     // Each element corresponds to a specific time point
     Rcpp::List pos_matrices_named;
-    for (int step = 0; step < pos_matrices.size(); step++) {
+    for (size_t step = 0; step < pos_matrices.size(); step++) {
         // Create a 2D matrix for this time point: [sites, cells]
         Rcpp::IntegerMatrix pos_matrix_2d(total_sites, cell_num);
         
