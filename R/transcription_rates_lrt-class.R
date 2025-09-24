@@ -234,6 +234,7 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
 #' method.
 #' @param transcriptionRates1 an \code{\linkS4class{TranscriptionRates}} object
 #' @param transcriptionRates2 an \code{\linkS4class{TranscriptionRates}} object
+#' @param scaleFactor a numeric value to scale the beta estimates. Defaults to 1
 #' @param spikeInFile path to a csv file containing scale factors
 #' based on total or spike-in reads or NULL if not provided. Defaults to NULL.
 #'
@@ -264,8 +265,7 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
 #' # Print the likelihood ratio test object
 #' print(lrts)
 #' @export
-likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2, scaleFactor,
-    spikeInFile = NULL) {
+likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2, scaleFactor = 1, spikeInFile = NULL) {
     if (!is(transcriptionRates1, "TranscriptionRates") ||
         !is(transcriptionRates2, "TranscriptionRates")) {
         stop("transcriptionRates1 and transcriptionRates2 must be an
