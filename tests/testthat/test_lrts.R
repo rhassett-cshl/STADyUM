@@ -3,7 +3,10 @@ test_that("Transcription Rates Likelihood Ratio Test works as intented", {
     alpha=0.5, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
     cellNum=100, polSize=33, addSpace=17, time=30, timesToRecord=NULL)
 
-    simpol2 <- simulatePolymerase(k=100, ksd=25, kMin=75, kMax=200, geneLen=1950, alpha=0.5, beta=10, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500, cellNum=100, polSize=33, addSpace=17, time=30, timesToRecord=NULL)
+    simpol2 <- simulatePolymerase(k=100, ksd=25, kMin=75, kMax=200,
+    geneLen=1950, alpha=0.5, beta=10, zeta=2000, zetaSd=1000, zetaMin=1500,
+    zetaMax=2500, cellNum=100, polSize=33, addSpace=17, time=30,
+    timesToRecord=NULL)
 
     simRates1 <- estimateTranscriptionRates(simpol1, name="low_k_low_beta")
 

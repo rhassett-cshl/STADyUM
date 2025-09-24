@@ -1,5 +1,6 @@
-# STADyUM 0.99.0
+# STADyUM 
 
-## First release
 
-... (previous content) ...
+# 0.99.2
+
+Initial submission to BioConductor.

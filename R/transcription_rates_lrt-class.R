@@ -226,9 +226,9 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
 #' dynamics of the same TU under different conditions using Likelihood Ratio
 #' Test Statistics. Uses read counts and rate estimates estimated from
 #' estimateTranscriptionRates. The method also requires
-#' scaling factors to determine changes in χ estimates. They can be the numbers
+#' scaling factors to determine changes in \eqn{\chi} estimates. They can be the numbers
 #' of total mapped reads or spike-in reads from the samples. Likelihood ratio
-#' test computes the log 2 fold change in χ estimates between conditions, the
+#' test computes the log 2 fold change in \eqn{\chi} estimates between conditions, the
 #' log 2 fold change in beta estimates between conditions, the t-statistics for
 #' the likelihood ratio tests, and the adjusted p-values based on the "BH"
 #' method.
@@ -242,24 +242,26 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
 #' @return a \code{\linkS4class{TranscriptionRatesLRT}} object
 #'
 #' @examples
-#' load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' transcriptionRates1 <- estimateTranscriptionRates(
-#'     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-#'     bigwigMinus = 
-#'      "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#' load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
+#' package = "STADyUM"))
+#' transcriptionRates1 <- estimateTranscriptionRates(system.file("extdata",
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' bigwigMinus = system.file("extdata",
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' transcriptionRates2 <- estimateTranscriptionRates(
-#'     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-#'     bigwigMinus = 
-#'      "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#' transcriptionRates2 <- estimateTranscriptionRates(system.file("extdata",
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' bigwigMinus = system.file("extdata",
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- system.file("extdata", "spikein_scaling_factor.csv", 
+#' package = "STADyUM")
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 #' spikeInFile)
 #' # Print the likelihood ratio test object
@@ -428,24 +430,26 @@ setMethod(
 #'
 #' @examples
 #' # Create an ExperimentTranscriptionRates object
-#' load("../inst//extdata/granges_for_read_counting_DLD1_chr21.RData")
-#' transcriptionRates1 <- estimateTranscriptionRates(
-#'     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-#'     bigwigMinus = 
-#'      "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#' load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
+#' package = "STADyUM"))
+#' transcriptionRates1 <- estimateTranscriptionRates(system.file("extdata",
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' bigwigMinus = system.file("extdata",
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
-#' transcriptionRates2 <- estimateTranscriptionRates(
-#'     "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw",
-#'     bigwigMinus = 
-#'      "../inst//extdata/PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+#' transcriptionRates2 <- estimateTranscriptionRates(system.file("extdata",
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' bigwigMinus = system.file("extdata",
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
 #' )
-#' spikeInFile <- "../inst//extdata/spikein_scaling_factor.csv"
+#' spikeInFile <- system.file("extdata", "spikein_scaling_factor.csv", 
+#' package = "STADyUM")
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
 #' spikeInFile)
 #' plotPauseSiteContourMapTwoConditions(lrts,
