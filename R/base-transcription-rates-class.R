@@ -15,6 +15,7 @@
 #' @importClassesFrom tibble tbl_df
 #' @importFrom methods slot
 #' @import ggplot2
+#' @importFrom rlang .data
 #' @importFrom grDevices nclass.Sturges
 #' @importFrom stats cor
 #' @exportClass TranscriptionRates
