@@ -174,7 +174,7 @@ bigwigMinus = system.file("extdata",
 spikeInFile <- system.file("extdata", "spikein_scaling_factor.csv", 
 package = "STADyUM")
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInFile)
+spikeInFile = spikeInFile)
 # Print the likelihood ratio test object
 print(lrts)
 # Create an ExperimentTranscriptionRates object
@@ -199,7 +199,7 @@ bigwigMinus = system.file("extdata",
 spikeInFile <- system.file("extdata", "spikein_scaling_factor.csv", 
 package = "STADyUM")
 lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-spikeInFile)
+spikeInFile = spikeInFile)
 plotPauseSiteContourMapTwoConditions(lrts,
 file="pause_sites_contour_map.png")
 

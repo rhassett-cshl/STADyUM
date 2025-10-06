@@ -108,7 +108,8 @@ runEMH0BetaLRT <- function(params, kmin, kmax, scaleFactor, maxItr, tor) {
         h0Likelihood = map_dbl(
             emRes,
             ~ .x$likelihoods[[length(.x$likelihoods)]]
-        )
+        ),
+        tStats = rc1$likelihood + rc2$likelihood - h0Results$h0Likelihood
     )
 }
 
@@ -158,14 +159,15 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
         h1Likelihood2 = map_dbl(
             emHt,
             ~ .x$likelihoods[[length(.x$likelihoods)]]
-        )
+        ),
+        tStats = h1Results$h1Likelihood1 + h1Results$h1Likelihood2 - h0Results$h0Likelihood[idx],
+        idx = idx
     )
 }
 
 constructBetaLRTTable <- function(rc1, rc2, scaleFactor, h0Results, h1Results, isExperiment)
 {
     beta1 <- rc1$betaAdp; beta2 <- rc2$betaAdp
-    tStats <- rc1$likelihood + rc2$likelihood - h0Results$h0Likelihood
     if(isExperiment) p <- numeric(length(rc1$geneId))
     else p <- numeric(length(rc1$trial))
 
@@ -181,7 +183,6 @@ constructBetaLRTTable <- function(rc1, rc2, scaleFactor, h0Results, h1Results, i
             tStats = tStats)
     }
 
-    idx <- betaTbl$tStats < 0
     betaTblIdx <- tibble(
         geneId = names(h1Results$emHc),
         beta1 = map_dbl(h1Results$emHc, "beta"),
@@ -191,9 +192,10 @@ constructBetaLRTTable <- function(rc1, rc2, scaleFactor, h0Results, h1Results, i
         fkMean2 = map_dbl(h1Results$emHt, "fkMean"),
         fkVar1 = map_dbl(h1Results$emHc, "fkVar"),
         fkVar2 = map_dbl(h1Results$emHt, "fkVar"),
-        tStats = h1Results$h1Likelihood1 + h1Results$h1Likelihood2 * scaleFactor -
-            h0Results$h0Likelihood[idx]
+        tStats = map_dbl(h1Results$tStats, "tStats")
     )
+
+    idx <- h1Results$idx
 
     betaTbl <- bind_rows(betaTbl[!idx, ], betaTblIdx)
     betaTbl <- betaTbl %>%
@@ -212,6 +214,7 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
     params <- computeBetaLRTParams(rc1, rc2, kmin, kmax, gbLength, scaleFactor)
     h0Results <- runEMH0BetaLRT(params, kmin, kmax, scaleFactor, maxItr, tor)
     h1Results <- runEMH1BetaLRT(params, h0Results, kmin, kmax, maxItr, tor)
+    browser()
     betaTbl <- constructBetaLRTTable(rc1, rc2, scaleFactor, h0Results, h1Results,
     isExperiment)
 
@@ -263,7 +266,7 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
 #' spikeInFile <- system.file("extdata", "spikein_scaling_factor.csv", 
 #' package = "STADyUM")
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInFile)
+#' spikeInFile = spikeInFile)
 #' # Print the likelihood ratio test object
 #' print(lrts)
 #' @export
@@ -451,7 +454,7 @@ setMethod(
 #' spikeInFile <- system.file("extdata", "spikein_scaling_factor.csv", 
 #' package = "STADyUM")
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInFile)
+#' spikeInFile = spikeInFile)
 #' plotPauseSiteContourMapTwoConditions(lrts,
 #' file="pause_sites_contour_map.png")
 #'
