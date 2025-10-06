@@ -143,7 +143,7 @@ setMethod(
     "plotMeanPauseDistrib", "TranscriptionRates",
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
-        p <- ggplot(cr, aes(x = fkMean)) +
+        p <- ggplot(cr, aes(x = .data$fkMean)) +
             geom_histogram(
                 bins = nclass.Sturges(cr$fkMean),
                 fill = "#56B4E9", alpha = 0.8,
@@ -215,7 +215,7 @@ setMethod(
         rSquared <- cor(allData$actual, allData$expected)^2
         r2Text <- paste("R^2 =", round(rSquared, 3))
 
-        p <- ggplot(allData, aes(x = actual, y = expected)) +
+        p <- ggplot(allData, aes(x = .data$actual, y = .data$expected)) +
             geom_point(alpha = 0.6, size = 0.8) +
             geom_abline(slope = 1, intercept = 0, linetype = "dashed", 
             color = "red") +
@@ -275,14 +275,14 @@ setMethod(
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
 
-        p <- ggplot(cr, aes(x = chi)) +
+        p <- ggplot(cr, aes(x = .data$chi)) +
             geom_density(fill = "#56B4E9", alpha = 0.7) +
             labs(
                 x = "RNAP Density (chi)",
                 y = "Density",
                 title = "Distribution of Gene Body RNAP Density"
             ) +
-            theme_pubr() +
+            theme_minimal() +
             theme(
                 plot.title = element_text(hjust = 0.5)
             )
@@ -345,7 +345,7 @@ setMethod("plotBetaVsChi", "TranscriptionRates",
             "Gene Activity vs Pause Escape Rate (Single Pause Site)"
         }
 
-        p <- ggplot(cr, aes(x = chi, y = !!sym(betaType))) +
+        p <- ggplot(cr, aes(x = .data$chi, y = !!sym(betaType))) +
             geom_point(alpha = 0.7, color = "#CC79A7") +
             geom_smooth(method = "loess", se = TRUE, color = "red") +
             labs(
@@ -408,8 +408,8 @@ setMethod(
             height = 6, dpi = 300) {
         cr <- rates(object)
 
-        p <- ggplot(cr, aes(x = fkMean, y = fkVar)) +
-            geom_density_2d(color = "blue", size = 0.8) +
+        p <- ggplot(cr, aes(x = .data$fkMean, y = .data$fkVar)) +
+            geom_density_2d(color = "blue", linewidth = 0.8) +
             geom_point(alpha = 0.6, size = 1.5, color = "#E69F00") +
             labs(
                 x = "Mean Pause Site Position (bp)",

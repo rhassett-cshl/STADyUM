@@ -487,11 +487,11 @@ setMethod(
         y_range <- y_max - y_min
 
         p <- ggplot(betaTbl) +
-            geom_density_2d(aes(x = fkMean1, y = fkSd1, color = name1)) +
-            geom_density_2d(aes(x = fkMean2, y = fkSd2, color = name2)) +
-            geom_point(aes(x = fkMean1, y = fkSd1, color = name1), alpha = 0.6,
+            geom_density_2d(aes(x = .data$fkMean1, y = .data$fkSd1, color = name1)) +
+            geom_density_2d(aes(x = .data$fkMean2, y = .data$fkSd2, color = name2)) +
+            geom_point(aes(x = .data$fkMean1, y = .data$fkSd1, color = name1), alpha = 0.6,
             size = 1.5) +
-            geom_point(aes(x = fkMean2, y = fkSd2, color = name2), alpha = 0.6,
+            geom_point(aes(x = .data$fkMean2, y = .data$fkSd2, color = name2), alpha = 0.6,
             size = 1.5) +
             labs(
                 x = "Mean Pause Site Position (bp)",
@@ -554,7 +554,7 @@ setMethod(
             dplyr::recode(Condition, "1" = name1, "2" = name2),
                 ScaledBeta = Beta * 2000,  # Scale by zeta
                 LogScaledBeta = log(ScaledBeta)) %>%  # Log of scaled beta
-            ggplot(aes(x = Condition, y = LogScaledBeta, fill = Condition)) +
+            ggplot(aes(x = .data$Condition, y = .data$LogScaledBeta, fill = .data$Condition)) +
             geom_violin(trim = FALSE) +
             geom_boxplot(width = 0.1, fill = "white") +
             scale_fill_manual(values = c("#00AFBB", "#E7B800")) +
@@ -614,7 +614,7 @@ setMethod(
             dplyr::recode(Condition, "1" = name1, "2" = name2),
                 ScaledChi = Chi * 2000,  # Scale by zeta
                 LogScaledChi = log(ScaledChi)) %>%  # Log of scaled chi
-            ggplot(aes(x = Condition, y = LogScaledChi, fill = Condition)) +
+            ggplot(aes(x = .data$Condition, y = .data$LogScaledChi, fill = .data$Condition)) +
             geom_violin(trim = FALSE) +
             geom_boxplot(width = 0.1, fill = "white") +
             scale_fill_manual(values = c("#00AFBB", "#E7B800")) +
@@ -677,7 +677,7 @@ setMethod(
                 category = factor(category, levels = c("Up", "Down", "Others")))
 
             p <- betaTbl %>%
-            ggplot(aes(x = logbeta_zeta, y = lfc, color = category)) +
+            ggplot(aes(x = .data$logbeta_zeta, y = .data$lfc, color = .data$category)) +
             geom_point(alpha = 0.5, size = 0.5) +
             scale_color_manual(values=c("#E41A1C", "#377EB8", "gray")) +
             geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
@@ -686,7 +686,7 @@ setMethod(
             labs(y = bquote(log[2]*"("*beta[.(name1)]/beta[.(name2)]*")"),
                 x = expr(log[2]*bar(beta*zeta)),
                 color = "Category") +
-            theme_pubr()
+            theme_minimal()
 
 
         if (!is.null(file)) {

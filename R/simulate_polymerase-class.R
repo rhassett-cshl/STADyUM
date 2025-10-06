@@ -673,7 +673,7 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
     pauseMean <- mean(df$pauseSite)
     pauseSd <- sd(df$pauseSite)
 
-    p <- ggplot(df, aes(x = pauseSite)) +
+    p <- ggplot(df, aes(x = .data$pauseSite)) +
         geom_histogram(binwidth = 1, fill = "steelblue", color = "black", alpha = 0.7) +
         geom_vline(
             xintercept = pauseMean, color = "red",
@@ -771,7 +771,7 @@ setMethod("plotPositionHeatmap", "SimulatePolymerase", function(
                         Cell = seq_len(ncol(matrix)))
     df$Polymerase <- as.vector(matrix)
 
-    p <- ggplot(df, aes(x = Cell, y = Site, fill = factor(Polymerase))) +
+    p <- ggplot(df, aes(x = .data$Cell, y = .data$Site, fill = factor(.data$Polymerase))) +
         geom_tile(color = "grey80") + 
         scale_fill_manual(values = c("0" = "white", "1" = "red"), 
         name = "Polymerase") +
@@ -843,7 +843,7 @@ setMethod(
             PolymeraseCount = colSums(mat)
         )
 
-        p <- ggplot(df, aes(x = PC1, y = PC2, color = PolymeraseCount)) +
+        p <- ggplot(df, aes(x = .data$PC1, y = .data$PC2, color = .data$PolymeraseCount)) +
             geom_point(size = 3, alpha = 0.8) +
             scale_color_gradient(
                 low = "lightblue", high = "darkred", name = "Polymerase\nCount"
@@ -945,8 +945,8 @@ setMethod(
         df <- validatePlotRange(start, end, data)
 
         df <- subset(df, count > 0)
-        p <- ggplot(df, aes(x=position, y=count)) +
-        geom_segment( aes(x=position, xend=position, y=0, yend=count),
+        p <- ggplot(df, aes(x=.data$position, y=.data$count)) +
+        geom_segment(aes(x=.data$position, xend=.data$position, y=0, yend=.data$count),
         color="lightgrey", size = 0.5) +
         geom_point( color="steelblue", size=3) +
         theme_minimal() +
