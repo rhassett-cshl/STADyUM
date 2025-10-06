@@ -275,10 +275,8 @@ setMethod(
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
 
-        p <- ggdensity(
-            cr, x = "chi",
-            fill = "#56B4E9", alpha = 0.7
-        ) +
+        p <- ggplot(cr, aes(x = chi)) +
+            geom_density(fill = "#56B4E9", alpha = 0.7) +
             labs(
                 x = "RNAP Density (chi)",
                 y = "Density",
