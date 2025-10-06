@@ -673,17 +673,12 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
     pauseMean <- mean(df$pauseSite)
     pauseSd <- sd(df$pauseSite)
 
-    p <- gghistogram(
-        df, x = "pauseSite",
-        bins = 30, alpha = 0.7, fill = "steelblue",
-        color = "black"
-    ) +
-        # Add vertical line for mean
+    p <- ggplot(df, aes(x = pauseSite)) +
+        geom_histogram(binwidth = 1, fill = "steelblue", color = "black", alpha = 0.7) +
         geom_vline(
             xintercept = pauseMean, color = "red",
             linetype = "dashed", size = 1
         ) +
-        # Add vertical lines for mean \pm 1 SD
         geom_vline(
             xintercept = pauseMean + pauseSd, color = "orange",
             linetype = "dotted", size = 0.8
@@ -692,7 +687,7 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
             xintercept = pauseMean - pauseSd, color = "orange",
             linetype = "dotted", size = 0.8
         ) +
-        theme_pubr() +
+        theme_minimal() +
         labs(
             title = "Distribution of Pause Sites",
             subtitle = sprintf("Mean: %.1f, SD: %.1f", pauseMean, pauseSd),
@@ -954,7 +949,7 @@ setMethod(
         geom_segment( aes(x=position, xend=position, y=0, yend=count),
         color="lightgrey", size = 0.5) +
         geom_point( color="steelblue", size=3) +
-        theme_pubr() +
+        theme_minimal() +
         theme(
             plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
         ) +

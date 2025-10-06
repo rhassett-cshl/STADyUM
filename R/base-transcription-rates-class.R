@@ -17,7 +17,6 @@
 #' @import ggplot2
 #' @importFrom grDevices nclass.Sturges
 #' @importFrom stats cor
-#' @import ggpubr
 #' @exportClass TranscriptionRates
 methods::setClass("TranscriptionRates",
     slots = c(
@@ -143,24 +142,23 @@ setMethod(
     "plotMeanPauseDistrib", "TranscriptionRates",
     function(object, file = NULL, width = 8, height = 6, dpi = 300) {
         cr <- rates(object)
-        p <- gghistogram(
-            cr, x = "fkMean",
-            add = "mean",
-            bins = nclass.Sturges(cr$fkMean),
-            fill = "#56B4E9", alpha = 0.8,
-            color = "white", size = 0.1
-        ) +
+        p <- ggplot(cr, aes(x = fkMean)) +
+            geom_histogram(
+                bins = nclass.Sturges(cr$fkMean),
+                fill = "#56B4E9", alpha = 0.8,
+                color = "white", size = 0.1
+            ) +
+            stat_summary(fun = mean, geom = "point", shape = 23, size = 3, fill = "red") +
             labs(
                 x = "Mean Pause Site Position (bp)",
                 y = "Count",
                 title = "Distribution of Mean Pause Site Positions",
                 subtitle = paste("n =", nrow(cr), "genes")
             ) +
-            theme_pubr() +
+            theme_minimal() +
             theme(
-                plot.title = element_text(size = 14, face = "bold", 
-                hjust = 0.5), plot.subtitle = element_text(size = 10, 
-                color = "gray50", hjust = 0.5),
+                plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+                plot.subtitle = element_text(size = 10, color = "gray50", hjust = 0.5),
                 axis.title = element_text(size = 11, face = "bold"),
                 axis.text = element_text(size = 10),
                 axis.line = element_line(color = "black", size = 0.5)

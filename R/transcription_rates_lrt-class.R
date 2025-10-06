@@ -554,14 +554,14 @@ setMethod(
             dplyr::recode(Condition, "1" = name1, "2" = name2),
                 ScaledBeta = Beta * 2000,  # Scale by zeta
                 LogScaledBeta = log(ScaledBeta)) %>%  # Log of scaled beta
-            ggpubr::ggviolin(x = "Condition", y = "LogScaledBeta", 
-            fill = "Condition",
-                    palette = c("#00AFBB", "#E7B800"),
-                    add = "boxplot", add.params = list(fill = "white")) +
+            ggplot(aes(x = Condition, y = LogScaledBeta, fill = Condition)) +
+            geom_violin(trim = FALSE) +
+            geom_boxplot(width = 0.1, fill = "white") +
+            scale_fill_manual(values = c("#00AFBB", "#E7B800")) +
             labs(title = "Log of Scaled Beta Values Comparison", 
             x = "Condition", 
             y = expression(log(beta * zeta))) +  
-            theme_pubr() +
+            theme_minimal() +
             theme(plot.title = element_text(hjust = 0.5))
 
         if (!is.null(file)) {
@@ -614,14 +614,14 @@ setMethod(
             dplyr::recode(Condition, "1" = name1, "2" = name2),
                 ScaledChi = Chi * 2000,  # Scale by zeta
                 LogScaledChi = log(ScaledChi)) %>%  # Log of scaled chi
-            ggpubr::ggviolin(x = "Condition", y = "LogScaledChi", 
-            fill = "Condition",
-                    palette = c("#00AFBB", "#E7B800"),
-                    add = "boxplot", add.params = list(fill = "white")) +
+            ggplot(aes(x = Condition, y = LogScaledChi, fill = Condition)) +
+            geom_violin(trim = FALSE) +
+            geom_boxplot(width = 0.1, fill = "white") +
+            scale_fill_manual(values = c("#00AFBB", "#E7B800")) +
             labs(title = "Log of Scaled Chi Values Comparison", 
             x = "Condition", 
             y = expression(log(chi * zeta))) +  
-            theme_pubr() +
+            theme_minimal() +
             theme(plot.title = element_text(hjust = 0.5))
 
         if (!is.null(file)) {
