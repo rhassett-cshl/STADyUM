@@ -146,9 +146,8 @@ setMethod(
             geom_histogram(
                 bins = nclass.Sturges(cr$fkMean),
                 fill = "#56B4E9", alpha = 0.8,
-                color = "white", size = 0.1
+                color = "white", linewidth = 0.1
             ) +
-            stat_summary(fun = mean, geom = "point", shape = 23, size = 3, fill = "red") +
             labs(
                 x = "Mean Pause Site Position (bp)",
                 y = "Count",
@@ -161,7 +160,7 @@ setMethod(
                 plot.subtitle = element_text(size = 10, color = "gray50", hjust = 0.5),
                 axis.title = element_text(size = 11, face = "bold"),
                 axis.text = element_text(size = 10),
-                axis.line = element_line(color = "black", size = 0.5)
+                axis.line = element_line(color = "black", linewidth = 0.5)
             )
 
         if (!is.null(file)) {

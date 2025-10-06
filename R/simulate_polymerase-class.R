@@ -677,15 +677,15 @@ setMethod("plotPauseSites", "SimulatePolymerase", function(
         geom_histogram(binwidth = 1, fill = "steelblue", color = "black", alpha = 0.7) +
         geom_vline(
             xintercept = pauseMean, color = "red",
-            linetype = "dashed", size = 1
+            linetype = "dashed", linewidth = 1
         ) +
         geom_vline(
             xintercept = pauseMean + pauseSd, color = "orange",
-            linetype = "dotted", size = 0.8
+            linetype = "dotted", linewidth = 0.8
         ) +
         geom_vline(
             xintercept = pauseMean - pauseSd, color = "orange",
-            linetype = "dotted", size = 0.8
+            linetype = "dotted", linewidth = 0.8
         ) +
         theme_minimal() +
         labs(
@@ -966,6 +966,11 @@ setMethod(
                 xintercept = pmean, color = "red",
                 linetype = "dashed", size = 1
             )
+        }
+
+        if (!is.null(file)) {
+            # save to file using default size/dpi consistent with other plots
+            ggsave(file, p, width = 8, height = 6, dpi = 300)
         }
 
         return(p)
