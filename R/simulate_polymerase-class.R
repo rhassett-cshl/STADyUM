@@ -44,8 +44,6 @@
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom tibble tbl_df
 #' @importFrom methods slot new is slot<-
-#' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs
-#' @importFrom ggplot2 geom_tile scale_fill_gradient ggsave geom_histogram
 #' @importFrom dplyr %>%
 #' @importFrom stats prcomp sd
 #' @importFrom utils head
@@ -916,12 +914,12 @@ validatePlotRange <- function(start, end, data) {
 #'     zetaMax = 2500, zetaVec = NULL, cellNum = 100, polSize = 33,
 #'     addSpace = 17, time = 1, timesToRecord = c(0.5, 1.0))
 #' # Plot final combined cells data
-#' plotCombinedCells(sim, file="combined_cells.html")
+#' plotCombinedCells(sim, file="combined_cells.png")
 #' # Plot specific time point data
-#' plotCombinedCells(sim, timePoint = 0.5, file="combined_cells.html")
+#' plotCombinedCells(sim, timePoint = 0.5, file="combined_cells.png")
 #' # Plot with custom range and title
 #' plotCombinedCells(sim, timePoint = 0.5, start = 100, end = 500,
-#' file="combined_cells.html")
+#' file="combined_cells.png")
 #' @export
 setGeneric("plotCombinedCells", function(
     object, start = NULL, end = NULL, timePoint = NULL, file = NULL) {
@@ -946,8 +944,9 @@ setMethod(
 
         df <- subset(df, count > 0)
         p <- ggplot(df, aes(x=.data$position, y=.data$count)) +
-        geom_segment(aes(x=.data$position, xend=.data$position, y=0, yend=.data$count),
-        color="lightgrey", size = 0.5) +
+        geom_segment(aes(x=.data$position, 
+        xend=.data$position, y=0, yend=.data$count),
+        color="lightgrey", linewidth = 0.5) +
         geom_point( color="steelblue", size=3) +
         theme_minimal() +
         theme(
@@ -964,7 +963,7 @@ setMethod(
         if (pmean >= min(df$position) && pmean <= max(df$position)) {
             p <- p + geom_vline(
                 xintercept = pmean, color = "red",
-                linetype = "dashed", size = 1
+                linetype = "dashed", linewidth = 1
             )
         }
 

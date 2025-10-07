@@ -439,10 +439,10 @@ sim <- simulatePolymerase(
     zetaMax = 2500, zetaVec = NULL, cellNum = 100, polSize = 33,
     addSpace = 17, time = 1, timesToRecord = c(0.5, 1.0))
 # Plot final combined cells data
-plotCombinedCells(sim, file="combined_cells.html")
+plotCombinedCells(sim, file="combined_cells.png")
 # Plot specific time point data
-plotCombinedCells(sim, timePoint = 0.5, file="combined_cells.html")
+plotCombinedCells(sim, timePoint = 0.5, file="combined_cells.png")
 # Plot with custom range and title
 plotCombinedCells(sim, timePoint = 0.5, start = 100, end = 500,
-file="combined_cells.html")
+file="combined_cells.png")
 }

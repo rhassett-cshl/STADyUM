@@ -66,9 +66,8 @@
 #' @importFrom plyranges group_by_overlaps group_by summarise
 #' @importFrom purrr map map_chr map_dbl map2
 #' @importFrom dplyr mutate
-#' @importFrom methods slot is slot<- validObject
+#' @importFrom methods slot is slot<- validObject show
 #' @importFrom stats rpois optim rnorm var dnorm uniroot
-#' @importFrom ggplot2 ggplot aes geom_line geom_point theme_minimal labs ggsave
 #' @exportClass SimulationTranscriptionRates
 methods::setClass("SimulationTranscriptionRates",
     slots = c(

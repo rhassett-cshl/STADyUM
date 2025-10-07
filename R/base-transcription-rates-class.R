@@ -1,3 +1,5 @@
+utils::globalVariables(c("gene_id", "query", "count", "score"))
+
 #' @title Base class for TranscriptionRates objects
 #'
 #' @description
@@ -14,8 +16,16 @@
 #' @rdname TranscriptionRates-class
 #' @importClassesFrom tibble tbl_df
 #' @importFrom methods slot
-#' @import ggplot2
-#' @importFrom rlang .data
+#' @importFrom ggplot2 ggsave ggplot geom_histogram labs theme_minimal expansion
+#' @importFrom ggplot2 geom_point geom_abline annotate theme_bw theme
+#' @importFrom ggplot2 geom_density geom_smooth element_text geom_density_2d aes
+#' @importFrom ggplot2 geom_vline geom_tile scale_fill_manual element_blank
+#' @importFrom ggplot2 scale_color_gradient geom_segment scale_y_continuous
+#' @importFrom ggplot2 scale_x_continuous geom_line xlim ylim geom_violin
+#' @importFrom ggplot2 geom_boxplot scale_color_manual geom_hline element_line
+#' @importFrom rlang .data sym
+#' @importFrom GenomicRanges GRanges makeGRangesFromDataFrame coverage strand<-
+#' @importFrom GenomicRanges promoters findOverlaps start end width strand
 #' @importFrom grDevices nclass.Sturges
 #' @importFrom stats cor
 #' @exportClass TranscriptionRates

@@ -545,15 +545,15 @@ setMethod(
         name2 <- slot(transcriptionRates2(object), "name")
 
         p <- betaTbl %>%
-            dplyr::select(beta1, beta2) %>%
-            tidyr::pivot_longer(cols = c(beta1, beta2),
+            dplyr::select(.data$beta1, .data$beta2) %>%
+            tidyr::pivot_longer(cols = c(.data$beta1, .data$beta2),
                                 names_to = "Condition",
                                 values_to = "Beta",
                                 names_prefix = "beta") %>%
             dplyr::mutate(Condition = 
-            dplyr::recode(Condition, "1" = name1, "2" = name2),
-                ScaledBeta = Beta * 2000,  # Scale by zeta
-                LogScaledBeta = log(ScaledBeta)) %>%  # Log of scaled beta
+            dplyr::recode(.data$Condition, "1" = name1, "2" = name2),
+                ScaledBeta = .data$Beta * 2000,  # Scale by zeta
+                LogScaledBeta = log(.data$ScaledBeta)) %>%  # Log of scaled beta
             ggplot(aes(x = .data$Condition, y = .data$LogScaledBeta, fill = .data$Condition)) +
             geom_violin(trim = FALSE) +
             geom_boxplot(width = 0.1, fill = "white") +
@@ -605,15 +605,15 @@ setMethod(
         name2 <- slot(transcriptionRates2(object), "name")
 
         p <- chiTbl %>%
-            dplyr::select(chi1, chi2) %>%
-            tidyr::pivot_longer(cols = c(chi1, chi2),
+            dplyr::select(.data$chi1, .data$chi2) %>%
+            tidyr::pivot_longer(cols = c(.data$chi1, .data$chi2),
                                 names_to = "Condition",
                                 values_to = "Chi",
                                 names_prefix = "chi") %>%
             dplyr::mutate(Condition = 
-            dplyr::recode(Condition, "1" = name1, "2" = name2),
-                ScaledChi = Chi * 2000,  # Scale by zeta
-                LogScaledChi = log(ScaledChi)) %>%  # Log of scaled chi
+            dplyr::recode(.data$Condition, "1" = name1, "2" = name2),
+                ScaledChi = .data$Chi * 2000,  # Scale by zeta
+                LogScaledChi = log(.data$ScaledChi)) %>%  # Log of scaled chi
             ggplot(aes(x = .data$Condition, y = .data$LogScaledChi, fill = .data$Condition)) +
             geom_violin(trim = FALSE) +
             geom_boxplot(width = 0.1, fill = "white") +
@@ -666,25 +666,26 @@ setMethod(
         zeta <- 2000
 
         betaTbl <- betaTbl %>%
-        mutate(beta = (beta1 + beta2) / 2,
-                logbeta_zeta = log2(beta * zeta),
+        mutate(beta = (.data$beta1 + .data$beta2) / 2,
+                logbeta_zeta = log2(.data$beta * zeta),
                 category =
                 case_when(
                     (padj < 0.05) & (lfc > log2(1.2)) ~ "Up",
                     (padj < 0.05) & (lfc < log2(0.8)) ~ "Down",
                     TRUE ~ "Others"
                 ),
-                category = factor(category, levels = c("Up", "Down", "Others")))
+                category = factor(.data$category, levels = c("Up", "Down", "Others")))
 
             p <- betaTbl %>%
-            ggplot(aes(x = .data$logbeta_zeta, y = .data$lfc, color = .data$category)) +
+            ggplot(aes(x = .data$logbeta_zeta, 
+            y = .data$lfc, color = .data$category)) +
             geom_point(alpha = 0.5, size = 0.5) +
             scale_color_manual(values=c("#E41A1C", "#377EB8", "gray")) +
             geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
             ylim(-6, 6) +
             xlim(-10, 10) +
             labs(y = bquote(log[2]*"("*beta[.(name1)]/beta[.(name2)]*")"),
-                x = expr(log[2]*bar(beta*zeta)),
+                x = expression(log[2]*bar(beta*zeta)),
                 color = "Category") +
             theme_minimal()
 

@@ -17,3 +17,5 @@ src/STADyUM.so
 src/RcppExports.o
 /doc/
 /Meta/
+
+README.Rmd

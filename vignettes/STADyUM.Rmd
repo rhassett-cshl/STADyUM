@@ -35,9 +35,10 @@ It provides tools for:
 # Installation
 
 ```{r install, eval = FALSE}
-# Install from GitHub
-devtools::install_github("yourusername/STADyUM")
-library(STADyUM)
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+install.packages("BiocManager")
+BiocManager::install("STADyUM")
 ```
 
 # Basic Usage

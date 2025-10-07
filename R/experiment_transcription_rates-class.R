@@ -51,7 +51,6 @@
 #'
 #' @name ExperimentTranscriptionRates-class
 #' @rdname ExperimentTranscriptionRates-class
-#' @import GenomicRanges
 #' @importClassesFrom tibble tbl_df
 #' @importFrom dplyr mutate select left_join rename %>%
 #' @importFrom stats dnorm uniroot density
@@ -307,8 +306,8 @@ experimentProcessEmResults <- function(emRate, emLs, stericHindrance, zeta) {
         emRate$phi <- map_dbl(emLs, "phi", .default = NA)
         emRate <- emRate %>%
             mutate(
-                betaZeta = betaAdp * zeta,
-                alphaZeta = omegaZeta / (1 - phi)
+                betaZeta = .data$betaAdp * zeta,
+                alphaZeta = .data$omegaZeta / (1 - .data$phi)
             )
     }
 
@@ -332,18 +331,18 @@ prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
     if (!stericHindrance) {
         emRate <- emRate %>%
             select(
-                geneId, chi, betaOrg, betaAdp, fkMean, fkVar, totalGbRc,
-                gbLength, Yk, Xk, likelihood
+                .data$geneId, .data$chi, .data$betaOrg, .data$betaAdp, .data$fkMean, .data$fkVar, .data$totalGbRc,
+                .data$gbLength, .data$Yk, .data$Xk, .data$likelihood
             )%>%
-            rename(expectedPauseSiteCounts = Yk, actualPauseSiteCounts = Xk)
+            rename(expectedPauseSiteCounts = .data$Yk, actualPauseSiteCounts = .data$Xk)
     } else {
         emRate <- emRate %>%
             select(
-                geneId, chi, betaOrg, betaAdp, fkMean, fkVar, phi,
-                omegaZeta, betaZeta, alphaZeta, totalGbRc, gbLength, Yk, Xk,
-                likelihood
+                .data$geneId, .data$chi, .data$betaOrg, .data$betaAdp, .data$fkMean, .data$fkVar, .data$phi,
+                .data$omegaZeta, .data$betaZeta, .data$alphaZeta, .data$totalGbRc, .data$gbLength, .data$Yk, .data$Xk,
+                .data$likelihood
             )%>%
-            rename(expectedPauseSiteCounts = Yk, actualPauseSiteCounts = Xk)
+            rename(expectedPauseSiteCounts = .data$Yk, actualPauseSiteCounts = .data$Xk)
     }
 
     return(emRate)
