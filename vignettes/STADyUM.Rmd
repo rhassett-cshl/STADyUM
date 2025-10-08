@@ -7,6 +7,7 @@ vignette: >
   %\VignetteIndexEntry{STADyUM: Simulating and Analyzing Transcription Dynamics}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+bibliography: references.bib
 ---
 
 ```{r setup, include = FALSE}
@@ -51,22 +52,17 @@ algorithm to estimate transcription rates such as gene body RNAP density (chi)
 and the ratio of gene body RNAP density to pause region RNAP density under
 models of fixed pause sites (betaOrg) and variable pause sites (betaAdp).
 
-The example data used throughout this package is derived from Aoi et al.
-(2020). The data is from the raw PRO-Seq read counts for human cells
-treated with auxin-induced acute depletion of NELF(negative elongation factor). 
+The example data used throughout this package is derived from @Aoi2020. The data is from the raw PRO-Seq read counts for human cells treated with auxin-induced acute depletion of NELF(negative elongation factor). 
 Raw PRO-seq data is located at GEO: GSE144786. The raw fastq files were 
 processed with https://github.com/Danko-Lab/proseq2.0. 
 
 Estimates of transcription rates, such as chi and beta, are calculated 
-given Expectation Maximization with likelihood formulas derived in (Siepel 
-2022, Section "Stationary Distribution and Inference at Steady-State") and 
-stated in (Zhao 2023, Section "Inference at Steady State"). Note that chi is 
+given Expectation Maximization with likelihood formulas derived in *Stationary Distribution and Inference at Steady-State* section of @Siepel2022 and stated in *Inference at Steady State* section of @Zhao2023. Note that chi is 
 the estimator for the average read depth, excluding the pause peak and beta 
 is the estimator for the ratio of chi to the read depth in the pause peak 
 region. The estimator for beta is also given for a model adapted for varying
 pause sites across cells and is denoted by variable betaAdp whereas the fixed 
-pause site estimate is denoted by betaOrg, refer to (Zhao 2023, Section 
-"Allowing for variation in pause site"). Pause site statistics such as the mean
+pause site estimate is denoted by betaOrg, refer to *Allowing for variation in pause site* section of @Zhao2023. Pause site statistics such as the mean
 position of pause sites and the variance of pause sites (fkMean and fkVar) are 
 also reported.
 
@@ -107,11 +103,9 @@ plotExpectedVsActualPauseSiteCounts(treatedRates,
 
 ## Estimate Transcription Rates for Experimental Data under Steric Hindrance
 
-Under the model of steric hindrance, additional rates are estimated such as the 
-landing pad occupancy (phi), pause-escape rate (betaZeta), the potential 
+Under the model of steric hindrance, additional rates are estimated such as the landing pad occupancy (phi), pause-escape rate (betaZeta), the potential 
 initiation rate (alphaZeta), and omegaZeta (effective initiation rate). The 
-likelihood functions differ under the model of steric hindrance and are derived 
-in (Zhao 2023, Section "Fitting the Steric Hindrance Model to the Data"). Note 
+likelihood functions differ under the model of steric hindrance and are derived in *Fitting the Steric Hindrance Model to the Data* of @Zhao2023. Note 
 the omega parameter is a scaling factor.
 
 ```{r estimate_experiment_rates_steric_hindrance, eval=FALSE}
@@ -138,10 +132,7 @@ show(treatedRatesSH)
 
 ## Likelihood Ratio Tests
 
-Compare samples treated with auxin to control samples using the 
-likelihood ratio test functionality derived in (Siepel 2022, Section 
-"LikelihoodRatio Tests for Differences Between Transcription Units, Conditions, 
-or Species")
+Compare samples treated with auxin to control samples using the likelihood ratio test functionality derived in *LikelihoodRatio Tests for Differences Between Transcription Units, Conditions, or Species* section of @Siepel2022
 
 ```{r likelihood_ratio_tests}
 lrt <- likelihoodRatioTest(controlRates, treatedRates)
@@ -153,8 +144,7 @@ show(lrt)
 
 As expected given current literature, RNAPs tend to pause more downstream when 
 NELF is absent due to Auxin treatment. As shown in the plot, the majority of 
-treated genes have average pause locations of more than 100bp downstream of the 
-TSS. Strikingly, few RNAPs could enter productive elongation after NELF 
+treated genes have average pause locations of more than 100bp downstream of the TSS. Strikingly, few RNAPs could enter productive elongation after NELF 
 depletion and treated samples had a signficantly lower pause-escape rate than 
 the control samples exemplified by the beta violin plots.
 
@@ -170,31 +160,13 @@ BetaViolinPlot(lrt, file="lrtBetaViolinPlot.png")
 ## Simulate Polymerase
 
 ![(A) Conceptual illustration of model focusing on the kinetic model for RNAP 
-movement on the DNA template. (B) Graphical model representation with unobserved
-continuous-time Markov chain (Z) and observed read counts (X). Read counts at 
-each site are conditionally independent and Poisson distributed. (C) Design of 
-SimPol simulator tracking the movement of in silico RNAPs across N-bp DNA 
-templates in C cells, then samples the synthetic read counts based on RNAP 
-positions. (D) Example of synthetic nascent RNA sequencing data from SimPol 
-alongside matched real PRO-seq data from the DNAJA1 gene on chromosome 9 of the 
-human genome](simpol_figures.png){width=75%}
+movement on the DNA template. (B) Graphical model representation with unobserved continuous-time Markov chain (Z) and observed read counts (X). Read counts at  each site are conditionally independent and Poisson distributed. (C) Design of SimPol simulator tracking the movement of in silico RNAPs across N-bp DNA templates in C cells, then samples the synthetic read counts based on RNAP positions. (D) Example of synthetic nascent RNA sequencing data from SimPol alongside matched real PRO-seq data from the DNAJA1 gene on chromosome 9 of the human genome](simpol_figures.png){width=75%}
 
 Simulate read counts by running simulations of polymerase movement along the
-gene at user-specified rates and gene lengths. Our simulator models the movement
-of RNAPs along a set of transcription units given a continuous-time Markov 
-model. Nascent RNA sequencing read counts are then generated under steady-state
-conditions by sampling based on a Poisson distribution with mean equal to the 
-simulated RNAP frequency multiplied by a user-specified sequencing depth. A 
-graphical model representation (Figure B) with unobserved continuous-time Markov
-chain (Z_i) in which user-specified paramters for transcription initiation 
-(alpha), pause-escape, and elongation (zeta) are included as well as the 
-observed read counts (Xi). The initial model is extended to allow for 
-variability across cells in promoter-proximal pause site locations and steric 
-hindrance of transcription initiation from paused RNAPs (Figure C). More 
-information on the simulator can be found in (Zhao 2023, Sections "A 
+gene at user-specified rates and gene lengths. Our simulator models the movement of RNAPs along a set of transcription units given a continuous-time Markov model. Nascent RNA sequencing read counts are then generated under steady-state conditions by sampling based on a Poisson distribution with mean equal to the simulated RNAP frequency multiplied by a user-specified sequencing depth. A graphical model representation (Figure B) with unobserved continuous-time Markov chain (Z_i) in which user-specified paramters for transcription initiation (alpha), pause-escape, and elongation (zeta) are included as well as the observed read counts (Xi). The initial model is extended to allow for variability across cells in promoter-proximal pause site locations and steric hindrance of transcription initiation from paused RNAPs (Figure C). More information on the simulator can be found in the sections *A 
 simple probabilistic model for transcription initiation, promoter-proximal 
-pausing, and elongation", "SimPol Simulator", "Generation of synthetic NRS 
-data")
+pausing, and elongation*, *SimPol Simulator*, *Generation of synthetic NRS 
+data* of @Zhao2023
 
 ```{r create_simpol, fig.width=7,fig.height=5,out.width="70%",out.height="50%"}
 simpol <- simulatePolymerase(k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
@@ -247,24 +219,3 @@ BetaViolinPlot(simLRT, file="simBetaViolinPlot.png")
 ```{r session_info}
 sessionInfo()
 ```
-
-# References
-- Yuki Aoi, Edwin R. Smith, Avani P. Shah, Emily J. Rendleman, Stacy A. 
-Marshall, Ashley R. Woodfin, Fei X. Chen, Ramin Shiekhattar, Ali Shilatifard,
-NELF Regulates a Promoter-Proximal Step Distinct from RNA Pol II Pause-Release,
-Molecular Cell,Volume 78, Issue 2,2020,Pages 261-274.e5,ISSN 1097-2765,
-https://doi.org/10.1016/j.molcel.2020.02.014. 
-- Yixin Zhao, Lingjie Liu, Rebecca Hassett, Adam Siepel, Model-based 
-characterization of the equilibrium dynamics of transcription initiation and 
-promoter-proximal pausing in human cells, Nucleic Acids Research, Volume 51, 
-Issue 21, 27 November 2023, Page e106, https://doi.org/10.1093/nar/gkad843
-- Chu, T., Wang, Z., Chou, S. P., & Danko, C. G. (2018). Discovering 
-Transcriptional Regulatory Elements From Run‐On and Sequencing Data Using the 
-Web‐Based dREG Gateway. Current protocols in bioinformatics, e70.
-- Lingjie Liu, Yixin Zhao, Rebecca Hassett, Shushan Toneyan, Peter K Koo, Adam 
-Siepel, Probabilistic and machine-learning methods for predicting local rates 
-of transcription elongation from nascent RNA sequencing data, Nucleic Acids
-Research, Volume 53, Issue 4, 28 February 2025, gkaf092, 
-https://doi.org/10.1093/nar/gkaf092
-- Adam Siepel, A Unified Probabilistic Modeling Framework for Eukaryotic 
-Transcription Based on Nascent RNA Sequencing Data, bioRxiv, 1, January, 2022
