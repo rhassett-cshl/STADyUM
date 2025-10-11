@@ -42,7 +42,6 @@ While existing Bioconductor packages like INSPEcT focuses primarily on modeling 
 ```{r install, eval = FALSE}
 if (!requireNamespace("BiocManager", quietly=TRUE))
     install.packages("BiocManager")
-install.packages("BiocManager")
 BiocManager::install("STADyUM")
 ```
 
