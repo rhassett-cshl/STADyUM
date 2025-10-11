@@ -211,7 +211,7 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
     maxItr <- 500
     tor <- 1e-6
 
-    params <- computeBetaLRTParams(rc1, rc2, kmin, kmax, gbLength, scaleFactor)
+    params <- computeBetaLRTParams(rc1, rc2, scaleFactor, kmin, kmax, gbLength)
     h0Results <- runEMH0BetaLRT(params, kmin, kmax, scaleFactor, maxItr, tor)
     h1Results <- runEMH1BetaLRT(params, h0Results, kmin, kmax, maxItr, tor, scaleFactor)
     betaTbl <- constructBetaLRTTable(rc1, rc2, scaleFactor, h0Results, h1Results, isExperiment)

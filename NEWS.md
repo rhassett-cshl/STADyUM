@@ -1,6 +1,6 @@
 # STADyUM 
 
 
-# 0.99.2
+# 0.99.3
 
 Initial submission to BioConductor.
