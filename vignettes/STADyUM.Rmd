@@ -186,7 +186,8 @@ plotCombinedCells(simpol, file="combinedCellsLollipopPlot.png")
 ```
 
 This uses the same core Expectation Maximization algorithm as the experimental data, but it is able to handle the simulated data as well.
-## Estimate Transcription Rates from Simualted Data
+
+## Estimate Transcription Rates from Simulated Data
 
 ```{r estimate_simulated_rates, fig.width=7, fig.height=5, out.width="75%"}
 simRates <- estimateTranscriptionRates(simpol, name="simRatesb0.5k50",
