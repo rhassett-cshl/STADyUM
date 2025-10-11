@@ -28,10 +28,14 @@ STADyUM is an R package for simulating and analyzing transcription dynamics.
 It provides tools for:
 
 - Simulating polymerase movement along genes
-- Estimating transcription rates
-- Analyzing pause site distributions
-- Visualizing transcription dynamics
-- Comparing transcription rates under different conditions
+- Estimating transcription initiation, pause-release, and elongation rates
+- Analyzing pause site distributions and RNAP density profiles
+- Visualizing transcription dynamics across genomic regions
+- Comparing transcription-associated rates under different conditions
+
+STADyUM seamlessly integrates with the Bioconductor ecosystem by leveraging standard Bioconductor data structures such as GRanges for genomic interval handling and S4Vectors for custom Bioconductor-style data structures. This compatibility allows users to incorporate STADyUM's results directly into downstream analyses and visualization pipelines with other Bioconductor tools. 
+
+While existing Bioconductor packages like INSPEcT focuses primarily on modeling RNA synthesis, processing, and degradation using both nascent and mature RNA-seq data through systems of differential equations, STADyUM takes a different modeling approach. STADyUM provides a probabilistic framework tailored specifically for nascent RNA data alone (such as PRO-seq, GRO-seq, 4sU-DRB-seq) including functionality for modeling steric hindrance between RNA polymerases and modeling pause-site kinetics explicitly.
 
 # Installation
 
@@ -92,10 +96,11 @@ controlRatesTbl <- rates(controlRates)
 head(controlRatesTbl)
 ```
 
+Plotted below is a density plot of gene-body RNAP density values of all the genes and a parity plot for verifying the model fit. The gene-body RNAP density (chi) is an estimate of the total gene-body reads / gene-body length in RNAPs per bp. This plot indicates that most genes have low RNAP density and only a minority of the genes have higher transcriptional activity. The parity plot of expected vs. actual pause site counts per gene can be used to verify that the model fit the actual data well. In this case the Pearson correlation coefficient is 0.99 indicating the model fit is strong.
 ## Plotting functionality for TranscriptionRates objects
 
 ```{r plot_exp_rates, fig.width=7, fig.height=5, out.width="75%"}
-plotBetaVsChi(controlRates, betaType="betaAdp", file="controlBetaAdpVsChi.png")
+plotChiDistrib(controlRates, file="ChiDistributionPlot.png")
 
 plotExpectedVsActualPauseSiteCounts(treatedRates, 
                                     file="treatedExpActPauseSites.png")
@@ -180,6 +185,7 @@ readCounts <- readCounts(simpol)
 plotCombinedCells(simpol, file="combinedCellsLollipopPlot.png")
 ```
 
+This uses the same core Expectation Maximization algorithm as the experimental data, but it is able to handle the simulated data as well.
 ## Estimate Transcription Rates from Simualted Data
 
 ```{r estimate_simulated_rates, fig.width=7, fig.height=5, out.width="75%"}

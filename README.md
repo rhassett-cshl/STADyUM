@@ -7,7 +7,31 @@
 
 <!-- badges: end -->
 
-The goal of STADyUM is to …
+STADyUM is probabilistic modeling software for analyzing simulated and
+experimental nascent RNA sequencing data to study transcriptional
+dynamics.
+
+Nascent RNA sequencing methods—such as PRO-seq, GRO-seq, and
+4sU-DRB-seq—are powerful tools for investigating transcription
+mechanisms, but their data can be challenging to interpret, and existing
+analysis tools are limited.
+
+STADyUM provides:
+
+- Efficient simulation of sequencing read counts.
+
+- Robust estimation of key rate parameters, including RNAP density along
+  gene bodies and pause regions, as well as pause site statistics.
+
+- A mechanistic model that accounts for steric hindrance between RNA
+  polymerases, which can impact apparent transcription rates.
+
+- Comprehensive support for differential analysis of
+  transcription-associated rates (such as initiation, pause-release, and
+  elongation) across conditions, cell types, individuals, and species.
+
+This framework offers a unified, statistically rigorous approach for
+dissecting transcription dynamics from nascent RNA data.
 
 ## Installation
 
@@ -27,4 +51,19 @@ BiocManager::install("STADyUM")
 ``` r
 install.packages("devtools")
 devtools::install_github("rhassett-cshl/STADyUM")
+```
+
+## Vignette
+
+The vignette illustrating how to use the package can be accessed on
+Bioconductor or from R via:
+
+``` r
+vignette("STADyUM")
+```
+
+or
+
+``` r
+browseVignettes("STADyUM")
 ```

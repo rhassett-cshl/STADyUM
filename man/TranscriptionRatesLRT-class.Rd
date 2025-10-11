@@ -27,6 +27,7 @@
 likelihoodRatioTest(
   transcriptionRates1,
   transcriptionRates2,
+  scaleFactor = 1,
   spikeInFile = NULL
 )
 
@@ -82,6 +83,8 @@ plotLfcMa(object, file = NULL, width = 8, height = 6, dpi = 300)
 \item{transcriptionRates1}{an \code{\linkS4class{TranscriptionRates}} object}
 
 \item{transcriptionRates2}{an \code{\linkS4class{TranscriptionRates}} object}
+
+\item{scaleFactor}{a numeric value to scale the beta estimates. Defaults to 1}
 
 \item{spikeInFile}{path to a csv file containing scale factors
 based on total or spike-in reads or NULL if not provided. Defaults to NULL.}

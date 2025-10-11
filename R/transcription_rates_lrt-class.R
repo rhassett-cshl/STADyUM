@@ -55,7 +55,7 @@ computeChiLRT <- function(lambda1, lambda2, rc1, rc2, isExperiment) {
     return(chiTbl)
 }
 
-computeBetaLRTParams <- function(rc1, rc2, kmin, kmax, gbLength) {
+computeBetaLRTParams <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength) {
     fkInt <- dnorm(kmin:kmax, mean = 50, sd = 100)
     fkInt <- fkInt / sum(fkInt)
     s1 <- rc1$totalGbRc
@@ -65,7 +65,7 @@ computeBetaLRTParams <- function(rc1, rc2, kmin, kmax, gbLength) {
     Xk1 <- rc1$actualPauseSiteCounts
     Xk2 <- rc2$actualPauseSiteCounts
     M <- gbLength
-    chiHat <- (s1 + s2) / M
+    chiHat <- (s1 + s2*scaleFactor) / M
     betaInt <- chiHat / (map_dbl(rc1$actualPauseSiteCounts, sum) 
     + map_dbl(rc2$actualPauseSiteCounts, sum))
     chiHat1 <- rc1$chi
@@ -79,7 +79,7 @@ computeBetaLRTParams <- function(rc1, rc2, kmin, kmax, gbLength) {
     )
 }
 
-runEMH0BetaLRT <- function(params, kmin, kmax, maxItr, tor) {
+runEMH0BetaLRT <- function(params, kmin, kmax, scaleFactor, maxItr, tor) {
     emRes <- pmap(
         list(
             params$Xk1, params$Xk2, params$betaInt, params$chiHat,
@@ -90,8 +90,7 @@ runEMH0BetaLRT <- function(params, kmin, kmax, maxItr, tor) {
                 mainExpectationMaximizationH0(
                     params$fkInt,
                     Xk1 = x, Xk2 = y, kmin, kmax,
-                    betaInt = z, chiHat = k, chiHat1 = m, chiHat2 = n,
-                    maxItr = maxItr, tor = tor
+                    betaInt = z, chiHat = k, chiHat1 = m, chiHat2 = n, scaleFactor = scaleFactor, maxItr = maxItr, tor = tor
                 ),
                 error = function(err) {
                     list(
@@ -162,7 +161,8 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor) {
     )
 }
 
-constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results, isExperiment)
+constructBetaLRTTable <- function(rc1, rc2, scaleFactor, h0Results, h1Results,
+isExperiment)
 {
     beta1 <- rc1$betaAdp; beta2 <- rc2$betaAdp
     tStats <- rc1$likelihood + rc2$likelihood - h0Results$h0Likelihood
@@ -191,8 +191,7 @@ constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results, isExperiment)
         fkMean2 = map_dbl(h1Results$emHt, "fkMean"),
         fkVar1 = map_dbl(h1Results$emHc, "fkVar"),
         fkVar2 = map_dbl(h1Results$emHt, "fkVar"),
-        tStats = h1Results$h1Likelihood1 + h1Results$h1Likelihood2 -
-            h0Results$h0Likelihood[idx]
+        tStats = h1Results$h1Likelihood1 + h1Results$h1Likelihood2 * scaleFactor - h0Results$h0Likelihood[idx]
     )
 
     betaTbl <- bind_rows(betaTbl[!idx, ], betaTblIdx)
@@ -205,15 +204,14 @@ constructBetaLRTTable <- function(rc1, rc2, h0Results, h1Results, isExperiment)
     return(betaTbl)
 }
 
-computeBetaLRT <- function(rc1, rc2, kmin, kmax, gbLength, isExperiment) {
+computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment) {
     maxItr <- 500
     tor <- 1e-6
 
-    params <- computeBetaLRTParams(rc1, rc2, kmin, kmax, gbLength)
-    h0Results <- runEMH0BetaLRT(params, kmin, kmax, maxItr, tor)
+    params <- computeBetaLRTParams(rc1, rc2, kmin, kmax, gbLength, scaleFactor)
+    h0Results <- runEMH0BetaLRT(params, kmin, kmax, scaleFactor, maxItr, tor)
     h1Results <- runEMH1BetaLRT(params, h0Results, kmin, kmax, maxItr, tor)
-    betaTbl <- constructBetaLRTTable(rc1, rc2, h0Results, h1Results,
-    isExperiment)
+    betaTbl <- constructBetaLRTTable(rc1, rc2, scaleFactor, h0Results, h1Results, isExperiment)
 
     return(betaTbl)
 }
@@ -234,6 +232,7 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax, gbLength, isExperiment) {
 #' method.
 #' @param transcriptionRates1 an \code{\linkS4class{TranscriptionRates}} object
 #' @param transcriptionRates2 an \code{\linkS4class{TranscriptionRates}} object
+#' @param scaleFactor a numeric value to scale the beta estimates. Defaults to 1
 #' @param spikeInFile path to a csv file containing scale factors
 #' based on total or spike-in reads or NULL if not provided. Defaults to NULL.
 #'
@@ -266,8 +265,7 @@ computeBetaLRT <- function(rc1, rc2, kmin, kmax, gbLength, isExperiment) {
 #' # Print the likelihood ratio test object
 #' print(lrts)
 #' @export
-likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
-    spikeInFile = NULL) {
+likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2, scaleFactor=1, spikeInFile = NULL) {
     if (!is(transcriptionRates1, "TranscriptionRates") ||
         !is(transcriptionRates2, "TranscriptionRates")) {
         stop("transcriptionRates1 and transcriptionRates2 must be an
@@ -309,7 +307,7 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2,
     lambda1 <- scaleTbl$control_1 + scaleTbl$control_2
     lambda2 <- scaleTbl$treated_1 + scaleTbl$treated_2
     chiTbl <- computeChiLRT(lambda1, lambda2, rc1, rc2, isExperiment)
-    betaTbl <- computeBetaLRT(rc1, rc2, kmin, kmax, gbLength, isExperiment)
+    betaTbl <- computeBetaLRT(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment)
     return(new("TranscriptionRatesLRT",
         transcriptionRates1 = transcriptionRates1,
         transcriptionRates2 = transcriptionRates2, chiTbl = chiTbl,
