@@ -96,6 +96,7 @@ head(controlRatesTbl)
 ```
 
 Plotted below is a density plot of gene-body RNAP density values of all the genes and a parity plot for verifying the model fit. The gene-body RNAP density (chi) is an estimate of the total gene-body reads / gene-body length in RNAPs per bp. This plot indicates that most genes have low RNAP density and only a minority of the genes have higher transcriptional activity. The parity plot of expected vs. actual pause site counts per gene can be used to verify that the model fit the actual data well. In this case the Pearson correlation coefficient is 0.99 indicating the model fit is strong.
+
 ## Plotting functionality for TranscriptionRates objects
 
 ```{r plot_exp_rates, fig.width=7, fig.height=5, out.width="75%"}
@@ -136,7 +137,7 @@ show(treatedRatesSH)
 
 ## Likelihood Ratio Tests
 
-Compare samples treated with auxin to control samples using the likelihood ratio test functionality derived in *LikelihoodRatio Tests for Differences Between Transcription Units, Conditions, or Species* section of @Siepel2022
+Compare samples treated with auxin to control samples using the likelihood ratio test functionality derived in *Likelihood Ratio Tests for Differences Between Transcription Units, Conditions, or Species* section of @Siepel2022
 
 ```{r likelihood_ratio_tests}
 lrt <- likelihoodRatioTest(controlRates, treatedRates)
