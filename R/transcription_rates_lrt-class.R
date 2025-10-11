@@ -264,7 +264,7 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
 #' spikeInFile <- system.file("extdata", "spikein_scaling_factor.csv", 
 #' package = "STADyUM")
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInFile)
+#' scaleFactor=1, spikeInFile)
 #' # Print the likelihood ratio test object
 #' print(lrts)
 #' @export
@@ -452,7 +452,7 @@ setMethod(
 #' spikeInFile <- system.file("extdata", "spikein_scaling_factor.csv", 
 #' package = "STADyUM")
 #' lrts <- likelihoodRatioTest(transcriptionRates1, transcriptionRates2,
-#' spikeInFile)
+#' scaleFactor=1, spikeInFile)
 #' plotPauseSiteContourMapTwoConditions(lrts,
 #' file="pause_sites_contour_map.png")
 #'
