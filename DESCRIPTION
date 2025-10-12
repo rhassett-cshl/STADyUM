@@ -1,7 +1,7 @@
 Package: STADyUM
 Type: Package
 Title: Statistical Transcriptome Analysis under a Dynamic Unified Model
-Version: 0.99.3
+Version: 0.99.4
 Authors@R: 
     c(
         person("Yixin", "Zhao", 
@@ -51,7 +51,8 @@ Imports:
     purrr,
     rtracklayer,
     tidyr,
-    rlang
+    rlang,
+    MASS
 LinkingTo:
     Rcpp
 Suggests: 
@@ -61,4 +62,4 @@ Suggests:
     devtools
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-Depends: R (>= 4.4.0)
+Depends: R (>= 4.5.0)

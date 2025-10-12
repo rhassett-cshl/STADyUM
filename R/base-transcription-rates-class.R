@@ -28,6 +28,7 @@ utils::globalVariables(c("gene_id", "query", "count", "score"))
 #' @importFrom GenomicRanges promoters findOverlaps start end width strand
 #' @importFrom grDevices nclass.Sturges
 #' @importFrom stats cor
+#' @importFrom MASS kde2d
 #' @exportClass TranscriptionRates
 methods::setClass("TranscriptionRates",
     slots = c(
