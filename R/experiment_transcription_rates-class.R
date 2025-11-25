@@ -55,10 +55,12 @@
 #' @importFrom dplyr mutate select left_join rename %>%
 #' @importFrom stats dnorm uniroot density
 #' @importFrom methods slot is slot<- validObject
-#' @importFrom S4Vectors DataFrame splitAsList
+#' @importFrom S4Vectors DataFrame splitAsList queryHits subjectHits mcols
 #' @importFrom tibble as_tibble
 #' @importFrom rtracklayer import.bw
 #' @importFrom GenomeInfoDb seqnames
+#' @importFrom GenomicRanges width
+#' @importFrom IRanges findOverlaps
 #' @exportClass ExperimentTranscriptionRates
 methods::setClass("ExperimentTranscriptionRates",
     slots = c(

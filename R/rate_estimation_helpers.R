@@ -19,15 +19,29 @@ processBw <- function(bw, strand) {
     return(bw)
 }
 
-summariseBw <-
-    function(bw, grng, colName) {
-        rc <- bw %>%
-            plyranges::find_overlaps_directed(grng) %>%
-            plyranges::group_by(gene_id) %>%
-            plyranges::summarise(score = sum(score * width))
-        colnames(rc) <- c("gene_id", colName)
-        return(rc)
+summariseBw <- function(bw, grng, colName) {
+    hits <- findOverlaps(bw, grng, ignore.strand = FALSE)
+    
+    if (length(hits) == 0) {
+        rc <- DataFrame(gene_id = character(0), score = numeric(0))
+    } else {
+        qh <- queryHits(hits)
+        sh <- subjectHits(hits)
+        
+        weighted <- mcols(bw)$score[qh] * width(bw)[qh]
+        sums <- tapply(weighted, sh, sum)
+        
+        gene_ids <- mcols(grng)$gene_id[as.integer(names(sums))]
+        
+        rc <- DataFrame(
+            gene_id = gene_ids,
+            score = as.numeric(sums)
+        )
     }
+    
+    colnames(rc) <- c("gene_id", colName)
+    return(rc)
+}
 
 getExpectation <- function(fk, Xk, beta) {
     Yk <- Xk / (1 - beta + beta / fk)

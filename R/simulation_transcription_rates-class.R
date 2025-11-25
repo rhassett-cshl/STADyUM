@@ -60,10 +60,9 @@
 #' @importClassesFrom GenomicRanges GRanges
 #' @importClassesFrom GenomicRanges CompressedGRangesList
 #' @importClassesFrom data.table data.table
-#' @importFrom IRanges IRanges
-#' @importFrom S4Vectors DataFrame
+#' @importFrom IRanges IRanges findOverlaps
+#' @importFrom S4Vectors DataFrame queryHits subjectHits mcols
 #' @importFrom tibble tibble
-#' @importFrom plyranges group_by_overlaps group_by summarise
 #' @importFrom purrr map map_chr map_dbl map2
 #' @importFrom dplyr mutate
 #' @importFrom methods slot is slot<- validObject show
@@ -80,16 +79,23 @@ methods::setClass("SimulationTranscriptionRates",
 )
 
 summariseSimulationBw <- function(bw, grng, regionNames) {
-    rc <- grng %>%
-        plyranges::group_by_overlaps(bw) %>%
-        plyranges::group_by(query) %>%
-        plyranges::summarise(score = sum(score))
-    if (!1 %in% rc$query) {
-        rc <- rbind(DataFrame(list(query = 1, score = 0)), rc)
+    hits <- findOverlaps(bw, grng, ignore.strand = FALSE)
+    
+    rc <- numeric(length(regionNames))
+    
+    if (length(hits) > 0) {
+        qh <- queryHits(hits)
+        sh <- subjectHits(hits)
+        
+        sums <- tapply(mcols(bw)$score[qh], sh, sum)
+        
+        rc[as.integer(names(sums))] <- as.numeric(sums)
     }
-    rc <- as.list(rc$score)
+    
+    if (is.na(rc[1])) rc[1] <- 0
+    
     names(rc) <- regionNames
-    return(rc)
+    return(as.list(rc))
 }
 
 prepareSimulationParameters <- function(simpol) {
