@@ -44,7 +44,6 @@ Imports:
     dplyr,
     ggplot2,
     progress,
-    plyranges,
     GenomeInfoDb,
     Rcpp,
     data.table,
