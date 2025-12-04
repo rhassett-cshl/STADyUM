@@ -81,6 +81,33 @@ computeBetaLRTParams <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength) {
     )
 }
 
+computeFkLRTParams <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength) {
+    fkInt <- dnorm(kmin:kmax, mean = 50, sd = 100)
+    fkInt <- fkInt / sum(fkInt)
+    s1 <- rc1$totalGbRc
+    s2 <- rc2$totalGbRc
+    t1H1 <- map_dbl(rc1$expectedPauseSiteCounts, sum)
+    t2H1 <- map_dbl(rc2$expectedPauseSiteCounts, sum)
+    Xk1 <- rc1$actualPauseSiteCounts
+    Xk2 <- rc2$actualPauseSiteCounts
+    M <- gbLength
+    chiHat <- (s1 + s2*scaleFactor) / M
+    chiHat1 <- rc1$chi
+    chiHat2 <- rc2$chi
+
+    betaInt1 <- rc1$betaAdp
+    betaInt2 <- rc2$betaAdp
+    rc1Likelihood <- rc1$likelihood
+    rc2Likelihood <- rc2$likelihood
+
+    list(
+        fkInt = fkInt, s1 = s1, s2 = s2, t1H1 = t1H1, t2H1 = t2H1,
+        Xk1 = Xk1, Xk2 = Xk2, M = M, chiHat = chiHat, betaInt1 = betaInt1, betaInt2 = betaInt2
+        chiHat1 = chiHat1, chiHat2 = chiHat2,
+        rc1Likelihood = rc1Likelihood, rc2Likelihood = rc2Likelihood
+    )
+}
+
 runEMH0BetaLRT <- function(params, kmin, kmax, scaleFactor, maxItr, tor) {
     emRes <- pmap(
         list(
@@ -93,6 +120,38 @@ runEMH0BetaLRT <- function(params, kmin, kmax, scaleFactor, maxItr, tor) {
                     params$fkInt,
                     Xk1 = x, Xk2 = y, kmin, kmax,
                     betaInt = z, chiHat = k, chiHat1 = m, chiHat2 = n, scaleFactor = scaleFactor, maxItr = maxItr, tor = tor
+                ),
+                error = function(err) {
+                    list(
+                        "beta" = NA, "Yk1" = NA, "Yk2" = NA, "likelihoods" =
+                            list(NA)
+                    )
+                }
+            )
+        }
+    )
+
+    list(
+        emRes = emRes,
+        h0Likelihood = map_dbl(
+            emRes,
+            ~ .x$likelihoods[[length(.x$likelihoods)]]
+        )
+    )
+}
+
+runEMH0FkLRT <- function(params, kmin, kmax, scaleFactor, maxItr, tor) {
+    emRes <- pmap(
+        list(
+            params$Xk1, params$Xk2, params$betaInt1, params$betaInt2, params$chiHat,
+            params$chiHat1, params$chiHat2
+        ),
+        function(x, y, z1, z2, k, m, n) {
+            tryCatch(
+                mainExpectationMaximizationFkH0(
+                    params$fkInt,
+                    Xk1 = x, Xk2 = y, kmin, kmax,
+                    betaInt1 = z1, betaInt2 = z2, chiHat = k, chiHat1 = m, chiHat2 = n, scaleFactor = scaleFactor, maxItr = maxItr, tor = tor
                 ),
                 error = function(err) {
                     list(
@@ -164,6 +223,58 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor, scaleFact
     )
 }
 
+runEMH1FkLRT <- function(params, h0Results, kmin, kmax, maxItr, tor, scaleFactor) {
+    tStats <- params$rc1Likelihood + params$rc2Likelihood * scaleFactor - h0Results$h0Likelihood
+    idx <- tStats < 0; h0Fk <- map_dbl(h0Results$emRes, "fk")
+    
+    emHc <- pmap(
+        list(h0Fk[idx], params$Xk1[idx], params$betaInt1[idx], params$chiHat1[idx]),
+        function(x, y, z, k) {
+            tryCatch(
+                pauseEscapeEM(
+                    fkInt = x, Xk = y, kmin = kmin, kmax = kmax, betaInt = z,
+                    chiHat = k, maxItr = maxItr, tor = tor
+                ),
+                error = function(err) {
+                    list(
+                        "beta" = NA, "Yk" = NA, "fkMean" = NA, "fkVar" = NA,
+                        "likelihoods" = list(NA)
+                    )
+                }
+            )
+        }
+    )
+    emHt <- pmap(
+        list(h0Fk[idx], params$Xk2[idx], params$betaInt2[idx], params$chiHat2[idx]),
+        function(x, y, z, k) {
+            tryCatch(
+                pauseEscapeEM(
+                    fkInt = x, Xk = y, kmin = kmin, kmax = kmax, betaInt = z,
+                    chiHat = k, maxItr = maxItr, tor = tor
+                ),
+                error = function(err) {
+                    list(
+                        "beta" = NA, "Yk" = NA, "fkMean" = NA, "fkVar" = NA,
+                        "likelihoods" = list(NA)
+                    )
+                }
+            )
+        }
+    )
+    list(
+        emHc = emHc, emHt = emHt,
+        h1Likelihood1 = map_dbl(
+            emHc,
+            ~ .x$likelihoods[[length(.x$likelihoods)]]
+        ),
+        h1Likelihood2 = map_dbl(
+            emHt,
+            ~ .x$likelihoods[[length(.x$likelihoods)]]
+        )
+    )
+}
+
+
 constructBetaLRTTable <- function(rc1, rc2, scaleFactor, h0Results, h1Results,
 isExperiment)
 {
@@ -207,6 +318,8 @@ isExperiment)
     return(betaTbl)
 }
 
+
+
 computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment) {
     maxItr <- 500
     tor <- 1e-6
@@ -217,6 +330,18 @@ computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperi
     betaTbl <- constructBetaLRTTable(rc1, rc2, scaleFactor, h0Results, h1Results, isExperiment)
 
     return(betaTbl)
+}
+
+computeFkLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment) {
+    maxItr <- 500
+    tor <- 1e-6
+
+    params <- computeFkLRTParams(rc1, rc2, scaleFactor, kmin, kmax, gbLength)
+    h0Results <- runEMH0FkLRT(params, kmin, kmax, scaleFactor, maxItr, tor)
+    h1Results <- runEMH1FkLRT(params, h0Results, kmin, kmax, maxItr, tor, scaleFactor)
+    FkTbl <- constructBetaLRTTable(rc1, rc2, scaleFactor, h0Results, h1Results, isExperiment)
+
+    return(fkTbl)
 }
 
 #' @rdname TranscriptionRatesLRT-class
@@ -311,10 +436,11 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2, scaleF
     lambda2 <- scaleTbl$treated_1 + scaleTbl$treated_2
     chiTbl <- computeChiLRT(lambda1, lambda2, rc1, rc2, isExperiment)
     betaTbl <- computeBetaLRT(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment)
+    fkTbl <- computeFkLRT(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment)
     return(new("TranscriptionRatesLRT",
         transcriptionRates1 = transcriptionRates1,
         transcriptionRates2 = transcriptionRates2, chiTbl = chiTbl,
-        spikeInFile = spikeInFile, betaTbl = betaTbl
+        spikeInFile = spikeInFile, betaTbl = betaTbl, fkTbl = fkTbl
     ))
 }
 
