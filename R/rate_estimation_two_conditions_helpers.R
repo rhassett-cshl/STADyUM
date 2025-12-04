@@ -85,6 +85,57 @@ mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
     ))
 }
 
+mainExpectationMaximizationFkH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt1, betaInt2,
+                                            chiHat, chiHat1, chiHat2, scaleFactor, maxItr = 100, tor = 1e-3) {
+    likelihoods <- list(); flag <- "normal"
+    for (i in seq_len(maxItr)) {
+        if (i == 1) {
+            Yk1 <- getExpectation(fkInt, Xk1, betaInt)
+            Yk2 <- getExpectation(fkInt, Xk2, betaInt)
+            fkLs <- getFk(Xk1 + Xk2 * scaleFactor, Yk1 + Yk2 * scaleFactor, fkInt, kmin, kmax)   
+        }
+        if (i != 1) {
+            Yk1 <- getExpectation(fk, Xk1, beta1)
+            Yk2 <- getExpectation(fk, Xk2, beta2)
+            fkLs <- getFk(Xk1 + Xk2 * scaleFactor, Yk1 + Yk2 * scaleFactor, fk, kmin, kmax) 
+        }
+
+        fk <- fkLs$fk
+
+        beta1 <- chiHat1/sum(Yk1)
+        beta2 <- chiHat2/sum(Yk2)
+
+        if (any(fk == 1)){
+            beta1 <- chi_hat1 / (Xk1[which(fk == 1)])
+            beta2 <- chi_hat2 / (Xk2[which(fk == 1)])
+            flag <- 'single_site'
+            fkLs$fkMean <- which(fk == 1)
+            fkLs$fkSD <- 0
+        }
+        
+        likelihoods[[i]] <-
+            getLikelihood(
+                beta = beta1, chi = chiHat1, Xk = Xk1, Yk = Yk1,
+                fk = fk
+            ) +
+            getLikelihood(
+                beta = beta2, chi = chiHat2, Xk = Xk2, Yk = Yk2,
+                fk = fk
+            )*scaleFactor
+        if (i > 1) {
+            diff <- likelihoods[[i]] - likelihoods[[i - 1]]
+            if (diff <= tor) break
+        }
+    }
+    if (i == maxItr) flag <- "max_iteration"
+    return(list(
+        "beta1" = beta1, "beta2" = beta2,
+        "fk" = fk, 
+        "likelihoods" = likelihoods, "flag" = flag
+    ))
+}
+
+
 #### Functions for LRTs ####
 # formulas are based on the unified model preprint v5
 # formula (27), calculate t stats for chi
