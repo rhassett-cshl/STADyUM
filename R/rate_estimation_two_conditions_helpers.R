@@ -74,7 +74,7 @@ mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
         }
         if (i > 1) {
             diff <- likelihoods[[i]] - likelihoods[[i - 1]]
-            if (diff <= tor) break
+            if (abs(diff) <= tor) break
         }
     }
     if (i == maxItr) flag <- "max_iteration"
@@ -86,12 +86,12 @@ mainExpectationMaximizationH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt,
 }
 
 mainExpectationMaximizationFkH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt1, betaInt2,
-                                            chiHat, chiHat1, chiHat2, scaleFactor, maxItr = 100, tor = 1e-3) {
+                                            chiHat, chiHat1, chiHat2, scaleFactor, maxItr = 200, tor = 1e-3) {
     likelihoods <- list(); flag <- "normal"
     for (i in seq_len(maxItr)) {
         if (i == 1) {
-            Yk1 <- getExpectation(fkInt, Xk1, betaInt)
-            Yk2 <- getExpectation(fkInt, Xk2, betaInt)
+            Yk1 <- getExpectation(fkInt, Xk1, betaInt1)
+            Yk2 <- getExpectation(fkInt, Xk2, betaInt2)
             fkLs <- getFk(Xk1 + Xk2 * scaleFactor, Yk1 + Yk2 * scaleFactor, fkInt, kmin, kmax)   
         }
         if (i != 1) {
@@ -106,8 +106,8 @@ mainExpectationMaximizationFkH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt
         beta2 <- chiHat2/sum(Yk2)
 
         if (any(fk == 1)){
-            beta1 <- chi_hat1 / (Xk1[which(fk == 1)])
-            beta2 <- chi_hat2 / (Xk2[which(fk == 1)])
+            beta1 <- chiHat1 / (Xk1[which(fk == 1)])
+            beta2 <- chiHat2 / (Xk2[which(fk == 1)])
             flag <- 'single_site'
             fkLs$fkMean <- which(fk == 1)
             fkLs$fkSD <- 0
@@ -124,7 +124,7 @@ mainExpectationMaximizationFkH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt
             )*scaleFactor
         if (i > 1) {
             diff <- likelihoods[[i]] - likelihoods[[i - 1]]
-            if (diff <= tor) break
+            if (abs(diff) <= tor) break
         }
     }
     if (i == maxItr) flag <- "max_iteration"
