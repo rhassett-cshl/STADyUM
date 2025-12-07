@@ -102,7 +102,7 @@ computeFkLRTParams <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength) {
 
     list(
         fkInt = fkInt, s1 = s1, s2 = s2, t1H1 = t1H1, t2H1 = t2H1,
-        Xk1 = Xk1, Xk2 = Xk2, M = M, chiHat = chiHat, betaInt1 = betaInt1, betaInt2 = betaInt2
+        Xk1 = Xk1, Xk2 = Xk2, M = M, chiHat = chiHat, betaInt1 = betaInt1, betaInt2 = betaInt2,
         chiHat1 = chiHat1, chiHat2 = chiHat2,
         rc1Likelihood = rc1Likelihood, rc2Likelihood = rc2Likelihood
     )
@@ -225,7 +225,7 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor, scaleFact
 
 runEMH1FkLRT <- function(params, h0Results, kmin, kmax, maxItr, tor, scaleFactor) {
     tStats <- params$rc1Likelihood + params$rc2Likelihood * scaleFactor - h0Results$h0Likelihood
-    idx <- tStats < 0; h0Fk <- map_dbl(h0Results$emRes, "fk")
+    idx <- tStats < 0; h0Fk <- map(h0Results$emRes, "fk")
     
     emHc <- pmap(
         list(h0Fk[idx], params$Xk1[idx], params$betaInt1[idx], params$chiHat1[idx]),
