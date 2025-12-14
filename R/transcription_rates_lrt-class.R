@@ -298,7 +298,7 @@ isExperiment)
 
     idx <- betaTbl$tStats < 0
     betaTblIdx <- tibble(
-        geneId = names(h1Results$emHc),
+        geneId = rc1$geneId[idx],
         beta1 = map_dbl(h1Results$emHc, "beta"),
         beta2 = map_dbl(h1Results$emHt, "beta"),
         lfc = log2(beta2 / beta1),
