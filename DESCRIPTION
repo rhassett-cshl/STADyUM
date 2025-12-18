@@ -18,6 +18,10 @@ Authors@R:
             email = "hassett@cshl.edu",
             role = c("aut", "cre"),
             comment = c(ORCID = "0000-0001-5133-9387")
+        ),
+        person("Xin", "Zeng",
+            email = "zeng@cshl.edu",
+            role = c("aut", "aut")
         )
     )
 Description: STADyUM is a package with functionality for analyzing nascent
