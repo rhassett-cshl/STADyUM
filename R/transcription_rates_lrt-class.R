@@ -19,7 +19,8 @@ methods::setClass("TranscriptionRatesLRT",
         transcriptionRates2 = "TranscriptionRates",
         spikeInFile = "ANY",
         chiTbl = "tbl_df",
-        betaTbl = "tbl_df"
+        betaTbl = "tbl_df",
+        fkTbl  = "tbl_df"
     )
 )
 
