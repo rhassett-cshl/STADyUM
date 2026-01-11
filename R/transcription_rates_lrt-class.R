@@ -355,9 +355,7 @@ isExperiment)
         mutate(p = pchisq(2 * tStats, df = 2, ncp = 0, lower.tail = FALSE,
                 log.p = FALSE)
         ) %>%
-        mutate(padj = p.adjust(p, method = "BH"),
-              deltaMean = fkMean2 - fkMean1,
-              deltaSD = (sqrt(fkVar2) - sqrt(fkVar1)) / (sqrt(fkVar2) + sqrt(fkVar1))
+        mutate(padj = p.adjust(p, method = "BH")
                )
     
     return(fkTbl)
