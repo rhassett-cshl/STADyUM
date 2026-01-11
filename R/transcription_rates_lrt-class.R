@@ -342,7 +342,7 @@ computeFkLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperime
     h1Results <- runEMH1FkLRT(params, h0Results, kmin, kmax, maxItr, tor, scaleFactor)
     FkTbl <- constructBetaLRTTable(rc1, rc2, scaleFactor, h0Results, h1Results, isExperiment)
 
-    return(fkTbl)
+    return(FkTbl)
 }
 
 #' @rdname TranscriptionRatesLRT-class
