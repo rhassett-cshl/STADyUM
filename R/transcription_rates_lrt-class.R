@@ -320,6 +320,49 @@ isExperiment)
     return(betaTbl)
 }
 
+constructFkLRTTable <- function(rc1, rc2, scaleFactor, h0Results, h1Results,
+isExperiment)
+{
+    tStats <- rc1$likelihood + rc2$likelihood * scaleFactor - h0Results$h0Likelihood
+    if(isExperiment) p <- numeric(length(rc1$geneId))
+    else p <- numeric(length(rc1$trial))
+
+    if(isExperiment) {
+        fkTbl <- tibble(geneId = rc1$geneId, 
+            fkMean1 = rc1$fkMean, 
+            fkMean2 = rc2$fkMean, fkVar1 = rc1$fkVar, fkVar2 = rc2$fkVar,
+            tStats = tStats)
+    } else {
+        fkTbl <- tibble(trial = rc1$trial,
+            fkMean1 = rc1$fkMean, 
+            fkMean2 = rc2$fkMean, fkVar1 = rc1$fkVar, fkVar2 = rc2$fkVar,
+            tStats = tStats)
+    }
+
+    idx <- fkTbl$tStats < 0
+    fkTblIdx <- tibble(
+        geneId = rc1$geneId[idx],
+        fkMean1 = map_dbl(h1Results$emHc, "fkMean"),
+        fkMean2 = map_dbl(h1Results$emHt, "fkMean"),
+        fkVar1 = map_dbl(h1Results$emHc, "fkVar"),
+        fkVar2 = map_dbl(h1Results$emHt, "fkVar"),
+        tStats = h1Results$h1Likelihood1 + h1Results$h1Likelihood2 * scaleFactor - h0Results$h0Likelihood[idx]
+    )
+    
+
+    fkTbl <- bind_rows(fkTbl[!idx, ], fkTblIdx)
+    fkTbl <- fkTbl %>%
+        mutate(p = pchisq(2 * tStats, df = 2, ncp = 0, lower.tail = FALSE,
+                log.p = FALSE)
+        ) %>%
+        mutate(padj = p.adjust(p, method = "BH"),
+              deltaMean = fkMean2 - fkMean1,
+              deltaSD = (sqrt(fkVar2) - sqrt(fkVar1)) / (sqrt(fkVar2) + sqrt(fkVar1))
+               )
+    
+    return(fkTbl)
+}
+
 
 
 computeBetaLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment) {
@@ -341,7 +384,7 @@ computeFkLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperime
     params <- computeFkLRTParams(rc1, rc2, scaleFactor, kmin, kmax, gbLength)
     h0Results <- runEMH0FkLRT(params, kmin, kmax, scaleFactor, maxItr, tor)
     h1Results <- runEMH1FkLRT(params, h0Results, kmin, kmax, maxItr, tor, scaleFactor)
-    FkTbl <- constructBetaLRTTable(rc1, rc2, scaleFactor, h0Results, h1Results, isExperiment)
+    FkTbl <- constructFkLRTTable(rc1, rc2, scaleFactor, h0Results, h1Results, isExperiment)
 
     return(FkTbl)
 }
