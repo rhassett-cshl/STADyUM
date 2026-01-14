@@ -124,7 +124,7 @@ runEMH0BetaLRT <- function(params, kmin, kmax, scaleFactor, maxItr, tor) {
                 ),
                 error = function(err) {
                     list(
-                        "beta" = NA, "Yk1" = NA, "Yk2" = NA, "likelihoods" =
+                        "beta1" = NA, "beta2" = NA, "fk" = NA, "likelihoods" =
                             list(NA)
                     )
                 }
