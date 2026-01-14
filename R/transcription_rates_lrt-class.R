@@ -226,11 +226,11 @@ runEMH1BetaLRT <- function(params, h0Results, kmin, kmax, maxItr, tor, scaleFact
 
 runEMH1FkLRT <- function(params, h0Results, kmin, kmax, maxItr, tor, scaleFactor) {
     tStats <- params$rc1Likelihood + params$rc2Likelihood * scaleFactor - h0Results$h0Likelihood
-    h0Beta1 <- map_dbl(h0Results$emRes, "beta1");  h0Beta2 <- map_dbl(h0Results$emRes, "beta2")
+    #h0Beta1 <- map_dbl(h0Results$emRes, "beta1");  h0Beta2 <- map_dbl(h0Results$emRes, "beta2")
     idx <- tStats < 0; h0Fk <- map(h0Results$emRes, "fk")
     
     emHc <- pmap(
-        list(h0Fk[idx], params$Xk1[idx], h0Beta1[idx], params$chiHat1[idx]),
+        list(h0Fk[idx], params$Xk1[idx], params$betaInt1[idx], params$chiHat1[idx]),
         function(x, y, z, k) {
             tryCatch(
                 pauseEscapeEM(
@@ -247,7 +247,7 @@ runEMH1FkLRT <- function(params, h0Results, kmin, kmax, maxItr, tor, scaleFactor
         }
     )
     emHt <- pmap(
-        list(h0Fk[idx], params$Xk2[idx], h0Beta2[idx], params$chiHat2[idx]),
+        list(h0Fk[idx], params$Xk2[idx], params$betaInt2[idx], params$chiHat2[idx]),
         function(x, y, z, k) {
             tryCatch(
                 pauseEscapeEM(
