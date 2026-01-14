@@ -128,6 +128,18 @@ mainExpectationMaximizationFkH0 <- function(fkInt, Xk1, Xk2, kmin, kmax, betaInt
         }
     }
     if (i == maxItr) flag <- "max_iteration"
+    
+    if (length(beta1) == 0 || length(beta2) == 0) {
+        cat("\n[EM ERROR] beta length = 0\n")
+        cat("  chiHat1:", chiHat1, "\n")
+        cat("  sum(Yk1):", sum(Yk1), "\n")
+        cat("  chiHat2:", chiHat2, "\n")
+        cat("  sum(Yk2):", sum(Yk2), "\n")
+        cat("  len Xk1:", length(Xk1), " len Yk1:", length(Yk1), "\n")
+        cat("  len Xk2:", length(Xk2), " len Yk2:", length(Yk2), "\n")
+        cat("  fk length:", length(fk), "\n\n")
+    }
+    
     return(list(
         "beta1" = beta1, "beta2" = beta2,
         "fk" = fk, 
