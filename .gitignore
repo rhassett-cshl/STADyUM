@@ -8,6 +8,7 @@ fk_mean_plot.png
 *.Rproj
 
 results/
+epigenomic_data/
 libs/
 .vscode/
 .github/
