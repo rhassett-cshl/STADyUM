@@ -19,7 +19,8 @@ methods::setClass("TranscriptionRatesLRT",
         transcriptionRates2 = "TranscriptionRates",
         spikeInFile = "ANY",
         chiTbl = "tbl_df",
-        betaTbl = "tbl_df"
+        betaTbl = "tbl_df",
+        fkTbl = "tbl_df"
     )
 )
 
@@ -436,8 +437,12 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2, scaleF
     lambda1 <- scaleTbl$control_1 + scaleTbl$control_2
     lambda2 <- scaleTbl$treated_1 + scaleTbl$treated_2
     chiTbl <- computeChiLRT(lambda1, lambda2, rc1, rc2, isExperiment)
-    betaTbl <- computeBetaLRT(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment)
-    fkTbl <- computeFkLRT(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment)
+    betaTbl <- computeBetaLRT(
+        rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment
+    )
+    fkTbl <- computeFkLRT(
+        rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment
+    )
     return(new("TranscriptionRatesLRT",
         transcriptionRates1 = transcriptionRates1,
         transcriptionRates2 = transcriptionRates2, chiTbl = chiTbl,
