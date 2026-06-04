@@ -11,6 +11,8 @@
 \alias{plotChiDistrib,TranscriptionRates-method}
 \alias{plotBetaVsChi}
 \alias{plotBetaVsChi,TranscriptionRates-method}
+\alias{plotScatterDensity}
+\alias{plotScatterDensity,TranscriptionRates-method}
 \alias{plotPauseSiteContourMap}
 \alias{plotPauseSiteContourMap,TranscriptionRates-method}
 \title{Base class for TranscriptionRates objects}
@@ -39,21 +41,45 @@ plotChiDistrib(object, file = NULL, width = 8, height = 6, dpi = 300)
 
 \S4method{plotChiDistrib}{TranscriptionRates}(object, file = NULL, width = 8, height = 6, dpi = 300)
 
-plotBetaVsChi(
+plotBetaVsChi(object, label_x, label_y, xlim = NULL, ylim = NULL, file = NULL)
+
+\S4method{plotBetaVsChi}{TranscriptionRates}(object, label_x, label_y, xlim = NULL, ylim = NULL, file = NULL)
+
+plotScatterDensity(
   object,
-  betaType = "betaAdp",
+  xvar,
+  yvar,
+  xlab = NULL,
+  ylab = NULL,
+  log_x = FALSE,
+  log_y = FALSE,
+  color_var = NULL,
+  color_values = NULL,
+  color_lab = NULL,
+  xlim = NULL,
+  ylim = NULL,
   file = NULL,
-  width = 8,
-  height = 6,
+  width = 3.5,
+  height = 3,
   dpi = 300
 )
 
-\S4method{plotBetaVsChi}{TranscriptionRates}(
+\S4method{plotScatterDensity}{TranscriptionRates}(
   object,
-  betaType = "betaAdp",
+  xvar,
+  yvar,
+  xlab = NULL,
+  ylab = NULL,
+  log_x = FALSE,
+  log_y = FALSE,
+  color_var = NULL,
+  color_values = NULL,
+  color_lab = NULL,
+  xlim = NULL,
+  ylim = NULL,
   file = NULL,
-  width = 8,
-  height = 6,
+  width = 3.5,
+  height = 3,
   dpi = 300
 )
 
@@ -72,8 +98,37 @@ plotPauseSiteContourMap(object, file = NULL, width = 8, height = 6, dpi = 300)
 
 \item{dpi}{the resolution of the plot in dpi}
 
-\item{betaType}{the type of beta to plot. Can be "betaAdp" for the adapted
-model or "betaOrg" for the single pause site model. Defaults to "betaAdp".}
+\item{label_x}{the x-axis label}
+
+\item{label_y}{the y-axis label}
+
+\item{xlim}{optional numeric(2); forwarded to \code{coord_cartesian}}
+
+\item{ylim}{optional numeric(2); forwarded to \code{coord_cartesian}}
+
+\item{xvar}{character; column name in \code{rates(object)} for the x-axis}
+
+\item{yvar}{character; column name in \code{rates(object)} for the y-axis}
+
+\item{xlab}{x-axis label (string or \code{expression}); defaults to
+\code{xvar} with a \code{log10()} prefix when \code{log_x = TRUE}}
+
+\item{ylab}{y-axis label (string or \code{expression}); same rules as
+\code{xlab}}
+
+\item{log_x}{logical; apply \code{log10} to x before plotting}
+
+\item{log_y}{logical; apply \code{log10} to y before plotting}
+
+\item{color_var}{optional character; column name for discrete color grouping;
+when supplied \code{geom_point} is used instead of
+\code{geom_pointdensity}}
+
+\item{color_values}{optional named character vector passed to
+\code{scale_color_manual} when \code{color_var} is set}
+
+\item{color_lab}{legend title for the color scale; defaults to
+\code{"Density"} or \code{color_var}}
 }
 \value{
 an \code{\link{ggplot2}} object
@@ -83,6 +138,8 @@ an \code{\link{ggplot2}} object
 an \code{\link{ggplot2}} object
 
 an \code{\link{ggplot2}} object
+
+a \code{\link[ggplot2]{ggplot}} object
 
 an \code{\link{ggplot2}} object
 }
@@ -115,6 +172,11 @@ Plot a scatter plot with gene body RNAP density on the x-axis and beta (ratio
 of gene body RNAP density to pause region RNAP density) on the y-axis. Fits a
 linear model to the data and plots the line. Can plot beta for either the
 adapted model or the single pause site model.
+
+Creates a scatter plot colored by local point density for any two columns in
+the rates tibble, with optional log10 transformation on either axis. When a
+discrete \code{color_var} is supplied the points are colored by that variable
+instead of by density.
 
 Plot a contour map with mean pause site position on the x-axis and pause site
 variance on the y-axis.
