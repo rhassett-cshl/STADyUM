@@ -1,72 +1,87 @@
 ####################################### for 1_EstimateRates part ####################################
+# Select the single most upstream TSS per gene (strand-aware).
+# On "+" strand the most upstream TSS has the smallest coordinate;
+# on "-" strand it has the largest coordinate.
+keep_upstream_tss <- function(tsn) {
+  as.data.frame(tsn) %>%
+    group_by(ensembl_gene_id, strand) %>%
+    slice_min(order_by = ifelse(strand == "+", start, -start),
+              n = 1, with_ties = FALSE) %>%
+    ungroup() %>%
+    as_granges()
+}
+
+# Build promoter-proximal pause regions and trimmed gene body regions
+# for read counting. Filters TSNs by score, constructs pause windows of
+# width `kmax`, and retains gene bodies longer than `gb_min_length`
+# after trimming `trim_len` from each end.
 build_readcount_regions <- function(bw_tsn,
                                     transcripts,
-                                    tsn_cutoff = 5,
+                                    tsn_cutoff    = 5,
                                     gb_min_length = 6000,
-                                    trim_len = 2000,
-                                    kmax = 200) {
-  # Construct genomic regions for read counting.
-  # This function builds promoter-proximal pause regions and trimmed gene bodies
-  # from TSN signals and transcript annotations, with basic filtering and QC stats.
+                                    trim_len      = 2000,
+                                    kmax          = 200) {
+  if (!inherits(bw_tsn, "GRanges"))
+    stop("bw_tsn must be a GRanges.")
+  if (!("ensembl_gene_id" %in% colnames(mcols(bw_tsn))))
+    stop("bw_tsn must contain 'ensembl_gene_id'.")
+  if (!("score" %in% colnames(mcols(bw_tsn))))
+    stop("bw_tsn must contain 'score'.")
+  if (!inherits(transcripts, "GRanges"))
+    stop("transcripts must be a GRanges.")
+  if (!("ensembl_gene_id" %in% colnames(mcols(transcripts))))
+    stop("transcripts must contain 'ensembl_gene_id'.")
 
-  # ---- Step 1: Filter TSN ----
-  bw_tsn <- bw_tsn[bw_tsn$score >= tsn_cutoff]
-
-  # ---- Step 2: Build pause regions ----
+  # Filter low-signal TSNs and build pause windows
+  bw_tsn   <- bw_tsn[bw_tsn$score >= tsn_cutoff]
   bw_pause <- promoters(bw_tsn, upstream = 0, downstream = kmax)
-  rm_cols <- intersect(c("score", "type"), colnames(mcols(bw_pause)))
+  rm_cols  <- intersect(c("score", "type"), colnames(mcols(bw_pause)))
   if (length(rm_cols) > 0) mcols(bw_pause)[rm_cols] <- NULL
 
-  # ---- Step 3: Build transcription ternimation site (3' ends, width = 1 bp)
+  # Derive one TTS position (3' end, width = 1) per gene from the transcript annotation
   gngrng <- transcripts %>%
-    group_by(ensembl_gene_id) %>%
-    reduce_ranges_directed() %>%
+    plyranges::group_by(ensembl_gene_id) %>%
+    plyranges::reduce_ranges_directed() %>%
     sort()
   bw_tts <- gngrng %>%
     plyranges::anchor_3p() %>%
     mutate(width = 1)
-  # ---- Step 4: Build gene body regions ----
-  generate_gene_body <- function(bw_tsn, bw_tts, bw_pause,
-                                 gb_min_length, trim_len) {
+
+  # Build gene bodies spanning from TSN to TTS, apply length filter and trim
+  generate_gene_body <- function(bw_tsn, bw_tts, bw_pause, gb_min_length, trim_len) {
     idx_tts <- match(bw_pause$ensembl_gene_id, bw_tts$ensembl_gene_id)
     idx_tsn <- match(bw_pause$ensembl_gene_id, bw_tsn$ensembl_gene_id)
-
-    keep <- !is.na(idx_tts) & !is.na(idx_tsn)
+    keep    <- !is.na(idx_tts) & !is.na(idx_tsn)
     if (!any(keep)) stop("No overlapping genes between TSN/TTS and pause set.")
 
     bw_tts_filtered <- bw_tts[idx_tts[keep]]
     bw_tsn_filtered <- bw_tsn[idx_tsn[keep]]
 
-    gb <- punion(bw_tsn_filtered, bw_tts_filtered, fill.gap = TRUE)
+    gb         <- punion(bw_tsn_filtered, bw_tts_filtered, fill.gap = TRUE)
     gb$gene_id <- bw_tsn_filtered$ensembl_gene_id
-    
-    gb_filt <- gb[width(gb) > gb_min_length]
-    gb_filt <- gb_filt - trim_len
+    gb_filt    <- gb[width(gb) > gb_min_length]
+    gb_filt    <- gb_filt - trim_len
     gb_filt
   }
-  bw_gb_filtered <- generate_gene_body(
-    bw_tsn, bw_tts, bw_pause, gb_min_length, trim_len
-  ) 
 
-  # ---- Step 5: Match pause to gene bodies ----
-  match_idx <- match(bw_gb_filtered$gene_id, bw_pause$ensembl_gene_id)
-  keep2 <- !is.na(match_idx)
-  bw_gb_filtered <- bw_gb_filtered[keep2]
+  bw_gb_filtered <- generate_gene_body(bw_tsn, bw_tts, bw_pause, gb_min_length, trim_len)
+
+  # Match pause regions to the filtered gene bodies
+  match_idx         <- match(bw_gb_filtered$gene_id, bw_pause$ensembl_gene_id)
+  keep2             <- !is.na(match_idx)
+  bw_gb_filtered    <- bw_gb_filtered[keep2]
   bw_pause_filtered <- bw_pause[match_idx[keep2]]
-  colnames(mcols(bw_pause_filtered)) <- c("gene_id", 'tss_type')
-  # ---- Stats ----
+  names(mcols(bw_pause_filtered))[names(mcols(bw_pause_filtered)) == "ensembl_gene_id"] <- "gene_id"
+
   stats <- list(
     tsn_after_cutoff = length(bw_tsn),
-    gene_body_kept = length(bw_gb_filtered)
+    gene_body_kept   = length(bw_gb_filtered)
   )
   message("Genes kept after length filter: ", stats$gene_body_kept)
 
-  list(
-    gene_body = bw_gb_filtered,
-    pause = bw_pause_filtered,
-    stats = stats
-  )
+  list(gene_body = bw_gb_filtered, pause = bw_pause_filtered, stats = stats)
 }
+
 
 merge_tss_from_two_samples <- function(tsn1, tsn2, tss_distance_threshold = 30) {
   # Align transcription start sites (TSSs) between two samples.
@@ -113,50 +128,6 @@ merge_tss_from_two_samples <- function(tsn1, tsn2, tss_distance_threshold = 30) 
   list(tsn1 = tsn1, tsn2 = tsn2, dist = d)
 }
 
-process_sample_rate <- function(df, from = 20, to = 50, bins = 100) {
-  # Add grouping variables based on rate-related metrics.
-  # betaAdp, fkMean, and chi are split into quantile-based groups,
-  # and fk variance is used to classify low and high SD genes.
-
-  # Split betaAdp into five quantile-based groups (Q1–Q5)
-  df$betaGroup <- cut(
-    df$betaAdp,
-    breaks = quantile(df$betaAdp, probs = seq(0, 1, 0.2), na.rm = TRUE),
-    labels = c("Q1", "Q2", "Q3", "Q4", "Q5"),
-    include.lowest = TRUE
-  )
-  # Split fkMean into five quantile-based groups (Q1–Q5)
-  df$fkMeanGroup <- cut(
-    df$fkMean,
-    breaks = quantile(df$fkMean, probs = seq(0, 1, 0.2), na.rm = TRUE),
-    labels = c("Q1", "Q2", "Q3", "Q4", "Q5"),
-    include.lowest = TRUE
-  )
-
-  # Split chi into three quantile-based groups: Low, Medium, High
-  df$chiGroup <- cut(
-    df$chi,
-    breaks = quantile(df$chi, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
-    labels = c("Low", "Medium", "High"),
-    include.lowest = TRUE)
-
-  # Assign SD group based on the threshold
-  df$fkSD <- sqrt(df$fkVar)
-  threshold <- find_valley_threshold(df$fkSD, from, to, bins)
-  print(threshold)
-  df$sdGroup <- ifelse(df$fkSD <= threshold, "Sharp", "Broad")
-  attr(df, "threshold") <- threshold
-  return(df)
-}
-find_valley_threshold <- function(x, from, to, bins = 100) {
-  hist_data <- hist(x, breaks = bins, plot = FALSE)
-  mids <- hist_data$mids
-  counts <- hist_data$counts
-  candidate_idx <- which(mids > from & mids < to)
-  # Find local minima in the histogram counts (valleys)
-  minima_idx <- findpeaks(-counts[candidate_idx])[,2]
-  mids[candidate_idx[minima_idx[which.min(counts[candidate_idx[minima_idx]])]]]
-}
 
 get_promoter_df_from_stadyum_obj <- function(stadyum_obj, promoter_len=500){
   tsn <- stadyum_obj@pauseRegions %>% anchor_5p() %>% mutate(width = 1) 

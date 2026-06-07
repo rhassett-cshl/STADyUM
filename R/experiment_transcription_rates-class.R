@@ -47,19 +47,25 @@
 #' \item{gbLength}{Numeric. Gene body length}
 #' \item{expectedPauseSiteCounts}{Numeric. Expected pause site counts}
 #' \item{actualPauseSiteCounts}{Numeric. Observed pause site counts}
+#' \item{fkSD}{Numeric. Standard deviation of pause site positions (sqrt of fkVar)}
+#' \item{betaGroup}{Factor. Quantile-based group for betaAdp (Q1–Q5)}
+#' \item{fkMeanGroup}{Factor. Quantile-based group for fkMean (Q1–Q5)}
+#' \item{chiGroup}{Factor. Quantile-based group for chi (Low/Medium/High)}
+#' \item{sdGroup}{Character. Pause site SD classification (Sharp/Broad)}
 #' }
 #'
 #' @name ExperimentTranscriptionRates-class
 #' @rdname ExperimentTranscriptionRates-class
 #' @importClassesFrom tibble tbl_df
 #' @importFrom dplyr mutate select left_join rename %>%
-#' @importFrom stats dnorm uniroot density
+#' @importFrom stats dnorm uniroot density quantile
 #' @importFrom methods slot is slot<- validObject
 #' @importFrom S4Vectors DataFrame splitAsList queryHits subjectHits mcols
 #' @importFrom tibble as_tibble
 #' @importFrom rtracklayer import.bw
 #' @importFrom GenomeInfoDb seqnames
 #' @importFrom GenomicRanges width
+#' @importFrom pracma findpeaks
 #' @importFrom IRanges findOverlaps
 #' @exportClass ExperimentTranscriptionRates
 methods::setClass("ExperimentTranscriptionRates",
@@ -327,6 +333,41 @@ estimateEmRates <- function(rc1, bw1P3, pauseRegions,
     return(emRate)
 }
 
+find_valley_threshold <- function(x, from, to, bins = 100) {
+    hist_data <- hist(x, breaks = bins, plot = FALSE)
+    mids <- hist_data$mids
+    counts <- hist_data$counts
+    candidate_idx <- which(mids > from & mids < to)
+    minima_idx <- findpeaks(-counts[candidate_idx])[, 2]
+    mids[candidate_idx[minima_idx[which.min(counts[candidate_idx[minima_idx]])]]]
+}
+
+process_sample_rate <- function(df, from = 20, to = 50, bins = 100) {
+    df$betaGroup <- cut(
+        df$betaAdp,
+        breaks = quantile(df$betaAdp, probs = seq(0, 1, 0.2), na.rm = TRUE),
+        labels = c("Q1", "Q2", "Q3", "Q4", "Q5"),
+        include.lowest = TRUE
+    )
+    df$fkMeanGroup <- cut(
+        df$fkMean,
+        breaks = quantile(df$fkMean, probs = seq(0, 1, 0.2), na.rm = TRUE),
+        labels = c("Q1", "Q2", "Q3", "Q4", "Q5"),
+        include.lowest = TRUE
+    )
+    df$chiGroup <- cut(
+        df$chi,
+        breaks = quantile(df$chi, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+        labels = c("Low", "Medium", "High"),
+        include.lowest = TRUE
+    )
+    df$fkSD <- sqrt(df$fkVar)
+    threshold <- find_valley_threshold(df$fkSD, from, to, bins)
+    df$sdGroup <- ifelse(df$fkSD <= threshold, "Sharp", "Broad")
+    attr(df, "sdGroupThreshold") <- threshold
+    return(df)
+}
+
 prepareRateTable <- function(emRate, analyticalRateTbl, stericHindrance) {
     emRate <- emRate %>% left_join(analyticalRateTbl, by = "geneId")
 
@@ -431,6 +472,7 @@ setMethod(
             rc1, bw1P3, pauseRegions, stericHindrance, omegaScale, zeta
         )
         emRate <- prepareRateTable(emRate, analyticalRateTbl, stericHindrance)
+        emRate <- process_sample_rate(emRate)
 
         return(methods::new(
             Class = "ExperimentTranscriptionRates",

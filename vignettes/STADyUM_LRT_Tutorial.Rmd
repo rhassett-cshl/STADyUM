@@ -1,5 +1,5 @@
 ---
-title: "Estimating Transcription Rates with STADyUM from PRO-seq Data"
+title: "Comparative Analysis of Promoter-Proximal Pausing using Likelihood Ratio Tests"
 author: "Xin Zeng"
 date: "2026/04/01"
 output:
@@ -8,17 +8,18 @@ output:
     toc_depth: 3
     theme: default
     highlight: tango
+vignette: >
+  %\VignetteIndexEntry{Comparative Analysis of Promoter-Proximal Pausing using Likelihood Ratio Tests}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
 # Introduction
 
-This tutorial demonstrates how to use the **STADyUM** package to estimate transcription rates from PRO-seq data. STADyUM (Statistical Analysis of Dynamics Under Multiple Measurements) models RNA polymerase dynamics by analyzing reads at promoter-proximal pause sites and gene bodies. 
+This tutorial demonstrates how to use the **STADyUM** package to perform comparative analysis of pause-escape kinetics and pause-site distributions across cell types using the likelihood-ratio tests (LRTs) developed in [CITE]. 
 
 In this workflow, we will:
-1. Harmonize transcription start sites (TSSs) between two cell types (CD4 and CD14)
-2. Construct read-counting regions for pause sites and gene bodies
-3. Apply STADyUM to estimate key kinetic parameters (release rate, elongation rate, activity)
-4. Visualize the relationships between estimated transcription parameters
+1. 
 
 This example uses human PRO-seq data from two immunologically distinct cell types to demonstrate comparative transcription rate estimation.
 
@@ -26,7 +27,7 @@ This example uses human PRO-seq data from two immunologically distinct cell type
 
 # Setup
 
-## Load Required Libraries
+## Load Required Libraries and Data
 
 ```{r setup, message=FALSE, warning=FALSE}
 library(STADyUM)           # For transcription rate estimation
@@ -36,12 +37,12 @@ library(plyranges)
 #library(tidyverse)         # For data manipulation and visualization
 library(ggplot2)           # For plotting
 library(pracma)
-library(BiocFileCache)
+#library(BiocFileCache)
 ```
 
 ```{r file-paths}
 
-## PULL ALL DATA FROM GEO ##
+## PULL ALL DATA FROM ZENODO ##
 
 # Required by Bioconductor to check for connection
 if (!requireNamespace("BiocFileCache", quietly = TRUE) || 
@@ -50,162 +51,23 @@ if (!requireNamespace("BiocFileCache", quietly = TRUE) ||
   message("No internet connection; vignette code not evaluated.")
 }
 
-bfc <- BiocFileCache(ask = FALSE)
+#bfc <- BiocFileCache(ask = FALSE)
 
 #geo_base <- "https://ftp.ncbi.nlm.nih.gov/geo/series/GSEnnn/GSEnnnn/suppl"
 #tsn_path <- bfcrpath(bfc, file.path(geo_base, "PROseq-HUMAN-CD4_tsn.RDS"))
 
-# TSN (Transcription Start Site Network) files
-# These are GRanges objects containing TSS annotations for each sample
-cd4_tsn_file <- paste0(root_dir, 'inst/extdata/lrts/PROseq-HUMAN-CD4_tsn.RDS')
-cd14_tsn_file <- paste0(root_dir, 'inst/extdata/lrts/PROseq-HUMAN-CD14_tsn.RDS')
+# STADyUM `ExperimentTranscriptionRates` objects containing transcription rates estimated from human CD4+ T cell and human CD14+ monocyte PRO-seq data.
+cd4_rate <- 'lrt_test_data/cd4_rate.RDS'
+cd14_rate <- 'lrt_test_data/cd14_rate.RDS'
+scale_factor <- 38359083 / 33294862 
 
-# Transcript annotation file
-# Contains gene models with exon structure for all genes
-human_tq_file <- paste0(root_dir, 'inst/extdata/lrts/HUMAN.RDS')
-
-# PRO-seq signal files (stranded bigWig format)
-# Plus strand reads
-cd4_bw_plus <- paste0(root_dir, 'data/result2/bigwig/p3/PROseq-HUMAN-CD4_plus.bw')
-cd4_bw_minus <- paste0(root_dir, 'data/result2/bigwig/p3/PROseq-HUMAN-CD4_minus.bw')
-
-cd14_bw_plus <- paste0(root_dir, 'data/result2/bigwig/p3/PROseq-HUMAN-CD14_plus.bw')
-cd14_bw_minus <- paste0(root_dir, 'data/result2/bigwig/p3/PROseq-HUMAN-CD14_minus.bw')
-
-```
-
----
-
-# Data Loading and TSS Selection
-
-## Load TSS Annotations
-
-We begin by loading transcription start site (TSS) annotations from both cell types. These annotations may contain multiple TSSs per gene (alternative promoters). For this analysis, we select a single representative TSS per gene.
-
-```{r load-tss}
-# Load TSN data for both cell types
-cd4_tsn <- readRDS(cd4_tsn_file)
-cd14_tsn <- readRDS(cd14_tsn_file)
-
-# Display structure of TSN data
-head(cd4_tsn)
-```
-
-## Select Single TSS per Gene
-
-When multiple TSSs exist for a single gene, we retain only the most upstream TSS. This ensures consistent TSS usage across the analysis. The "most upstream" is defined as the TSS with the smallest genomic coordinate on the plus strand and the largest coordinate on the minus strand.
-
-```{r select-single-tss}
-# Process CD4 data: select most upstream TSS per gene
-cd4_tsn <- as.data.frame(cd4_tsn) %>%
-  group_by(ensembl_gene_id, strand) %>%
-  slice_min(order_by = ifelse(strand == "+", start, -start), 
-            n = 1, with_ties = FALSE) %>%
-  ungroup() %>%
-  as_granges()
-
-# Process CD14 data: select most upstream TSS per gene
-cd14_tsn <- as.data.frame(cd14_tsn) %>%
-  group_by(ensembl_gene_id, strand) %>%
-  slice_min(order_by = ifelse(strand == "+", start, -start), 
-            n = 1, with_ties = FALSE) %>%
-  ungroup() %>%
-  as_granges()
-
-cat("CD4 TSS sites:", length(cd4_tsn), "\n")
-cat("CD14 TSS sites:", length(cd14_tsn), "\n")
-```
-
----
-
-# TSS Harmonization Between Samples
-
-## Merge TSSs from Both Cell Types
-
-When comparing transcription rates between cell types, TSSs should be unified to ensure we measure the same transcriptional unit. If TSSs are close between samples (within 30 bp), we merge them and use the most upstream as the consensus TSS.
-
-```{r harmonize-tss}
-# Merge TSSs: combine close TSSs from both samples
-# TSSs within 30 bp are unified to the most upstream position
-tsn_merge <- STADyUM:::merge_tss_from_two_samples(cd4_tsn, cd14_tsn)
-
-# Extract distances between matched TSSs
-dist_df <- data.frame(Distance = tsn_merge$dist)
-
-# Display summary statistics
-summary(dist_df$Distance)
-```
-
-## Visualize TSS Distance Distribution
-
-This plot shows the distribution of distances between TSSs in CD4 and CD14 samples. The dashed vertical line indicates the 30 bp threshold used for merging.
-
-```{r plot-tss-distances, fig.width=4, fig.height=3}
-p0 <- ggplot(dist_df, aes(x = log10(Distance + 1))) +
-  geom_histogram(bins = 100, fill = "steelblue", color = "black") +
-  scale_y_log10() +
-  xlab('log10(Distance + 1)') +
-  ylab('Count') +
-  geom_vline(xintercept = log10(30 + 1),
-             linetype = "dashed",
-             color = "red", linewidth = 1)
-
-print(p0)
-```
-
----
-
-# Building Read-Count Regions
-
-## Load Transcript Annotations
-
-We load the full transcript annotation to define gene bodies. From these, we extract the transcription termination sites (TTS) to define the 3' boundary of gene bodies.
-
-```{r load-transcripts}
-# Load transcript model for all genes
-human_tq <- readRDS(human_tq_file)
-
-# Extract gene ranges and reduce overlapping exons
-# This creates a single range per gene (union of all exons)
-gngrng <- human_tq@transcripts %>%
-  group_by(ensembl_gene_id) %>%
-  reduce_ranges_directed() %>%
-  sort()
-
-cat("Number of genes:", length(gngrng), "\n")
-```
-
-## Define Pause and Gene Body Regions
-
-For STADyUM analysis, we define two counting regions:
-- **Pause region**: typically near the TSS (promoter-proximal pause site)
-- **Gene body region**: the elongating polymerase region 
-
-Here, we anchor at the transcription termination site (3' end) and define regions relative to those anchors.
-
-```{r define-count-regions}
-# Anchor at 3' end (transcription termination site) and set width to 1
-# This creates a point coordinate at the TTS for each gene
-bw_tts <- gngrng %>% 
-  plyranges::anchor_3p() %>% 
-  mutate(width = 1)
-
-# Build read-count regions for CD4
-# Returns list with 'pause' and 'gene_body' GRanges
-cd4_count_region <- STADyUM:::build_readcount_regions(tsn_merge$tsn1, bw_tts)
-
-# Build read-count regions for CD14
-cd14_count_region <- STADyUM:::build_readcount_regions(tsn_merge$tsn2, bw_tts)
-
-cat("CD4 pause regions:", length(cd4_count_region$pause), "\n")
-cat("CD4 gene body regions:", length(cd4_count_region$gene_body), "\n")
 ```
 
 ---
 
 # Running STADyUM
 
-## Estimate Transcription Rates
+## Likelihood Ratio Test Calculations
 
 The `estimateTranscriptionRates()` function applies STADyUM to count reads in pause and gene body regions. It estimates key kinetic parameters:
 
@@ -213,21 +75,18 @@ The `estimateTranscriptionRates()` function applies STADyUM to count reads in pa
 - **chi (χ)**: elongation rate relative to transcription activity
 - **activity**: transcription initiation/activity level
 
-```{r run-stadyum}
-# Estimate transcription rates for CD4
-# Input: plus and minus strand bigWig files, pause/gene body regions, sample label
-cd4_rate <- estimateTranscriptionRates(
-  cd4_bw_plus, cd4_bw_minus,
-  cd4_count_region$pause, cd4_count_region$gene_body, 
-  "CD4"
-)
+```{r lrt_calculation}
 
-# Estimate transcription rates for CD14
-cd14_rate <- estimateTranscriptionRates(
-  cd14_bw_plus, cd14_bw_minus,
-  cd14_count_region$pause, cd14_count_region$gene_body, 
-  "CD14"
-)
+lrt <- likelihoodRatioTest(cd4_rate, cd14_rate, scale_factor)
+
+lrt <- mergeBetaChiLRTStats(lrt, scale_factor, prefix1='CD4', prefix2='CD14')
+lrt$pause_change <- paste0(lrt$CD4_sdGroup, '_to_', lrt$CD14_sdGroup)
+
+lrt$deltaSD   <- (lrt$CD14_fkSD - lrt$CD4_fkSD) /
+                      (lrt$CD14_fkSD + lrt$CD4_fkSD)
+lrt$deltaMean <- lrt$fkMean2 - lrt$fkMean1
+
+head(lrt)
 
 cat("CD4 rate estimation complete\n")
 cat("CD14 rate estimation complete\n")
@@ -235,205 +94,9 @@ cat("CD14 rate estimation complete\n")
 
 ---
 
-# Post-Processing Results
-
-## Process Estimated Rates
-
-After STADyUM estimation, rates are post-processed to remove outliers and standardize values. This typically involves log-transformation and filtering of extreme values.
-
-```{r post-process-rates}
-# Post-process rates for CD4
-# This filters outliers and applies statistical normalization
-cd4_rate@rates <- STADyUM:::process_sample_rate(rates(cd4_rate))
-
-# Post-process rates for CD14
-cd14_rate@rates <- STADyUM:::process_sample_rate(rates(cd14_rate))
-
-cat("Post-processing complete\n")
-```
-
-## Save Results
-
-Save the estimated rates as RDS files for downstream analysis.
-
-```{r save-rates}
-# Save CD4 rates
-saveRDS(cd4_rate, paste0(file.path(result_dir, "human/cd4_rate"), ".RDS"))
-
-# Save CD14 rates
-saveRDS(cd14_rate, paste0(file.path(result_dir, "human/cd14_rate"), ".RDS"))
-
-cat("Results saved to:", result_dir, "\n")
-```
-
----
-
 # Visualization
+```{r lrt_visualization}
 
-## Extract Rate Data
-
-Convert rate objects into data frames for plotting.
-
-```{r extract-rates}
-# Create a CD14 visualization copy with extreme outliers removed
-cd14_rate_viz <- cd14_rate
-cd14_rate_viz@rates <- cd14_rate_viz@rates[log10(cd14_rate_viz@rates$betaAdp) < 10, ]
-
-cat("CD4 genes with estimated rates:", nrow(rates(cd4_rate)), "\n")
-cat("CD14 genes with estimated rates:", nrow(rates(cd14_rate_viz)), "\n")
-```
-
-## CD4 Visualizations
-
-### Pause Release Rate vs. Transcription Activity
-
-This plot shows the relationship between the pause release rate (beta) and transcription activity (chi). Each point represents one gene. Positively correlated genes may indicate coupled regulation of pause release and transcription initiation.
-
-```{r cd4-beta-chi, fig.width=3.5, fig.height=3}
-p1 <- plotScatterDensity(cd4_rate, "betaAdp", "chi",
-                          log_x = TRUE, log_y = TRUE,
-                          xlab = expression(log[10] ~ beta),
-                          ylab = expression(log[10] ~ chi),
-                          xlim = c(-6, -1), ylim = c(-4, 1))
-
-if (requireNamespace("ggpubr", quietly = TRUE)) {
-  p1 <- p1 + scale_color_viridis_c() +
-    ggpubr::stat_cor(method = "spearman", label.x = -3.5, label.y = -3.8,
-                     size = 5, aes(label = after_stat(r.label)))
-}
-
-print(p1)
-```
-
-### Pause Release Rate vs. Elongation Parameters
-
-These plots show relationships between pause release rate (beta) and two measures of elongation variability. The first shows beta vs. mean elongation time; the second shows beta vs. elongation time standard deviation.
-
-```{r cd4-beta-elongation, fig.width=10, fig.height=3}
-p1 <- plotScatterDensity(cd4_rate, "betaAdp", "fkMean",
-                          log_x = TRUE,
-                          xlab = expression(log[10] ~ beta),
-                          ylab = expression(mu))
-if (requireNamespace("ggpubr", quietly = TRUE)) {
-  p1 <- p1 + scale_color_viridis_c() +
-    ggpubr::stat_cor(method = "spearman", label.x = -2.2, label.y = 160,
-                     size = 5, aes(label = after_stat(r.label)))
-}
-
-p2 <- plotScatterDensity(cd4_rate, "betaAdp", "fkSD",
-                          log_x = TRUE,
-                          xlab = expression(log[10] ~ beta),
-                          ylab = expression(sigma),
-                          color_var = "sdGroup",
-                          color_values = c(Broad = "#1b9e77", Sharp = "#762a83"),
-                          color_lab = expression(sigma ~ group))
-if (requireNamespace("ggpubr", quietly = TRUE)) {
-  p2 <- p2 +
-    ggpubr::stat_cor(method = "spearman", label.x = -2.5, label.y = 75,
-                     size = 3, aes(label = after_stat(r.label), group = 1),
-                     color = "black")
-}
-p2_hist <- ggplot(rates(cd4_rate), aes(x = .data$fkSD)) +
-  geom_histogram(aes(y = after_stat(density)), bins = 50) +
-  geom_vline(xintercept = 38.5, linetype = "dashed", color = "black",
-             linewidth = 0.6) +
-  coord_flip() +
-  theme(axis.title = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank())
-print(p1)
-
-grid::grid.newpage()
-grid::pushViewport(grid::viewport(layout = grid::grid.layout(1, 2, widths = grid::unit(c(4, 1), "null"))))
-print(p2,      vp = grid::viewport(layout.pos.row = 1, layout.pos.col = 1))
-print(p2_hist, vp = grid::viewport(layout.pos.row = 1, layout.pos.col = 2))
-
-p3 <- plotScatterDensity(cd4_rate, "fkMean", "fkSD",
-                          xlab = expression(mu),
-                          ylab = expression(sigma))
-if (requireNamespace("ggpubr", quietly = TRUE)) {
-  p3 <- p3 + scale_color_viridis_c() +
-    ggpubr::stat_cor(method = "spearman", label.x = 112, label.y = 1,
-                     size = 5, aes(label = after_stat(r.label)))
-}
-
-print(p3)
-
-```
-
-## CD14 Visualizations
-
-### Pause Release Rate vs. Transcription Activity
-
-Same analysis for the CD14 cell type. This allows comparison of transcription parameter distributions and relationships between the two cell types.
-
-```{r cd14-beta-chi, fig.width=3.5, fig.height=3}
-p1 <- plotScatterDensity(cd14_rate_viz, "betaAdp", "chi",
-                          log_x = TRUE, log_y = TRUE,
-                          xlab = expression(log[10] ~ beta),
-                          ylab = expression(log[10] ~ chi),
-                          xlim = c(-6, -1), ylim = c(-4, 1))
-
-if (requireNamespace("ggpubr", quietly = TRUE)) {
-  p1 <- p1 + scale_color_viridis_c() +
-    ggpubr::stat_cor(method = "spearman", label.x = -3, label.y = -4,
-                     size = 5, aes(label = after_stat(r.label)))
-}
-
-print(p1)
-```
-
-### Pause Release Rate vs. Elongation Parameters
-
-Relationship plots for CD14 showing how pause release rate associates with elongation time parameters.
-
-```{r cd14-beta-elongation, fig.width=10, fig.height=3}
-p1 <- plotScatterDensity(cd14_rate_viz, "betaAdp", "fkMean",
-                          log_x = TRUE,
-                          xlab = expression(log[10] ~ beta),
-                          ylab = expression(mu))
-if (requireNamespace("ggpubr", quietly = TRUE)) {
-  p1 <- p1 + scale_color_viridis_c() +
-    ggpubr::stat_cor(method = "spearman", label.x = 0, label.y = 180,
-                     size = 5, aes(label = after_stat(r.label)))
-}
-
-p2 <- plotScatterDensity(cd14_rate_viz, "betaAdp", "fkSD",
-                          log_x = TRUE,
-                          xlab = expression(log[10] ~ beta),
-                          ylab = expression(sigma),
-                          color_var = "sdGroup",
-                          color_values = c(Broad = "#1b9e77", Sharp = "#762a83"),
-                          color_lab = expression(sigma ~ group))
-if (requireNamespace("ggpubr", quietly = TRUE)) {
-  p2 <- p2 +
-    ggpubr::stat_cor(method = "spearman", label.x = 0, label.y = 75,
-                     size = 3, aes(label = after_stat(r.label), group = 1),
-                     color = "black")
-}
-p2_hist <- ggplot(rates(cd14_rate_viz), aes(x = .data$fkSD)) +
-  geom_histogram(aes(y = after_stat(density)), bins = 50) +
-  geom_vline(xintercept = 37.5, linetype = "dashed", color = "black",
-             linewidth = 0.6) +
-  coord_flip() +
-  theme(axis.title = element_blank(), axis.text = element_blank(),
-        axis.ticks = element_blank())
-print(p1)
-
-grid::grid.newpage()
-grid::pushViewport(grid::viewport(layout = grid::grid.layout(1, 2, widths = grid::unit(c(4, 1), "null"))))
-print(p2,      vp = grid::viewport(layout.pos.row = 1, layout.pos.col = 1))
-print(p2_hist, vp = grid::viewport(layout.pos.row = 1, layout.pos.col = 2))
-
-p3 <- plotScatterDensity(cd14_rate_viz, "fkMean", "fkSD",
-                          xlab = expression(mu),
-                          ylab = expression(sigma))
-if (requireNamespace("ggpubr", quietly = TRUE)) {
-  p3 <- p3 + scale_color_viridis_c() +
-    ggpubr::stat_cor(method = "spearman", label.x = 120, label.y = 1,
-                     size = 5, aes(label = after_stat(r.label)))
-}
-
-print(p3)
 
 ```
 

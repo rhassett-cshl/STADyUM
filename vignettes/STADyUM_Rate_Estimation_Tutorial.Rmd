@@ -1,228 +1,280 @@
 ---
-title: "STADyUM: Simulating and Analyzing Transcription Dynamics"
-author: "Rebecca Hassett"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
+title: "Estimating Transcription Rates with STADyUM from PRO-seq Data"
+author: "Xin Zeng"
+date: "2026/04/01"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: default
+    highlight: tango
 vignette: >
-  %\VignetteIndexEntry{STADyUM: Simulating and Analyzing Transcription Dynamics}
+  %\VignetteIndexEntry{Estimating Transcription Rates with STADyUM from PRO-seq Data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
-bibliography: references.bib
 ---
-
-```{r setup, include = FALSE}
-knitr::opts_chunk$set(
-    collapse = TRUE,
-    comment = "#>"
-)
-```
-
-```{r load_package, include = FALSE}
-# Load the package
-library(STADyUM)
-```
 
 # Introduction
 
-STADyUM is an R package for simulating and analyzing transcription dynamics.
-It provides tools for:
+This tutorial demonstrates how to use the **STADyUM** package to estimate transcription rates from PRO-seq data. STADyUM (Statistical Analysis of Dynamics Under Multiple Measurements) models RNA polymerase dynamics by analyzing reads at promoter-proximal pause sites and gene bodies. 
 
-- Simulating polymerase movement along genes
-- Estimating transcription initiation, pause-release, and elongation rates
-- Analyzing pause site distributions and RNAP density profiles
-- Visualizing transcription dynamics across genomic regions
-- Comparing transcription-associated rates under different conditions
+In this workflow, we will:
+1. Identify transcription start sites (TSSs) for each gene by keeping the upstream most TSS per gene from annotations
+2. Construct read-counting regions for pause sites and gene bodies
+3. Apply STADyUM to estimate key kinetic parameters (release rate, elongation rate, activity)
+4. Visualize the relationships between estimated transcription parameters
 
-STADyUM seamlessly integrates with the Bioconductor ecosystem by leveraging standard Bioconductor data structures such as GRanges for genomic interval handling and S4Vectors for custom Bioconductor-style data structures. This compatibility allows users to incorporate STADyUM's results directly into downstream analyses and visualization pipelines with other Bioconductor tools. 
+This example uses human PRO-seq data from the human CD4 cell type to demonstrate transcription rate estimation
 
-While existing Bioconductor packages like INSPEcT focuses primarily on modeling RNA synthesis, processing, and degradation using both nascent and mature RNA-seq data through systems of differential equations, STADyUM takes a different modeling approach. STADyUM provides a probabilistic framework tailored specifically for nascent RNA data alone (such as PRO-seq, GRO-seq, 4sU-DRB-seq) including functionality for modeling steric hindrance between RNA polymerases and modeling pause-site kinetics explicitly.
+---
 
-# Installation
+# Setup
 
-```{r install, eval = FALSE}
-if (!requireNamespace("BiocManager", quietly=TRUE))
-    install.packages("BiocManager")
-BiocManager::install("STADyUM")
+## Load Required Libraries
+
+```{r setup, message=FALSE, warning=FALSE}
+library(STADyUM)           # For transcription rate estimation
+library(GenomicRanges)     # For genomic data manipulation
+library(dplyr) 
+library(plyranges)        
+#library(tidyverse)         # For data manipulation and visualization
+library(ggplot2)           # For plotting
+library(pracma)
+#library(BiocFileCache)
 ```
 
-# Basic Usage
+```{r file-paths}
 
-## Estimating Transcription Rates from Experimental Data
+## PULL ALL DATA FROM ZENODO ##
 
-First estimate transcription rates from an experiment's BigWig files containing
-PRO-seq read counts without steric hindrance. Uses Expectation Maximization 
-algorithm to estimate transcription rates such as gene body RNAP density (chi) 
-and the ratio of gene body RNAP density to pause region RNAP density under
-models of fixed pause sites (betaOrg) and variable pause sites (betaAdp).
+# Required by Bioconductor to check for connection
+if (!requireNamespace("BiocFileCache", quietly = TRUE) || 
+    !curl::has_internet()) {
+  knitr::opts_chunk$set(eval = FALSE)
+  message("No internet connection; vignette code not evaluated.")
+}
 
-The example data used throughout this package is derived from @Aoi2020. The data is from the raw PRO-Seq read counts for human cells treated with auxin-induced acute depletion of NELF(negative elongation factor). 
-Raw PRO-seq data is located at GEO: GSE144786. The raw fastq files were 
-processed with https://github.com/Danko-Lab/proseq2.0. 
+#bfc <- BiocFileCache(ask = FALSE)
 
-Estimates of transcription rates, such as chi and beta, are calculated 
-given Expectation Maximization with likelihood formulas derived in *Stationary Distribution and Inference at Steady-State* section of @Siepel2022 and stated in *Inference at Steady State* section of @Zhao2023. Note that chi is 
-the estimator for the average read depth, excluding the pause peak and beta 
-is the estimator for the ratio of chi to the read depth in the pause peak 
-region. The estimator for beta is also given for a model adapted for varying
-pause sites across cells and is denoted by variable betaAdp whereas the fixed 
-pause site estimate is denoted by betaOrg, refer to *Allowing for variation in pause site* section of @Zhao2023. Pause site statistics such as the mean
-position of pause sites and the variance of pause sites (fkMean and fkVar) are 
-also reported.
+#geo_base <- "https://ftp.ncbi.nlm.nih.gov/geo/series/GSEnnn/GSEnnnn/suppl"
+#tsn_path <- bfcrpath(bfc, file.path(geo_base, "PROseq-HUMAN-CD4_tsn.RDS"))
 
+# TSN (Transcription Start Site Network) files
+# These are GRanges objects containing TSS annotations for each sample
+cd4_tsn_file <- 'lrt_test_data/PROseq-HUMAN-CD4_tsn.RDS'
 
-```{r estimate_experiment_rates}
-load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData", 
-package = "STADyUM"))
+# Transcript annotation file
+# Contains gene models with exon structure for all genes
+human_tq_file <- 'lrt_test_data/HUMAN.RDS'
 
-controlRates <- estimateTranscriptionRates(system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
-system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
-package = "STADyUM"),
-    bw_pause_filtered, bw_gb_filtered, "Control")
-
-show(controlRates)
-
-treatedRates <- estimateTranscriptionRates(system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin-SE_plus_chr21.bw", package = "STADyUM"),
-system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin-SE_minus_chr21.bw", 
-package = "STADyUM"),
-    bw_pause_filtered, bw_gb_filtered, "Auxin Treated")
-
-show(treatedRates)
-
-controlRatesTbl <- rates(controlRates)
-
-head(controlRatesTbl)
-```
-
-Plotted below is a density plot of gene-body RNAP density values of all the genes and a parity plot for verifying the model fit. The gene-body RNAP density (chi) is an estimate of the total gene-body reads / gene-body length in RNAPs per bp. This plot indicates that most genes have low RNAP density and only a minority of the genes have higher transcriptional activity. The parity plot of expected vs. actual pause site counts per gene can be used to verify that the model fit the actual data well. In this case the Pearson correlation coefficient is 0.99 indicating the model fit is strong.
-
-## Plotting functionality for TranscriptionRates objects
-
-```{r plot_exp_rates, fig.width=7, fig.height=5, out.width="75%"}
-plotChiDistrib(controlRates, file="ChiDistributionPlot.png")
-
-plotExpectedVsActualPauseSiteCounts(treatedRates, 
-                                    file="treatedExpActPauseSites.png")
-```
-
-## Estimate Transcription Rates for Experimental Data under Steric Hindrance
-
-Under the model of steric hindrance, additional rates are estimated such as the landing pad occupancy (phi), pause-escape rate (betaZeta), the potential 
-initiation rate (alphaZeta), and omegaZeta (effective initiation rate). The 
-likelihood functions differ under the model of steric hindrance and are derived in *Fitting the Steric Hindrance Model to the Data* of @Zhao2023. Note 
-the omega parameter is a scaling factor.
-
-```{r estimate_experiment_rates_steric_hindrance, eval=FALSE}
-controlRatesSH <- estimateTranscriptionRates(system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
-    system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
-    package = "STADyUM"),
-    bw_pause_filtered, bw_gb_filtered, "Control", stericHindrance=TRUE, 
-    omegaScale=12.3768278981277)
-
-show(controlRatesSH)
-
-treatedRatesSH <- estimateTranscriptionRates(
-    system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin-SE_plus_chr21.bw", 
-    package = "STADyUM"),
-    system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin-SE_minus_chr21.bw",
-    package = "STADyUM"),
-    bw_pause_filtered, bw_gb_filtered, "Auxin Treated", stericHindrance=TRUE, 
-    omegaScale=11.0318379571379)
-
-show(treatedRatesSH)
-```
-
-
-## Likelihood Ratio Tests
-
-Compare samples treated with auxin to control samples using the likelihood ratio test functionality derived in *Likelihood Ratio Tests for Differences Between Transcription Units, Conditions, or Species* section of @Siepel2022
-
-```{r likelihood_ratio_tests}
-lrt <- likelihoodRatioTest(controlRates, treatedRates)
-
-show(lrt)
-```
-
-## Plot Results from Likelihood Ratio Tests
-
-As expected given current literature, RNAPs tend to pause more downstream when 
-NELF is absent due to Auxin treatment. As shown in the plot, the majority of 
-treated genes have average pause locations of more than 100bp downstream of the TSS. Strikingly, few RNAPs could enter productive elongation after NELF 
-depletion and treated samples had a signficantly lower pause-escape rate than 
-the control samples exemplified by the beta violin plots.
-
-```{r plot_lrt_results,fig.width=7,fig.height=5,out.width="75%"}
-
-plotMeanPauseDistrib(controlRates, file="meanPauseSitesControl.png")
-plotMeanPauseDistrib(treatedRates, file="meanPauseSitesTreated.png")
-
-BetaViolinPlot(lrt, file="lrtBetaViolinPlot.png")
+# PRO-seq signal files (stranded bigWig format)
+# Plus strand reads
+cd4_bw_plus <- 'lrt_test_data/PROseq-HUMAN-CD4_plus.bw'
+cd4_bw_minus <- 'lrt_test_data/PROseq-HUMAN-CD4_minus.bw'
 
 ```
 
-## Simulate Polymerase
+---
 
-![(A) Conceptual illustration of model focusing on the kinetic model for RNAP 
-movement on the DNA template. (B) Graphical model representation with unobserved continuous-time Markov chain (Z) and observed read counts (X). Read counts at  each site are conditionally independent and Poisson distributed. (C) Design of SimPol simulator tracking the movement of in silico RNAPs across N-bp DNA templates in C cells, then samples the synthetic read counts based on RNAP positions. (D) Example of synthetic nascent RNA sequencing data from SimPol alongside matched real PRO-seq data from the DNAJA1 gene on chromosome 9 of the human genome](simpol_figures.png){width=75%}
+# Data Loading and TSS Selection
 
-Simulate read counts by running simulations of polymerase movement along the
-gene at user-specified rates and gene lengths. Our simulator models the movement of RNAPs along a set of transcription units given a continuous-time Markov model. Nascent RNA sequencing read counts are then generated under steady-state conditions by sampling based on a Poisson distribution with mean equal to the simulated RNAP frequency multiplied by a user-specified sequencing depth. A graphical model representation (Figure B) with unobserved continuous-time Markov chain (Z_i) in which user-specified paramters for transcription initiation (alpha), pause-escape, and elongation (zeta) are included as well as the observed read counts (Xi). The initial model is extended to allow for variability across cells in promoter-proximal pause site locations and steric hindrance of transcription initiation from paused RNAPs (Figure C). More information on the simulator can be found in the sections *A 
-simple probabilistic model for transcription initiation, promoter-proximal 
-pausing, and elongation*, *SimPol Simulator*, *Generation of synthetic NRS 
-data* of @Zhao2023
+## Load TSS Annotations
 
-```{r create_simpol, fig.width=7,fig.height=5,out.width="70%",out.height="50%"}
-simpol <- simulatePolymerase(k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
-alpha=2, beta=0.5, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-cellNum=100, polSize=33, addSpace=17, time=39, timesToRecord=NULL)
+We begin by loading transcription start site (TSS) annotations from the CD4 cell type. These annotations may contain multiple TSSs per gene (alternative promoters). For this analysis, we select a single representative TSS per gene.
 
-show(simpol)
+```{r load-tss}
+# Load TSN data for both cell types
+cd4_tsn <- readRDS(cd4_tsn_file)
 
-readCounts <- readCounts(simpol)
-
-plotCombinedCells(simpol, file="combinedCellsLollipopPlot.png")
+# Display structure of TSN data
+head(cd4_tsn)
 ```
 
-This uses the same core Expectation Maximization algorithm as the experimental data, but it is able to handle the simulated data as well.
+## Select Single TSS per Gene
 
-## Estimate Transcription Rates from Simulated Data
+When multiple TSSs exist for a single gene, we retain only the most upstream TSS. This ensures consistent TSS usage across the analysis. The "most upstream" is defined as the TSS with the smallest genomic coordinate on the plus strand and the largest coordinate on the minus strand.
 
-```{r estimate_simulated_rates, fig.width=7, fig.height=5, out.width="75%"}
-simRates <- estimateTranscriptionRates(simpol, name="simRatesb0.5k50",
-stericHindrance=TRUE)
+```{r select-single-tss}
+# Process CD4 data: select most upstream TSS per gene
+cd4_tsn <- STADyUM::keep_upstream_tss(cd4_tsn)
 
-show(simRates)
+cat("CD4 TSS sites:", length(cd4_tsn), "\n")
 ```
 
-## Likelihood Ratio Tests for Simulated Data
+---
 
-Likelihood ratio tests can also be applied to simulated data. In this example, 
-the simulated rates for the first simpol object is compared to the simulated 
-rates from the second simpol object. As expected given the simpol parameters, 
-the plots show that the second simulated rates have higher beta and higher mean
-pause sites
-![](simPauseSitesContourMap.png){width=75%}
-![](simBetaViolinPlot.png){width=75%}
+# Building Read-Count Regions
 
-```{r simulated_lrts, fig.width=7, fig.height=5, out.width="75%", eval=FALSE}
+## Load Transcript Annotations
 
-simpol2 <- simulatePolymerase(k=100, ksd=25, kMin=75, kMax=200, geneLen=1950,
-alpha=2, beta=10, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,
-cellNum=100, polSize=33, addSpace=17, time=30, timesToRecord=NULL)
+We load the full transcript annotation to define gene bodies. From these, we extract the transcription termination sites (TTS) to define the 3' boundary of gene bodies.
 
-simRates2 <- estimateTranscriptionRates(simpol2, name="simRatesb10k100",
-stericHindrance=TRUE)
+```{r load-transcripts}
+# Load transcript model for all genes
+human_tq <- readRDS(human_tq_file)
 
-simLRT <- likelihoodRatioTest(simRates, simRates2)
+# Extract gene ranges and reduce overlapping exons
+# This creates a single range per gene (union of all exons)
+gngrng <- human_tq@transcripts %>%
+  group_by(ensembl_gene_id) %>%
+  reduce_ranges_directed() %>%
+  sort()
 
-plotPauseSiteContourMapTwoConditions(simLRT, file="simPauseSitesContourMap.png")
-BetaViolinPlot(simLRT, file="simBetaViolinPlot.png")
+cat("Number of genes:", length(gngrng), "\n")
+```
+
+## Define Pause and Gene Body Regions
+
+For STADyUM analysis, we define two counting regions:
+- **Pause region**: typically near the TSS (promoter-proximal pause site)
+- **Gene body region**: the elongating polymerase region 
+
+Here, we anchor at the transcription termination site (3' end) and define regions relative to those anchors.
+
+```{r define-count-regions}
+# Anchor at 3' end (transcription termination site) and set width to 1
+# This creates a point coordinate at the TTS for each gene
+bw_tts <- gngrng %>% 
+  plyranges::anchor_3p() %>% 
+  mutate(width = 1)
+
+# Build read-count regions for CD4
+# Returns list with 'pause' and 'gene_body' GRanges
+cd4_count_region <- STADyUM:::build_readcount_regions(tsn_merge$tsn1, bw_tts)
+
+cat("CD4 pause regions:", length(cd4_count_region$pause), "\n")
+cat("CD4 gene body regions:", length(cd4_count_region$gene_body), "\n")
+```
+
+---
+
+# Running STADyUM
+
+## Estimate Transcription Rates
+
+The `estimateTranscriptionRates()` function applies STADyUM to count reads in pause and gene body regions. It estimates key kinetic parameters:
+
+- **beta (β)**: pause release rate (1/time)
+- **chi (χ)**: elongation rate relative to transcription activity
+- **activity**: transcription initiation/activity level
+
+```{r run-stadyum}
+# Estimate transcription rates for CD4
+# Input: plus and minus strand bigWig files, pause/gene body regions, sample label
+cd4_rate <- estimateTranscriptionRates(
+  cd4_bw_plus, cd4_bw_minus,
+  cd4_count_region$pause, cd4_count_region$gene_body, 
+  "CD4"
+)
+
+cat("CD4 rate estimation complete\n")
+cat("CD14 rate estimation complete\n")
+```
+
+---
+
+# Visualization
+
+## CD4 Visualizations
+
+### Pause Release Rate vs. Transcription Activity
+
+This plot shows the relationship between the pause release rate (beta) and transcription activity (chi). Each point represents one gene. Positively correlated genes may indicate coupled regulation of pause release and transcription initiation.
+
+```{r cd4-beta-chi, fig.width=3.5, fig.height=3}
+
+cat("CD4 genes with estimated rates:", nrow(rates(cd4_rate)), "\n")
+
+p1 <- plotScatterDensity(cd4_rate, "betaAdp", "chi",
+                          log_x = TRUE, log_y = TRUE,
+                          xlab = expression(log[10] ~ beta),
+                          ylab = expression(log[10] ~ chi),
+                          xlim = c(-6, -1), ylim = c(-4, 1))
+
+if (requireNamespace("ggpubr", quietly = TRUE)) {
+  p1 <- p1 + scale_color_viridis_c() +
+    ggpubr::stat_cor(method = "spearman", label.x = -3.5, label.y = -3.8,
+                     size = 5, aes(label = after_stat(r.label)))
+}
+
+print(p1)
+```
+
+### Pause Release Rate vs. Elongation Parameters
+
+These plots show relationships between pause release rate (beta) and two measures of elongation variability. The first shows beta vs. mean elongation time; the second shows beta vs. elongation time standard deviation.
+
+```{r cd4-beta-elongation, fig.width=10, fig.height=3}
+p1 <- plotScatterDensity(cd4_rate, "betaAdp", "fkMean",
+                          log_x = TRUE,
+                          xlab = expression(log[10] ~ beta),
+                          ylab = expression(mu))
+if (requireNamespace("ggpubr", quietly = TRUE)) {
+  p1 <- p1 + scale_color_viridis_c() +
+    ggpubr::stat_cor(method = "spearman", label.x = -2.2, label.y = 160,
+                     size = 5, aes(label = after_stat(r.label)))
+}
+
+p2 <- plotScatterDensity(cd4_rate, "betaAdp", "fkSD",
+                          log_x = TRUE,
+                          xlab = expression(log[10] ~ beta),
+                          ylab = expression(sigma),
+                          color_var = "sdGroup",
+                          color_values = c(Broad = "#1b9e77", Sharp = "#762a83"),
+                          color_lab = expression(sigma ~ group))
+if (requireNamespace("ggpubr", quietly = TRUE)) {
+  p2 <- p2 +
+    ggpubr::stat_cor(method = "spearman", label.x = -2.5, label.y = 75,
+                     size = 3, aes(label = after_stat(r.label), group = 1),
+                     color = "black")
+}
+p2_hist <- ggplot(rates(cd4_rate), aes(x = .data$fkSD)) +
+  geom_histogram(aes(y = after_stat(density)), bins = 50) +
+  geom_vline(xintercept = 38.5, linetype = "dashed", color = "black",
+             linewidth = 0.6) +
+  coord_flip() +
+  theme(axis.title = element_blank(), axis.text = element_blank(),
+        axis.ticks = element_blank())
+print(p1)
+
+grid::grid.newpage()
+grid::pushViewport(grid::viewport(layout = grid::grid.layout(1, 2, widths = grid::unit(c(4, 1), "null"))))
+print(p2,      vp = grid::viewport(layout.pos.row = 1, layout.pos.col = 1))
+print(p2_hist, vp = grid::viewport(layout.pos.row = 1, layout.pos.col = 2))
+
+p3 <- plotScatterDensity(cd4_rate, "fkMean", "fkSD",
+                          xlab = expression(mu),
+                          ylab = expression(sigma))
+if (requireNamespace("ggpubr", quietly = TRUE)) {
+  p3 <- p3 + scale_color_viridis_c() +
+    ggpubr::stat_cor(method = "spearman", label.x = 112, label.y = 1,
+                     size = 5, aes(label = after_stat(r.label)))
+}
+
+print(p3)
 
 ```
 
-## Session Info
-```{r session_info}
+---
+
+# Summary
+
+This tutorial demonstrated a complete workflow for estimating transcription rates from PRO-seq data using STADyUM:
+
+1. **TSS Identification**: We identified a single transcription start site using annotations.
+
+2. **Region Definition**: We defined pause (promoter-proximal) and gene body regions as input for rate estimation.
+
+3. **Rate Estimation**: STADyUM estimated three key transcription parameters (pause release rate, elongation characteristics, and activity) from the read distribution in these regions.
+
+4. **Visualization**: We explored relationships between parameters, revealing how pause release and elongation dynamics are coupled in CD4 cells.
+
+The estimated rates are now ready for downstream comparative analysis (e.g., identifying genes with cell-type-specific transcription dynamics) and integration with other genomic data.
+
+---
+
+# Session Information
+
+```{r session-info}
 sessionInfo()
 ```

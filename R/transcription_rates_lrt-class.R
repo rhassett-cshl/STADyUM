@@ -19,7 +19,8 @@ methods::setClass("TranscriptionRatesLRT",
         transcriptionRates2 = "TranscriptionRates",
         spikeInFile = "ANY",
         chiTbl = "tbl_df",
-        betaTbl = "tbl_df"
+        betaTbl = "tbl_df",
+        fkTbl = "tbl_df"
     )
 )
 
@@ -538,6 +539,82 @@ setMethod(
     "betaTbl", "TranscriptionRatesLRT",
     function(object) slot(object, "betaTbl")
 )
+
+#' @rdname TranscriptionRatesLRT-class
+#' @title Merge Beta and Chi LRT Statistics
+#'
+#' @description
+#' Builds a single per-gene summary tibble from a TranscriptionRatesLRT
+#' object's beta LRT results, joined with per-sample rate groupings, and
+#' enriched with derived chi LRT statistics (mean and log2 fold change between
+#' samples, scaled by \code{scale_factor}).
+#'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
+#' @param scale_factor a numeric scale factor used to normalize chi between
+#' the two samples (e.g. a spike-in based library size ratio)
+#' @param lfc_threshold the threshold for the log2 fold change used to
+#' categorize beta and chi changes
+#' @param prefix1 the prefix for the first sample's joined rate columns
+#' @param prefix2 the prefix for the second sample's joined rate columns
+#'
+#' @return tbl_df
+#'
+#' @export
+setGeneric("mergeBetaChiLRTStats", function(object, scale_factor,
+    lfc_threshold = 0.5, prefix1 = 'control', prefix2 = 'treatment') {
+    standardGeneric("mergeBetaChiLRTStats")
+})
+#' @rdname TranscriptionRatesLRT-class
+setMethod(
+    "mergeBetaChiLRTStats", "TranscriptionRatesLRT",
+    function(object, scale_factor, lfc_threshold = 0.5,
+                               prefix1 = 'control', prefix2 = 'treatment') {
+    beta_lrt <- betaTbl(object)
+
+    sample1_beta <- rates(transcriptionRates1(object))
+    sample1_beta <- sample1_beta[, c('geneId', 'chi', 'fkSD', 'betaGroup', 'chiGroup', 'sdGroup')]
+    colnames(sample1_beta)[2:6] <- paste0(prefix1, '_', colnames(sample1_beta)[2:6])
+
+    sample2_beta <- rates(transcriptionRates2(object))
+    sample2_beta <- sample2_beta[, c('geneId', 'chi', 'fkSD', 'betaGroup', 'chiGroup', 'sdGroup')]
+    colnames(sample2_beta)[2:6] <- paste0(prefix2, '_', colnames(sample2_beta)[2:6])
+
+    beta_lrt <- left_join(beta_lrt, sample1_beta, by = 'geneId')
+    beta_lrt <- left_join(beta_lrt, sample2_beta, by = 'geneId')
+
+    beta_lrt <- beta_lrt %>%
+        mutate(
+        betaCategory = case_when(
+            (padj < 0.05) & (lfc >  lfc_threshold) ~ "Up",
+            (padj < 0.05) & (lfc < -lfc_threshold) ~ "Down",
+            TRUE ~ "Others"
+        ),
+        betaCategory = factor(betaCategory, levels = c("Down", "Others", "Up"))
+        )
+
+    control_chi <- rlang::sym(paste0(prefix1, '_chi'))
+    treat_chi   <- rlang::sym(paste0(prefix2, '_chi'))
+
+    beta_lrt <- beta_lrt %>%
+        mutate(
+        chi_mean = ((!!treat_chi * scale_factor) + !!control_chi) / 2,
+        chi_mean_group = cut(
+            chi_mean,
+            breaks = quantile(chi_mean, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+            labels = c("Low", "Medium", "High"),
+            include.lowest = TRUE
+        ),
+        chi_lfc = log2((!!treat_chi * scale_factor) / !!control_chi),
+        chi_lfc_group = case_when(
+            chi_lfc <= -lfc_threshold ~ "Decrease",
+            chi_lfc >=  lfc_threshold ~ "Increase",
+            TRUE ~ "Unchanged"
+        ),
+        chi_lfc_group = factor(chi_lfc_group, levels = c("Increase", "Unchanged", "Decrease"))
+        )
+
+    return(beta_lrt)
+})
 
 # Plotting Utilities
 
