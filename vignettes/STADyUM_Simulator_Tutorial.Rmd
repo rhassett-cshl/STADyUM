@@ -90,8 +90,6 @@ the simulated rates for the first simpol object is compared to the simulated
 rates from the second simpol object. As expected given the simpol parameters, 
 the plots show that the second simulated rates have higher beta and higher mean
 pause sites.
-![](simPauseSitesContourMap.png){width=75%}
-![](simBetaViolinPlot.png){width=75%}
 
 ```{r simulated_lrts, fig.width=7, fig.height=5, out.width="75%"}
 
@@ -105,8 +103,8 @@ stericHindrance=TRUE)
 simLRT <- likelihoodRatioTest(simRates, simRates2)
 
 plotPauseSiteContourMapTwoConditions(simLRT, file="simPauseSitesContourMap.png",
-                                      width=5, height=4, dpi=72)
-BetaViolinPlot(simLRT, file="simBetaViolinPlot.png", width=4, height=3.5, dpi=72)
+                                      width=7, height=5, dpi=150)
+BetaViolinPlot(simLRT, file="simBetaViolinPlot.png", width=5, height=4.5, dpi=150)
 
 ```
 
