@@ -4,11 +4,11 @@
 # on "-" strand it has the largest coordinate.
 keep_upstream_tss <- function(tsn) {
   as.data.frame(tsn) %>%
-    group_by(ensembl_gene_id, strand) %>%
-    slice_min(order_by = ifelse(strand == "+", start, -start),
+    dplyr::group_by(ensembl_gene_id, strand) %>%
+    dplyr::slice_min(order_by = ifelse(strand == "+", start, -start),
               n = 1, with_ties = FALSE) %>%
-    ungroup() %>%
-    as_granges()
+    dplyr::ungroup() %>%
+    plyranges::as_granges()
 }
 
 # Build promoter-proximal pause regions and trimmed gene body regions
@@ -40,7 +40,7 @@ build_readcount_regions <- function(bw_tsn,
 
   # Derive one TTS position (3' end, width = 1) per gene from the transcript annotation
   gngrng <- transcripts %>%
-    plyranges::group_by(ensembl_gene_id) %>%
+    dplyr::group_by(ensembl_gene_id) %>%
     plyranges::reduce_ranges_directed() %>%
     sort()
   bw_tts <- gngrng %>%
@@ -173,7 +173,7 @@ get_promoter_motif_from_stadyum_obj <- function(stadyum_obj, promoter_df){
     mutate(dist_bp = abs(tsn_pos - TSS))
 
   nearest <- pairs %>%
-    group_by(tsn_id) %>%
+    dplyr::group_by(tsn_id) %>%
     slice_min(order_by = dist_bp, with_ties = FALSE) %>%
     ungroup() %>%
     filter(dist_bp <= 200)
@@ -267,8 +267,8 @@ get_histone_modification_sum <- function(promoter_df,promoter_grng, meta_sel){
       histone_score = mcols(histone_bw)$score[subject_hits]
       )
     sum_scores <- df %>%
-      group_by(promoter_idx) %>%
-      summarize(histone_sum_scores = mean(histone_score))
+      dplyr::group_by(promoter_idx) %>%
+      dplyr::summarize(histone_sum_scores = mean(histone_score))
 
     promoter_df[,meta_sel$Target[i]] <- sum_scores$histone_sum_scores
   }

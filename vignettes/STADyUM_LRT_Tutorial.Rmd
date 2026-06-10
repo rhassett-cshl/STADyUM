@@ -12,16 +12,25 @@ vignette: >
   %\VignetteIndexEntry{Comparative Analysis of Promoter-Proximal Pausing using Likelihood Ratio Tests}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+bibliography: references.bib
 ---
 
 # Introduction
 
-This tutorial demonstrates how to use the **STADyUM** package to perform comparative analysis of pause-escape kinetics and pause-site distributions across cell types using the likelihood-ratio tests (LRTs) developed in [CITE]. 
+This tutorial demonstrates how to use the **STADyUM** package to perform comparative analysis of pause-escape kinetics and pause-site distributions across cell types using the likelihood-ratio tests (LRTs) developed in @Zeng2026 
 
 In this workflow, we will:
-1. 
+
+1. Load pre-prepared estimated transcription rates objects
+   `TranscriptionRates` for human CD4+ T cells and human CD14 monocytes. To learn how to estimate transcription rates from PRO-seq data, refer to
+[STADyUM_Rate_Estimation_Tutorial.Rmd](STADyUM_Rate_Estimation_Tutorial.html).
+2. Run `likelihoodRatioTest`
+3. Perform visualizations such as scatter plots, density plots, and heatmaps built into STADyUM to analyze the differences in pause-escape kinetics and pause site distribution
+
 
 This example uses human PRO-seq data from two immunologically distinct cell types to demonstrate comparative transcription rate estimation.
+
+![Overview of the comparative probabilistic framework for promoter-proximal pausing analysis across conditions, cell types, and species. The framework uses likelihood-ratio tests to quantify changes in pause-escape kinetics and pausing distributions from nascent RNA sequencing data](lrt_figures.png){width=75%}
 
 ---
 
@@ -37,29 +46,27 @@ library(plyranges)
 #library(tidyverse)         # For data manipulation and visualization
 library(ggplot2)           # For plotting
 library(pracma)
-#library(BiocFileCache)
+library(BiocFileCache)
 ```
 
 ```{r file-paths}
 
-## PULL ALL DATA FROM ZENODO ##
-
 # Required by Bioconductor to check for connection
-if (!requireNamespace("BiocFileCache", quietly = TRUE) || 
+if (!requireNamespace("BiocFileCache", quietly = TRUE) ||
     !curl::has_internet()) {
   knitr::opts_chunk$set(eval = FALSE)
   message("No internet connection; vignette code not evaluated.")
 }
 
-#bfc <- BiocFileCache(ask = FALSE)
-
-#geo_base <- "https://ftp.ncbi.nlm.nih.gov/geo/series/GSEnnn/GSEnnnn/suppl"
-#tsn_path <- bfcrpath(bfc, file.path(geo_base, "PROseq-HUMAN-CD4_tsn.RDS"))
+bfc <- BiocFileCache(ask = FALSE)
+zip_path <- bfcrpath(bfc, "https://zenodo.org/records/20618059/files/lrt_vignette_data.zip")
+unzip(zip_path, exdir = tempdir())
+data_dir <- file.path(tempdir(), "vignettes", "lrt_test_data")
 
 # STADyUM `ExperimentTranscriptionRates` objects containing transcription rates estimated from human CD4+ T cell and human CD14+ monocyte PRO-seq data.
-cd4_rate <- 'lrt_test_data/cd4_rate.RDS'
-cd14_rate <- 'lrt_test_data/cd14_rate.RDS'
-scale_factor <- 38359083 / 33294862 
+cd4_rate <- readRDS(file.path(data_dir, 'cd4_rate.RDS'))
+cd14_rate <- readRDS(file.path(data_dir, 'cd14_rate.RDS'))
+scale_factor <- 38359083 / 33294862
 
 ```
 
@@ -69,54 +76,95 @@ scale_factor <- 38359083 / 33294862
 
 ## Likelihood Ratio Test Calculations
 
-The `estimateTranscriptionRates()` function applies STADyUM to count reads in pause and gene body regions. It estimates key kinetic parameters:
+The `likelihoodRatioTest()` function compares promoter-proximal pausing
+kinetics between two `TranscriptionRates` objects from
+`estimateTranscriptionRates()`. For experimental data, genes present in both
+conditions are matched, then three complementary likelihood-ratio tests are
+run per transcription unit:
 
-- **beta (β)**: pause release rate (1/time)
-- **chi (χ)**: elongation rate relative to transcription activity
-- **activity**: transcription initiation/activity level
+1. **Chi (χ) LRT** — tests whether elongation activity differs between
+   conditions using gene-body read counts. Chi estimates from condition 2 can
+   be scaled by library-size or spike-in factors (via the optional
+   `spikeInFile` argument).
+2. **Beta (β) LRT** — tests whether pause-release rate differs between
+   conditions using promoter-proximal pause-site read counts. The null model
+   (H0) assumes a shared β across conditions; the alternative (H1) allows
+   separate β per condition. Both models are fit with expectation-maximization
+   (EM).
+3. **Pause-site distribution (Fk) LRT** — tests whether the shape of the
+   pause-site distribution differs between conditions, again comparing shared
+   versus condition-specific models fit with EM.
+
+The `scaleFactor` argument accounts for sequencing-depth differences between
+samples when comparing pause-related statistics. Here we use the ratio of
+total mapped reads between CD4+ T cells and CD14 monocytes.
+
+For each gene, the function returns log2 fold changes, LRT test statistics,
+and Benjamini-Hochberg adjusted p-values. Results are stored in a
+`TranscriptionRatesLRT` object with three per-gene tables (`chiTbl`, `betaTbl`,
+and `fkTbl`) and a merged summary table (`lrtTbl`) used by the plotting
+functions below.
 
 ```{r lrt_calculation}
 
 lrt <- likelihoodRatioTest(cd4_rate, cd14_rate, scale_factor)
 
-lrt <- mergeBetaChiLRTStats(lrt, scale_factor, prefix1='CD4', prefix2='CD14')
-lrt$pause_change <- paste0(lrt$CD4_sdGroup, '_to_', lrt$CD14_sdGroup)
-
-lrt$deltaSD   <- (lrt$CD14_fkSD - lrt$CD4_fkSD) /
-                      (lrt$CD14_fkSD + lrt$CD4_fkSD)
-lrt$deltaMean <- lrt$fkMean2 - lrt$fkMean1
-
-head(lrt)
-
-cat("CD4 rate estimation complete\n")
-cat("CD14 rate estimation complete\n")
+# The merged per-gene LRT summary table is built automatically and stored in
+# the lrtTbl slot, ready to be passed straight to the plotting methods below.
+head(lrtTbl(lrt))
 ```
 
 ---
 
 # Visualization
-```{r lrt_visualization}
 
+## Pause-escape Rate Quantile Heatmap
+```{r beta_heatmap}
+# Each plotting method takes the TranscriptionRatesLRT object directly and
+# reads the merged table from its lrtTbl slot internally.
+p0 <- plotBetaQuantileHeatmap(lrt)
 
+print(p0)
 ```
 
----
+Each cell shows the number of genes that fall into a given β quintile in CD4+ T cells (x-axis) and CD14+ monocytes (y-axis). Strong enrichment along the diagonal indicates that the relative ordering of genes by pause-escape rate is substantially preserved across cell types, even though widespread gene-level changes in β are detected by the LRT. 
+
+## Pause-escape Rate Scatter Plot
+
+```{r beta_scatter}
+p1 <- plotBetaScatter(lrt,
+                      label_x = -6,
+                      label_y = -1,
+                      x_lim   = c(-6, -1),
+                      y_lim   = c(-6, -1))
+
+print(p1)
+```
+LRT analysis identified widespread gene-level changes in β between human CD4+ T cells and CD14+ monocytes, with 25.8% of genes showing significantly increased β values and 36.3% showing significantly decreased β values.
+
+## Pause-escape Rate and Pausing Dispersion Contour Plot
+
+```{r delta_beta_sigma}
+p2 <- plotDeltaBetaSigma(lrt, filter_lfc = TRUE)
+
+print(p2)
+```
+
+To compare kinetic and distributional changes directly, we mapped shifts in β against shifts in σ. Although individual genes display changes in both parameters, their joint distribution shows minimal overall association, indicating weak coupling between kinetic and distributional changes.
+
+## Pausing Dispersion Contour Plot
+
+```{r fksd_density}
+p3 <- plotFksdDensity(lrt)
+
+print(p3)
+```
+
+Although σ values show global alignment between the two cell types, substantial gene-level deviations from the diagonal are evident. Stratifying genes by sharp and broad pausing groups in each cell type reveals four classes of change. Notably, approximately 30.3% (1606 out of 5300) of genes switch between sharp and broad pausing groups between the two cell types, indicating that variation in pausing dispersion frequently involves changes between sharper and broader pause-site distributions.
 
 # Summary
 
-This tutorial demonstrated a complete workflow for estimating transcription rates from PRO-seq data using STADyUM:
-
-1. **TSS Harmonization**: We unified transcription start sites between two cell types, allowing consistent measurement of transcriptional parameters across samples.
-
-2. **Region Definition**: We defined pause (promoter-proximal) and gene body regions as input for rate estimation.
-
-3. **Rate Estimation**: STADyUM estimated three key transcription parameters (pause release rate, elongation characteristics, and activity) from the read distribution in these regions.
-
-4. **Visualization**: We explored relationships between parameters, revealing how pause release and elongation dynamics are coupled in CD4 and CD14 cells.
-
-The estimated rates are now ready for downstream comparative analysis (e.g., identifying genes with cell-type-specific transcription dynamics) and integration with other genomic data.
-
----
+Together, these analyses suggest that pause-escape kinetics and pause-site distribution exhibit distinct modes of variation across cellular contexts. While the relative ordering of genes by pause-escape rate remains largely preserved across cell types, pause-escape kinetics retain substantial regulatory plasticity. Variation in pausing dispersion more frequently involves changes between sharper and broader pause-site distributions. The weak association between changes in β and σ further supports the view that kinetic and distributional aspects of pausing can vary differently across cellular contexts.
 
 # Session Information
 

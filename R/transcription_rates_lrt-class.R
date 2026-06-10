@@ -1,7 +1,8 @@
-#' @importFrom dplyr mutate bind_rows bind_cols case_when
+#' @importFrom dplyr mutate bind_rows bind_cols case_when count
+#' @importFrom ggplot2 geom_text scale_fill_viridis_c coord_equal guides guide_legend after_stat stat_density_2d geom_label
 #' @importFrom tibble tibble
 #' @importFrom purrr map2 pmap map_dbl
-#' @importFrom stats pchisq p.adjust
+#' @importFrom stats pchisq p.adjust cor
 #' @importFrom methods slot is slot<- validObject
 #' @importFrom utils read.csv
 #' @title Constructor for TranscriptionRatesLRT object
@@ -20,7 +21,8 @@ methods::setClass("TranscriptionRatesLRT",
         spikeInFile = "ANY",
         chiTbl = "tbl_df",
         betaTbl = "tbl_df",
-        fkTbl = "tbl_df"
+        fkTbl = "tbl_df",
+        lrtTbl = "tbl_df"
     )
 )
 
@@ -439,11 +441,19 @@ likelihoodRatioTest <- function(transcriptionRates1, transcriptionRates2, scaleF
     chiTbl <- computeChiLRT(lambda1, lambda2, rc1, rc2, isExperiment)
     betaTbl <- computeBetaLRT(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment)
     fkTbl <- computeFkLRT(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperiment)
-    return(new("TranscriptionRatesLRT",
+    lrtObj <- new("TranscriptionRatesLRT",
         transcriptionRates1 = transcriptionRates1,
         transcriptionRates2 = transcriptionRates2, chiTbl = chiTbl,
-        spikeInFile = spikeInFile, betaTbl = betaTbl, fkTbl = fkTbl
-    ))
+        spikeInFile = spikeInFile, betaTbl = betaTbl, fkTbl = fkTbl,
+        lrtTbl = tibble()
+    )
+    if (isExperiment) {
+        name1 <- slot(transcriptionRates1, "name")
+        name2 <- slot(transcriptionRates2, "name")
+        lrtObj@lrtTbl <- mergeBetaChiLRTStats(lrtObj, scaleFactor,
+            prefix1 = name1, prefix2 = name2)
+    }
+    return(lrtObj)
 }
 
 #' @rdname TranscriptionRatesLRT-class
@@ -541,13 +551,41 @@ setMethod(
 )
 
 #' @rdname TranscriptionRatesLRT-class
+#' @title Accessor for Merged LRT Table
+#'
+#' @description
+#' Accessor for the merged per-gene LRT summary table from a
+#' TranscriptionRatesLRT object. This table is built automatically by
+#' \code{\link{likelihoodRatioTest}} via \code{\link{mergeBetaChiLRTStats}}
+#' and is the table consumed by the package's LRT plotting methods (e.g.
+#' \code{\link{plotBetaQuantileHeatmap}}, \code{\link{plotBetaScatter}},
+#' \code{\link{plotDeltaBetaSigma}}, \code{\link{plotFksdDensity}}).
+#'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
+#'
+#' @return tbl_df
+#'
+#' @export
+setGeneric("lrtTbl", function(object) {
+    standardGeneric("lrtTbl")
+})
+#' @rdname TranscriptionRatesLRT-class
+setMethod(
+    "lrtTbl", "TranscriptionRatesLRT",
+    function(object) slot(object, "lrtTbl")
+)
+
+#' @rdname TranscriptionRatesLRT-class
 #' @title Merge Beta and Chi LRT Statistics
 #'
 #' @description
 #' Builds a single per-gene summary tibble from a TranscriptionRatesLRT
 #' object's beta LRT results, joined with per-sample rate groupings, and
 #' enriched with derived chi LRT statistics (mean and log2 fold change between
-#' samples, scaled by \code{scale_factor}).
+#' samples, scaled by \code{scale_factor}), as well as derived pause-site
+#' shape statistics (\code{pause_change}, \code{deltaSD}, \code{deltaMean})
+#' used by the package's LRT plotting methods. This is the table populated
+#' automatically in the \code{lrtTbl} slot by \code{\link{likelihoodRatioTest}}.
 #'
 #' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
 #' @param scale_factor a numeric scale factor used to normalize chi between
@@ -613,10 +651,418 @@ setMethod(
         chi_lfc_group = factor(chi_lfc_group, levels = c("Increase", "Unchanged", "Decrease"))
         )
 
+    sd_group1 <- rlang::sym(paste0(prefix1, '_sdGroup'))
+    sd_group2 <- rlang::sym(paste0(prefix2, '_sdGroup'))
+    fk_sd1    <- rlang::sym(paste0(prefix1, '_fkSD'))
+    fk_sd2    <- rlang::sym(paste0(prefix2, '_fkSD'))
+
+    beta_lrt <- beta_lrt %>%
+        mutate(
+        pause_change = paste0(!!sd_group1, '_to_', !!sd_group2),
+        deltaSD      = (!!fk_sd2 - !!fk_sd1) / (!!fk_sd2 + !!fk_sd1),
+        deltaMean    = .data$fkMean2 - .data$fkMean1
+        )
+
     return(beta_lrt)
 })
 
 # Plotting Utilities
+
+#' @title Plot Beta Quantile Heatmap
+#'
+#' @description
+#' Plot a heatmap comparing quantile-based beta groupings (Q1-Q5) between two
+#' conditions, with tiles showing the number of genes that fall into each
+#' combination of groups. Ported from \code{plot_beta_quantile_heatmap} in
+#' \code{1_2_LRT_viz.R}. Operates on the \code{lrtTbl} slot of a
+#' \code{\linkS4class{TranscriptionRatesLRT}} object, as populated by
+#' \code{\link{likelihoodRatioTest}}.
+#'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#' @param fill_label the label for the fill legend
+#' @param show_text whether to display the gene count in each tile
+#' @param text_size the size of the gene count labels
+#' @param show_legend whether to display the fill legend
+#'
+#' @return a \code{\link{ggplot2}} object
+#'
+#' @rdname TranscriptionRatesLRT-class
+#' @export
+setGeneric("plotBetaQuantileHeatmap", function(
+    object, file = NULL, width = 8, height = 6, dpi = 300,
+    fill_label = "Gene count", show_text = TRUE, text_size = 5,
+    show_legend = FALSE) {
+    standardGeneric("plotBetaQuantileHeatmap")
+})
+#' @rdname TranscriptionRatesLRT-class
+setMethod(
+    "plotBetaQuantileHeatmap", "TranscriptionRatesLRT",
+    function(object, file = NULL, width = 8, height = 6, dpi = 300,
+            fill_label = "Gene count", show_text = TRUE, text_size = 5,
+            show_legend = FALSE) {
+
+        df <- lrtTbl(object)
+        name1 <- slot(transcriptionRates1(object), "name")
+        name2 <- slot(transcriptionRates2(object), "name")
+        cd4_col  <- paste0(name1, '_betaGroup')
+        cd14_col <- paste0(name2, '_betaGroup')
+
+        mat <- table(df[[cd4_col]], df[[cd14_col]])
+        plot_df <- as.data.frame(mat)
+
+        p <- ggplot(plot_df, aes(x = .data$Var1, y = .data$Var2, fill = .data$Freq)) +
+            geom_tile()
+
+        if (show_text) {
+            p <- p + geom_text(aes(label = .data$Freq), size = text_size)
+        }
+
+        p <- p +
+            scale_fill_viridis_c() +
+            labs(
+                x = bquote(beta[.(name1)]),
+                y = bquote(beta[.(name2)]),
+                fill = fill_label
+            ) +
+            coord_equal()
+
+        if (requireNamespace("cowplot", quietly = TRUE)) {
+            p <- p + cowplot::theme_cowplot()
+        } else {
+            p <- p + theme_bw()
+        }
+
+        p <- p + theme(legend.position = if (show_legend) "right" else "none")
+
+        if (!is.null(file)) {
+            ggsave(file, p, width = width, height = height, dpi = dpi)
+        }
+        return(p)
+    }
+)
+
+#' @title Plot Beta Scatter
+#'
+#' @description
+#' Plot a scatter of log10(beta1) vs log10(beta2), colored by betaCategory,
+#' comparing pause-escape rate estimates between two conditions. Ported from
+#' \code{plot_beta_scatter} in \code{1_2_LRT_viz.R}. Operates on the
+#' \code{lrtTbl} slot of a \code{\linkS4class{TranscriptionRatesLRT}} object,
+#' as populated by \code{\link{likelihoodRatioTest}}.
+#'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#' @param label_x the x position of the correlation label
+#' @param label_y the y position of the correlation label
+#' @param x_lim the x-axis limits
+#' @param y_lim the y-axis limits
+#'
+#' @return a \code{\link{ggplot2}} object
+#'
+#' @rdname TranscriptionRatesLRT-class
+#' @export
+setGeneric("plotBetaScatter", function(
+    object, file = NULL, width = 8, height = 6, dpi = 300,
+    label_x = -6, label_y = -1, x_lim = c(-6, -1), y_lim = c(-6, -1)) {
+    standardGeneric("plotBetaScatter")
+})
+#' @rdname TranscriptionRatesLRT-class
+setMethod(
+    "plotBetaScatter", "TranscriptionRatesLRT",
+    function(object, file = NULL, width = 8, height = 6, dpi = 300,
+            label_x = -6, label_y = -1, x_lim = c(-6, -1), y_lim = c(-6, -1)) {
+
+        beta_tbl <- lrtTbl(object)
+        name1 <- slot(transcriptionRates1(object), "name")
+        name2 <- slot(transcriptionRates2(object), "name")
+
+        p <- ggplot(beta_tbl, aes(x = log10(.data$beta1), y = log10(.data$beta2))) +
+            geom_abline(intercept = 0, slope = 1,
+                        linetype = "dashed", color = "gray60", linewidth = 0.8) +
+            geom_point(aes(color = .data$betaCategory), alpha = 0.3, size = 0.5) +
+            scale_color_manual(values = c(
+                "Others" = "gray",
+                "Up"     = "#E41A1C",
+                "Down"   = "#377EB8"
+            )) +
+            guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
+            coord_cartesian(xlim = x_lim, ylim = y_lim) +
+            labs(
+                x     = bquote(log[10] * "(" * beta[.(name1)] * ")"),
+                y     = bquote(log[10] * "(" * beta[.(name2)] * ")"),
+                color = expression(beta * " change")
+            )
+
+        if (requireNamespace("ggpubr", quietly = TRUE)) {
+            p <- p + ggpubr::stat_cor(
+                aes(label = gsub("R", "rho", after_stat(r.label))),
+                label.x = label_x,
+                label.y = label_y
+            )
+        }
+
+        if (requireNamespace("cowplot", quietly = TRUE)) {
+            p <- p + cowplot::theme_cowplot()
+        } else {
+            p <- p + theme_bw()
+        }
+
+        p <- p + theme(
+            axis.title = element_text(size = 12),
+            axis.text  = element_text(size = 12),
+            strip.text = element_text(size = 12),
+            axis.line  = element_line(linewidth = 0.3),
+            axis.ticks = element_line(linewidth = 0.3)
+        )
+
+        if (!is.null(file)) {
+            ggsave(file, p, width = width, height = height, dpi = dpi)
+        }
+        return(p)
+    }
+)
+
+#' @title Plot Delta Beta vs Delta Sigma
+#'
+#' @description
+#' Plot a 2D density scatter of the log2 fold change in beta (\code{lfc})
+#' against the normalized change in pause site standard deviation
+#' (\code{deltaSD}) between two conditions, annotated with the Spearman
+#' correlation. Ported from \code{plot_delta_beta_sigma} in
+#' \code{1_2_LRT_viz.R}. Operates on the \code{lrtTbl} slot of a
+#' \code{\linkS4class{TranscriptionRatesLRT}} object, as populated by
+#' \code{\link{likelihoodRatioTest}}.
+#'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#' @param filter_lfc if \code{TRUE}, restricts to genes with
+#' \code{abs(lfc) < 5} before computing the correlation and plotting
+#'
+#' @return a \code{\link{ggplot2}} object
+#'
+#' @rdname TranscriptionRatesLRT-class
+#' @export
+setGeneric("plotDeltaBetaSigma", function(
+    object, file = NULL, width = 8, height = 6, dpi = 300,
+    filter_lfc = FALSE) {
+    standardGeneric("plotDeltaBetaSigma")
+})
+#' @rdname TranscriptionRatesLRT-class
+setMethod(
+    "plotDeltaBetaSigma", "TranscriptionRatesLRT",
+    function(object, file = NULL, width = 8, height = 6, dpi = 300,
+            filter_lfc = FALSE) {
+
+        beta_tbl <- lrtTbl(object)
+        if (filter_lfc) {
+            beta_tbl <- beta_tbl[abs(beta_tbl$lfc) < 5, ]
+        }
+
+        rho <- cor(beta_tbl$lfc, beta_tbl$deltaSD,
+                   method = "spearman", use = "complete.obs")
+
+        p <- beta_tbl %>%
+            ggplot(aes(x = .data$lfc, y = .data$deltaSD)) +
+            stat_density_2d(
+                aes(fill = after_stat(level)),
+                geom  = "polygon",
+                bins  = 8,
+                alpha = 0.8
+            ) +
+            scale_fill_viridis_c(option = "C", name = "Density") +
+            annotate(
+                "text",
+                x     = Inf, y = Inf,
+                label = paste0("Spearman rho = ", round(rho, 3)),
+                hjust = 1.1, vjust = 1.5,
+                size  = 4
+            ) +
+            labs(
+                x = expression(Delta * beta),
+                y = expression(Delta * sigma)
+            ) +
+            geom_vline(xintercept = 0, linetype = "dashed", color = "grey40") +
+            geom_hline(yintercept = 0, linetype = "dashed", color = "grey40") +
+            coord_cartesian(xlim = c(-5, 5))
+
+        if (requireNamespace("cowplot", quietly = TRUE)) {
+            p <- p + cowplot::theme_cowplot()
+        } else {
+            p <- p + theme_bw()
+        }
+
+        p <- p + theme(
+            axis.title = element_text(size = 12),
+            axis.text  = element_text(size = 12),
+            strip.text = element_text(size = 12),
+            axis.line  = element_line(linewidth = 0.3),
+            axis.ticks = element_line(linewidth = 0.3)
+        )
+
+        if (!is.null(file)) {
+            ggsave(file, p, width = width, height = height, dpi = dpi)
+        }
+        return(p)
+    }
+)
+
+#' @title Get SD Group Cutoff
+#'
+#' @description
+#' Computes the midpoint cutoff between the maximum fkSD value among "Sharp"
+#' genes and the minimum fkSD value among "Broad" genes for a given fkSD
+#' column and its associated sdGroup column. Ported from
+#' \code{get_sdgroup_cutoff} in \code{1_2_LRT_viz.R}.
+#'
+#' @param df a \code{tbl_df} or \code{data.frame} containing \code{value_col}
+#' and \code{group_col}
+#' @param value_col the name of the column with fkSD values
+#' @param group_col the name of the column with "Sharp"/"Broad" group labels
+#'
+#' @return a numeric cutoff value
+#'
+#' @export
+getSdGroupCutoff <- function(df, value_col, group_col) {
+    sharp_max <- max(df[[value_col]][df[[group_col]] == "Sharp"], na.rm = TRUE)
+    broad_min <- min(df[[value_col]][df[[group_col]] == "Broad"], na.rm = TRUE)
+    (sharp_max + broad_min) / 2
+}
+
+#' @title Plot FkSD Density
+#'
+#' @description
+#' Plot a 2D density of pause site standard deviation (\code{fkSD}) between
+#' two conditions, with quadrant labels showing how many genes have stable or
+#' changing pause-site sharpness between conditions. Ported from
+#' \code{plot_fksd_density} in \code{1_2_LRT_viz.R}. Operates on the
+#' \code{lrtTbl} slot of a \code{\linkS4class{TranscriptionRatesLRT}} object,
+#' as populated by \code{\link{likelihoodRatioTest}}, restricted to genes with
+#' a non-missing \code{sdGroup} call in both samples. Sharp/broad cutoffs
+#' default to \code{\link{getSdGroupCutoff}} computed on that restricted table
+#' when not supplied explicitly.
+#'
+#' @param object a \code{\linkS4class{TranscriptionRatesLRT}} object
+#' @param file the path to a file to save the plot to
+#' @param width the width of the plot in inches
+#' @param height the height of the plot in inches
+#' @param dpi the resolution of the plot in dpi
+#' @param cutoff_cd4 the fkSD cutoff between "Sharp" and "Broad" for the
+#' first sample. If \code{NULL} (the default), computed via
+#' \code{\link{getSdGroupCutoff}}
+#' @param cutoff_cd14 the fkSD cutoff between "Sharp" and "Broad" for the
+#' second sample. If \code{NULL} (the default), computed via
+#' \code{\link{getSdGroupCutoff}}
+#'
+#' @return a \code{\link{ggplot2}} object
+#'
+#' @rdname TranscriptionRatesLRT-class
+#' @export
+setGeneric("plotFksdDensity", function(
+    object, file = NULL, width = 8, height = 6, dpi = 300,
+    cutoff_cd4 = NULL, cutoff_cd14 = NULL) {
+    standardGeneric("plotFksdDensity")
+})
+#' @rdname TranscriptionRatesLRT-class
+setMethod(
+    "plotFksdDensity", "TranscriptionRatesLRT",
+    function(object, file = NULL, width = 8, height = 6, dpi = 300,
+            cutoff_cd4 = NULL, cutoff_cd14 = NULL) {
+
+        name1 <- slot(transcriptionRates1(object), "name")
+        name2 <- slot(transcriptionRates2(object), "name")
+        fk_sd_col1    <- paste0(name1, '_fkSD')
+        fk_sd_col2    <- paste0(name2, '_fkSD')
+        sd_group_col1 <- paste0(name1, '_sdGroup')
+        sd_group_col2 <- paste0(name2, '_sdGroup')
+
+        lrt <- lrtTbl(object)
+        lrt <- lrt[!is.na(lrt[[sd_group_col1]]) & !is.na(lrt[[sd_group_col2]]), ]
+
+        if (is.null(cutoff_cd4)) {
+            cutoff_cd4 <- getSdGroupCutoff(lrt, fk_sd_col1, sd_group_col1)
+        }
+        if (is.null(cutoff_cd14)) {
+            cutoff_cd14 <- getSdGroupCutoff(lrt, fk_sd_col2, sd_group_col2)
+        }
+
+        xmax <- max(lrt[[fk_sd_col1]], na.rm = TRUE)
+        ymax <- max(lrt[[fk_sd_col2]], na.rm = TRUE)
+
+        label_df <- lrt %>%
+            count(.data$pause_change) %>%
+            mutate(
+                label = case_when(
+                    .data$pause_change == "Sharp_to_Sharp" ~ paste0("Stable Sharp\nn = ", .data$n),
+                    .data$pause_change == "Broad_to_Broad" ~ paste0("Stable Broad\nn = ", .data$n),
+                    .data$pause_change == "Sharp_to_Broad" ~ paste0("Sharp → Broad\nn = ", .data$n),
+                    .data$pause_change == "Broad_to_Sharp" ~ paste0("Broad → Sharp\nn = ", .data$n),
+                    TRUE ~ paste0(.data$pause_change, "\nn = ", .data$n)
+                ),
+                x = case_when(
+                    .data$pause_change %in% c("Sharp_to_Sharp", "Sharp_to_Broad") ~ cutoff_cd4 * 0.45,
+                    .data$pause_change %in% c("Broad_to_Sharp", "Broad_to_Broad") ~ cutoff_cd4 + (xmax - cutoff_cd4) * 0.55
+                ),
+                y = case_when(
+                    .data$pause_change %in% c("Sharp_to_Sharp", "Broad_to_Sharp") ~ cutoff_cd14 * 0.45,
+                    .data$pause_change %in% c("Sharp_to_Broad", "Broad_to_Broad") ~ cutoff_cd14 + (ymax - cutoff_cd14) * 0.55
+                )
+            )
+
+        p <- ggplot(lrt, aes(x = .data[[fk_sd_col1]], y = .data[[fk_sd_col2]])) +
+            stat_density_2d(
+                aes(fill = after_stat(level)),
+                geom  = "polygon",
+                bins  = 8,
+                alpha = 0.8
+            ) +
+            scale_fill_viridis_c(name = "Density") +
+            geom_vline(xintercept = cutoff_cd4,  linetype = "dashed", color = "gray30", linewidth = 0.5) +
+            geom_hline(yintercept = cutoff_cd14, linetype = "dashed", color = "gray30", linewidth = 0.5) +
+            geom_label(
+                data        = label_df,
+                aes(x = .data$x, y = .data$y, label = .data$label),
+                inherit.aes = FALSE,
+                size        = 4,
+                label.size  = 0.2,
+                label.color = "gray70",
+                fill        = "white",
+                alpha       = 0.85
+            ) +
+            labs(
+                x = bquote(sigma[.(name1)]),
+                y = bquote(sigma[.(name2)])
+            )
+
+        if (requireNamespace("cowplot", quietly = TRUE)) {
+            p <- p + cowplot::theme_cowplot()
+        } else {
+            p <- p + theme_bw()
+        }
+
+        p <- p + theme(
+            axis.title      = element_text(size = 18),
+            axis.text       = element_text(size = 14),
+            axis.line       = element_line(linewidth = 0.3),
+            axis.ticks      = element_line(linewidth = 0.3),
+            legend.position = "right"
+        )
+
+        if (!is.null(file)) {
+            ggsave(file, p, width = width, height = height, dpi = dpi)
+        }
+        return(p)
+    }
+)
 
 #' @title Plot pause site contour map comparison between two conditions
 #'

@@ -33,11 +33,9 @@ It provides tools for:
 - Visualizing transcription dynamics across genomic regions
 - Comparing transcription-associated rates under different conditions
 
-STADyUM seamlessly integrates with the Bioconductor ecosystem by leveraging standard Bioconductor data structures such as GRanges for genomic interval handling and S4Vectors for custom Bioconductor-style data structures. This compatibility allows users to incorporate STADyUM's results directly into downstream analyses and visualization pipelines with other Bioconductor tools. 
+STADyUM seamlessly integrates with the Bioconductor ecosystem by leveraging standard Bioconductor data structures such as GRanges for genomic interval handling and S4Vectors for custom Bioconductor-style data structures. While existing Bioconductor packages like INSPEcT focuses primarily on modeling RNA synthesis, processing, and degradation using both nascent and mature RNA-seq data through systems of differential equations, STADyUM takes a different modeling approach. STADyUM provides a probabilistic framework tailored specifically for nascent RNA data alone (such as PRO-seq, GRO-seq, 4sU-DRB-seq) including functionality for modeling steric hindrance between RNA polymerases and modeling pause-site kinetics explicitly.
 
-While existing Bioconductor packages like INSPEcT focuses primarily on modeling RNA synthesis, processing, and degradation using both nascent and mature RNA-seq data through systems of differential equations, STADyUM takes a different modeling approach. STADyUM provides a probabilistic framework tailored specifically for nascent RNA data alone (such as PRO-seq, GRO-seq, 4sU-DRB-seq) including functionality for modeling steric hindrance between RNA polymerases and modeling pause-site kinetics explicitly.
-
-The focus of this tutorial will be on using our simulator, SimPol, for simulating RNA Pol II dynamics on a DNA template. SimPol tracks the independent movement of RNAPs along the DNA templates of a large number of cells. It accepts several key user-specified parameters, including the initiation rate, pause-escape rate, a constant or variable elongation rate, the mean and variance of pause sites across cells, as well as the center-to-center spacing constraint between RNAPs, the number of cells being simulated, the gene length, and the total time of transcription. The simulator simply allows each RNAP to move forward or not, in time slices of $10^{-4}$ minutes, according to the specified position-specific rate parameters. It assumes that at most one movement of each RNAP can occur per time slice. The simulator monitors for collisions between adjacent RNAPs, prohibiting one RNAP to advance if it is at the boundary of the allowable distance from the next. After running for the specified time, SimPol outputs a `SimulatePolymerase` object that stores matrices at different time points, including the final time point, recording the RNAP positions. This is stored in slots `positionMatrices` and `finalPositionMatrix`. It also stores an estimated vector of read counts per nucleotide in slot `readCounts`.
+The focus of this tutorial will be on using our simulator, SimPol, for simulating RNA Pol II dynamics on a DNA template. SimPol tracks the independent movement of RNAPs along the DNA templates of a large number of cells. It accepts several key user-specified parameters, including the initiation rate, pause-escape rate, a constant or variable elongation rate, the mean and variance of pause sites across cells, as well as the center-to-center spacing constraint between RNAPs, the number of cells being simulated, the gene length, and the total time of transcription. After running for the specified time, SimPol outputs a `SimulatePolymerase` object that stores matrices at different time points recording the RNAP positions. This is stored in slots `positionMatrices` and `finalPositionMatrix`. It also stores an estimated vector of read counts per nucleotide in slot `readCounts`. More information on the simulator can be found in the sections *A simple probabilistic model for transcription initiation, promoter-proximal pausing, and elongation*, *SimPol Simulator*, *Generation of synthetic NRS data* of @Zhao2023
 
 # Installation
 
@@ -53,12 +51,6 @@ BiocManager::install("STADyUM")
 
 ![(A) Conceptual illustration of model focusing on the kinetic model for RNAP 
 movement on the DNA template. (B) Graphical model representation with unobserved continuous-time Markov chain (Z) and observed read counts (X). Read counts at  each site are conditionally independent and Poisson distributed. (C) Design of SimPol simulator tracking the movement of in silico RNAPs across N-bp DNA templates in C cells, then samples the synthetic read counts based on RNAP positions. (D) Example of synthetic nascent RNA sequencing data from SimPol alongside matched real PRO-seq data from the DNAJA1 gene on chromosome 9 of the human genome](simpol_figures.png){width=75%}
-
-Simulate read counts by running simulations of polymerase movement along the
-gene at user-specified rates and gene lengths. Our simulator models the movement of RNAPs along a set of transcription units given a continuous-time Markov model. Nascent RNA sequencing read counts are then generated under steady-state conditions by sampling based on a Poisson distribution with mean equal to the simulated RNAP frequency multiplied by a user-specified sequencing depth. A graphical model representation (Figure B) with unobserved continuous-time Markov chain (Z_i) in which user-specified paramters for transcription initiation (alpha), pause-escape, and elongation (zeta) are included as well as the observed read counts (Xi). The initial model is extended to allow for variability across cells in promoter-proximal pause site locations and steric hindrance of transcription initiation from paused RNAPs (Figure C). More information on the simulator can be found in the sections *A 
-simple probabilistic model for transcription initiation, promoter-proximal 
-pausing, and elongation*, *SimPol Simulator*, *Generation of synthetic NRS 
-data* of @Zhao2023
 
 ```{r create_simpol, fig.width=7,fig.height=5,out.width="70%",out.height="50%"}
 simpol <- simulatePolymerase(k=50, ksd=25, kMin=17, kMax=200, geneLen=1950,
@@ -94,11 +86,11 @@ Likelihood ratio tests can also be applied to simulated data. In this example,
 the simulated rates for the first simpol object is compared to the simulated 
 rates from the second simpol object. As expected given the simpol parameters, 
 the plots show that the second simulated rates have higher beta and higher mean
-pause sites
+pause sites.
 ![](simPauseSitesContourMap.png){width=75%}
 ![](simBetaViolinPlot.png){width=75%}
 
-```{r simulated_lrts, fig.width=7, fig.height=5, out.width="75%", eval=FALSE}
+```{r simulated_lrts, fig.width=7, fig.height=5, out.width="75%"}
 
 simpol2 <- simulatePolymerase(k=100, ksd=25, kMin=75, kMax=200, geneLen=1950,
 alpha=2, beta=10, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500,

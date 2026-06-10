@@ -12,16 +12,19 @@ vignette: >
   %\VignetteIndexEntry{Estimating Transcription Rates with STADyUM from PRO-seq Data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+bibliography: references.bib
+
 ---
 
 # Introduction
 
-This tutorial demonstrates how to use the **STADyUM** package to estimate transcription rates from PRO-seq data. STADyUM (Statistical Analysis of Dynamics Under Multiple Measurements) models RNA polymerase dynamics by analyzing reads at promoter-proximal pause sites and gene bodies. 
+This tutorial demonstrates how to use the **STADyUM** package to estimate transcription rates from PRO-seq data. STADyUM (Statistical Analysis of Dynamics Under Multiple Measurements) models RNA polymerase dynamics by analyzing reads at promoter-proximal pause sites and gene bodies. Refer to @Zhao2023 and @Siepel2022 for more details on modeling the transcription rates from real PRO-seq data.
 
 In this workflow, we will:
+
 1. Identify transcription start sites (TSSs) for each gene by keeping the upstream most TSS per gene from annotations
 2. Construct read-counting regions for pause sites and gene bodies
-3. Apply STADyUM to estimate key kinetic parameters (release rate, elongation rate, activity)
+3. Apply STADyUM to estimate key kinetic parameters e(release rate, elongation rate, activity)
 4. Visualize the relationships between estimated transcription parameters
 
 This example uses human PRO-seq data from the human CD4 cell type to demonstrate transcription rate estimation
@@ -40,37 +43,34 @@ library(plyranges)
 #library(tidyverse)         # For data manipulation and visualization
 library(ggplot2)           # For plotting
 library(pracma)
-#library(BiocFileCache)
+library(BiocFileCache)
 ```
 
 ```{r file-paths}
 
-## PULL ALL DATA FROM ZENODO ##
-
 # Required by Bioconductor to check for connection
-if (!requireNamespace("BiocFileCache", quietly = TRUE) || 
+if (!requireNamespace("BiocFileCache", quietly = TRUE) ||
     !curl::has_internet()) {
   knitr::opts_chunk$set(eval = FALSE)
   message("No internet connection; vignette code not evaluated.")
 }
 
-#bfc <- BiocFileCache(ask = FALSE)
-
-#geo_base <- "https://ftp.ncbi.nlm.nih.gov/geo/series/GSEnnn/GSEnnnn/suppl"
-#tsn_path <- bfcrpath(bfc, file.path(geo_base, "PROseq-HUMAN-CD4_tsn.RDS"))
+bfc <- BiocFileCache(ask = FALSE)
+zip_path <- bfcrpath(bfc, "https://zenodo.org/records/20618059/files/rate_estimation_vignette_data.zip")
+unzip(zip_path, exdir = tempdir())
+data_dir <- file.path(tempdir(), "vignettes", "lrt_test_data")
 
 # TSN (Transcription Start Site Network) files
 # These are GRanges objects containing TSS annotations for each sample
-cd4_tsn_file <- 'lrt_test_data/PROseq-HUMAN-CD4_tsn.RDS'
+cd4_tsn_file <- file.path(data_dir, 'PROseq-HUMAN-CD4_tsn.RDS')
 
 # Transcript annotation file
 # Contains gene models with exon structure for all genes
-human_tq_file <- 'lrt_test_data/HUMAN.RDS'
+human_tq_file <- file.path(data_dir, 'HUMAN.RDS')
 
 # PRO-seq signal files (stranded bigWig format)
-# Plus strand reads
-cd4_bw_plus <- 'lrt_test_data/PROseq-HUMAN-CD4_plus.bw'
-cd4_bw_minus <- 'lrt_test_data/PROseq-HUMAN-CD4_minus.bw'
+cd4_bw_plus <- file.path(data_dir, 'PROseq-HUMAN-CD4_plus.bw')
+cd4_bw_minus <- file.path(data_dir, 'PROseq-HUMAN-CD4_minus.bw')
 
 ```
 
@@ -96,7 +96,7 @@ When multiple TSSs exist for a single gene, we retain only the most upstream TSS
 
 ```{r select-single-tss}
 # Process CD4 data: select most upstream TSS per gene
-cd4_tsn <- STADyUM::keep_upstream_tss(cd4_tsn)
+cd4_tsn <- STADyUM:::keep_upstream_tss(cd4_tsn)
 
 cat("CD4 TSS sites:", length(cd4_tsn), "\n")
 ```
@@ -117,7 +117,7 @@ human_tq <- readRDS(human_tq_file)
 # This creates a single range per gene (union of all exons)
 gngrng <- human_tq@transcripts %>%
   group_by(ensembl_gene_id) %>%
-  reduce_ranges_directed() %>%
+  plyranges::reduce_ranges_directed() %>%
   sort()
 
 cat("Number of genes:", length(gngrng), "\n")
@@ -140,7 +140,7 @@ bw_tts <- gngrng %>%
 
 # Build read-count regions for CD4
 # Returns list with 'pause' and 'gene_body' GRanges
-cd4_count_region <- STADyUM:::build_readcount_regions(tsn_merge$tsn1, bw_tts)
+cd4_count_region <- STADyUM:::build_readcount_regions(cd4_tsn, bw_tts)
 
 cat("CD4 pause regions:", length(cd4_count_region$pause), "\n")
 cat("CD4 gene body regions:", length(cd4_count_region$gene_body), "\n")

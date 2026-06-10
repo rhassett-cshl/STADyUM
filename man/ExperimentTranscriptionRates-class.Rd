@@ -187,6 +187,11 @@ hindrance is enabled)}
 \item{gbLength}{Numeric. Gene body length}
 \item{expectedPauseSiteCounts}{Numeric. Expected pause site counts}
 \item{actualPauseSiteCounts}{Numeric. Observed pause site counts}
+\item{fkSD}{Numeric. Standard deviation of pause site positions (sqrt of fkVar)}
+\item{betaGroup}{Factor. Quantile-based group for betaAdp (Q1–Q5)}
+\item{fkMeanGroup}{Factor. Quantile-based group for fkMean (Q1–Q5)}
+\item{chiGroup}{Factor. Quantile-based group for chi (Low/Medium/High)}
+\item{sdGroup}{Character. Pause site SD classification (Sharp/Broad)}
 }}
 }}
 

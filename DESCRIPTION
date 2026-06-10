@@ -62,12 +62,13 @@ Imports:
     ggpointdensity
 LinkingTo:
     Rcpp
-Suggests: 
+Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
     devtools,
-    ggpubr
+    ggpubr,
+    cowplot
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Depends: R (>= 4.5.0)
