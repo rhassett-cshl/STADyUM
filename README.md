@@ -69,7 +69,9 @@ browseVignettes("STADyUM")
 ```
 
 ## Citation
-If you use this package, please cite:
-Zeng X, Barshad G, Hassett R, Rice EJ, Danko CG, Siepel A, Zhao Y.
-*A comparative analysis of promoter-proximal pausing reveals kinetic and distributional dimensions of variation.* bioRxiv (2026).
-Preprint: https://www.biorxiv.org/content/10.64898/2026.06.01.729264v1
+
+If you use this package, please cite: Zeng X, Barshad G, Hassett R, Rice
+EJ, Danko CG, Siepel A, Zhao Y. *A comparative analysis of
+promoter-proximal pausing reveals kinetic and distributional dimensions
+of variation.* bioRxiv (2026). Preprint:
+<https://www.biorxiv.org/content/10.64898/2026.06.01.729264v1>
