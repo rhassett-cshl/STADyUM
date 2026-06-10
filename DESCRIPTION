@@ -57,7 +57,6 @@ Imports:
     rlang,
     MASS,
     plyranges,
-    readr,
     pracma,
     ggpointdensity
 LinkingTo:

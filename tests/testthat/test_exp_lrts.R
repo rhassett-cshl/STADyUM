@@ -3,13 +3,13 @@ test_that("Experimental Data Transcription Rates Likelihood Ratio Test works as 
     load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData", 
     package = "STADyUM"))
 
-    controlRates <- estimateTranscriptionRates(system.file("extdata","PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
-    system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw",
+    controlRates <- estimateTranscriptionRates(system.file("extdata","PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
+    system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw",
     package = "STADyUM"), bw_pause_filtered, bw_gb_filtered, "Control", stericHindrance=TRUE, omegaScale=12.3768278981277)
 
     treatedRates <- estimateTranscriptionRates(system.file("extdata",
-    "PROseq-DLD1-aoi-NELFC_Auxin-SE_plus_chr21.bw", package = "STADyUM"),
-    system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin-SE_minus_chr21.bw", 
+    "PROseq-DLD1-aoi-NELFC_Auxin-SE_plus_chr21_subset.bw", package = "STADyUM"),
+    system.file("extdata", "PROseq-DLD1-aoi-NELFC_Auxin-SE_minus_chr21_subset.bw", 
     package = "STADyUM"), bw_pause_filtered, bw_gb_filtered, "Auxin Treated", stericHindrance=TRUE, omegaScale=11.0318379571379)
 
     lrts <- likelihoodRatioTest(controlRates, treatedRates, spikeInFile=system.file("extdata", "spikein_scaling_factor.csv",  package = "STADyUM"))

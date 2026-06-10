@@ -70,9 +70,9 @@ pauseEscapeMaximization <- function(chiHat, Xk, Yk, fk, kmin, kmax) {
     u <- sum(Yk * seq(kmin, kmax))
     v <- sum(Yk * seq(kmin, kmax)^2)
 
-    w <- sum(fk / (1 - fk) * (Xk - Yk))
-    z <- sum(fk / (1 - fk) * (Xk - Yk) * seq(kmin, kmax))
-    r <- sum(fk / (1 - fk) * (Xk - Yk) * seq(kmin, kmax)^2)
+    w <- sum(fk / (1 - fk) * (Xk - Yk), na.rm = TRUE)
+    z <- sum(fk / (1 - fk) * (Xk - Yk) * seq(kmin, kmax), na.rm = TRUE)
+    r <- sum(fk / (1 - fk) * (Xk - Yk) * seq(kmin, kmax)^2, na.rm = TRUE)
 
     fkMean <- (u - z) / (t - w)
     fkVar <- (v - r) / (t - w) - fkMean^2
@@ -233,9 +233,9 @@ stericHindranceMaximization <- function(
     u <- sum(Yk * seq(kmin, kmax))
     v <- sum(Yk * seq(kmin, kmax)^2)
 
-    w <- sum(fk / (1 - fk) * (Xk - Yk))
-    z <- sum(fk / (1 - fk) * (Xk - Yk) * seq(kmin, kmax))
-    r <- sum(fk / (1 - fk) * (Xk - Yk) * seq(kmin, kmax)^2)
+    w <- sum(fk / (1 - fk) * (Xk - Yk), na.rm = TRUE)
+    z <- sum(fk / (1 - fk) * (Xk - Yk) * seq(kmin, kmax), na.rm = TRUE)
+    r <- sum(fk / (1 - fk) * (Xk - Yk) * seq(kmin, kmax)^2, na.rm = TRUE)
 
     fkMean <- (u - z) / (t - w)
     fkVar <- (v - r) / (t - w) - fkMean^2

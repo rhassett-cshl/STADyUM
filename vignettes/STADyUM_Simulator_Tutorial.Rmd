@@ -13,7 +13,10 @@ bibliography: references.bib
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
     collapse = TRUE,
-    comment = "#>"
+    comment = "#>",
+    dpi = 72,
+    fig.width = 5,
+    fig.height = 4
 )
 ```
 
@@ -101,8 +104,9 @@ stericHindrance=TRUE)
 
 simLRT <- likelihoodRatioTest(simRates, simRates2)
 
-plotPauseSiteContourMapTwoConditions(simLRT, file="simPauseSitesContourMap.png")
-BetaViolinPlot(simLRT, file="simBetaViolinPlot.png")
+plotPauseSiteContourMapTwoConditions(simLRT, file="simPauseSitesContourMap.png",
+                                      width=5, height=4, dpi=72)
+BetaViolinPlot(simLRT, file="simBetaViolinPlot.png", width=4, height=3.5, dpi=72)
 
 ```
 

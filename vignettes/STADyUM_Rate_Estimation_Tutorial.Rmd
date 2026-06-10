@@ -8,6 +8,7 @@ output:
     toc_depth: 3
     theme: default
     highlight: tango
+    fig_retina: 1
 vignette: >
   %\VignetteIndexEntry{Estimating Transcription Rates with STADyUM from PRO-seq Data}
   %\VignetteEngine{knitr::rmarkdown}
@@ -36,6 +37,8 @@ This example uses human PRO-seq data from the human CD4 cell type to demonstrate
 ## Load Required Libraries
 
 ```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(dpi = 72, fig.width = 5, fig.height = 4)
+
 library(STADyUM)           # For transcription rate estimation
 library(GenomicRanges)     # For genomic data manipulation
 library(dplyr) 
@@ -204,7 +207,7 @@ print(p1)
 
 These plots show relationships between pause release rate (beta) and two measures of elongation variability. The first shows beta vs. mean elongation time; the second shows beta vs. elongation time standard deviation.
 
-```{r cd4-beta-elongation, fig.width=10, fig.height=3}
+```{r cd4-beta-elongation, fig.width=8, fig.height=3}
 p1 <- plotScatterDensity(cd4_rate, "betaAdp", "fkMean",
                           log_x = TRUE,
                           xlab = expression(log[10] ~ beta),

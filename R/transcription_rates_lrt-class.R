@@ -375,17 +375,17 @@ computeFkLRT <- function(rc1, rc2, scaleFactor, kmin, kmax, gbLength, isExperime
 #' load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
 #' package = "STADyUM"))
 #' transcriptionRates1 <- estimateTranscriptionRates(system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 #' bigwigMinus = system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
 #' transcriptionRates2 <- estimateTranscriptionRates(system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 #' bigwigMinus = system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"
@@ -1004,8 +1004,8 @@ setMethod(
                 label = case_when(
                     .data$pause_change == "Sharp_to_Sharp" ~ paste0("Stable Sharp\nn = ", .data$n),
                     .data$pause_change == "Broad_to_Broad" ~ paste0("Stable Broad\nn = ", .data$n),
-                    .data$pause_change == "Sharp_to_Broad" ~ paste0("Sharp → Broad\nn = ", .data$n),
-                    .data$pause_change == "Broad_to_Sharp" ~ paste0("Broad → Sharp\nn = ", .data$n),
+                    .data$pause_change == "Sharp_to_Broad" ~ paste0("Sharp \u2192 Broad\nn = ", .data$n),
+                    .data$pause_change == "Broad_to_Sharp" ~ paste0("Broad \u2192 Sharp\nn = ", .data$n),
                     TRUE ~ paste0(.data$pause_change, "\nn = ", .data$n)
                 ),
                 x = case_when(
@@ -1084,17 +1084,17 @@ setMethod(
 #' load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
 #' package = "STADyUM"))
 #' transcriptionRates1 <- estimateTranscriptionRates(system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 #' bigwigMinus = system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"
 #' )
 #' transcriptionRates2 <- estimateTranscriptionRates(system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 #' bigwigMinus = system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Treated"

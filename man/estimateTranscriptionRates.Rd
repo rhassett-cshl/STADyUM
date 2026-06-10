@@ -23,9 +23,9 @@ genomic regions).
 load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
 package = "STADyUM"))
 expRates <- estimateTranscriptionRates(system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 bigwigMinus = system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control",

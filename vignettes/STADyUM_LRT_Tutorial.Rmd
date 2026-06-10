@@ -8,6 +8,7 @@ output:
     toc_depth: 3
     theme: default
     highlight: tango
+    fig_retina: 1
 vignette: >
   %\VignetteIndexEntry{Comparative Analysis of Promoter-Proximal Pausing using Likelihood Ratio Tests}
   %\VignetteEngine{knitr::rmarkdown}
@@ -39,6 +40,8 @@ This example uses human PRO-seq data from two immunologically distinct cell type
 ## Load Required Libraries and Data
 
 ```{r setup, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(dpi = 72, fig.width = 5, fig.height = 4)
+
 library(STADyUM)           # For transcription rate estimation
 library(GenomicRanges)     # For genomic data manipulation
 library(dplyr) 
