@@ -52,7 +52,7 @@ test_that("Simulated Transcription Rates Likelihood Ratio Test works as intented
     expect_true(all(combinedCellsData10 >= 0))
     expect_true(combinedCellsData10[1] == 100)
 
-    betaVsChiPlot <- plotBetaVsChi(simRates1)
+    betaVsChiPlot <- plotBetaVsChi(simRates1, label_x = -3.5, label_y = -3.8, xlim = c(-6, -1), ylim = c(-4, 1))
     expect_s3_class(betaVsChiPlot, "ggplot")
     pauseSiteContourMap <- plotPauseSiteContourMap(simRates1)
     expect_s3_class(pauseSiteContourMap, "ggplot")

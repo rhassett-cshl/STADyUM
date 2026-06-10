@@ -187,6 +187,11 @@ hindrance is enabled)}
 \item{gbLength}{Numeric. Gene body length}
 \item{expectedPauseSiteCounts}{Numeric. Expected pause site counts}
 \item{actualPauseSiteCounts}{Numeric. Observed pause site counts}
+\item{fkSD}{Numeric. Standard deviation of pause site positions (sqrt of fkVar)}
+\item{betaGroup}{Factor. Quantile-based group for betaAdp (Q1–Q5)}
+\item{fkMeanGroup}{Factor. Quantile-based group for fkMean (Q1–Q5)}
+\item{chiGroup}{Factor. Quantile-based group for chi (Low/Medium/High)}
+\item{sdGroup}{Character. Pause site SD classification (Sharp/Broad)}
 }}
 }}
 
@@ -195,9 +200,9 @@ hindrance is enabled)}
 load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
 package = "STADyUM"))
 expRates <- estimateTranscriptionRates(system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 bigwigMinus = system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control",

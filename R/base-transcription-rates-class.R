@@ -23,6 +23,9 @@ utils::globalVariables(c("gene_id", "query", "count", "score"))
 #' @importFrom ggplot2 scale_color_gradient geom_segment scale_y_continuous
 #' @importFrom ggplot2 scale_x_continuous geom_line xlim ylim geom_violin
 #' @importFrom ggplot2 geom_boxplot scale_color_manual geom_hline element_line
+#' @importFrom ggplot2 coord_cartesian
+#' @importFrom ggpointdensity geom_pointdensity
+#' @importFrom grid unit
 #' @importFrom rlang .data sym
 #' @importFrom GenomicRanges GRanges makeGRangesFromDataFrame coverage strand<-
 #' @importFrom GenomicRanges promoters findOverlaps start end width strand
@@ -54,9 +57,9 @@ methods::setClass("TranscriptionRates",
 #' load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
 #' package = "STADyUM"))
 #' expRates <- estimateTranscriptionRates(system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 #' bigwigMinus = system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control",
@@ -81,9 +84,9 @@ setGeneric("estimateTranscriptionRates", function(x, ...) {
 #' load(system.file("extdata", 
 #' "granges_for_read_counting_DLD1_chr21.RData", package = "STADyUM"))
 #' expRates <- estimateTranscriptionRates(system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 #' bigwigMinus = system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control",
@@ -109,9 +112,9 @@ setGeneric("rates", function(object) standardGeneric("rates"))
 #' load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
 #' package = "STADyUM"))
 #' expRates <- estimateTranscriptionRates(system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 #' bigwigMinus = system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control",
@@ -317,57 +320,148 @@ setMethod(
 #' adapted model or the single pause site model.
 #'
 #' @param object an \code{\linkS4class{TranscriptionRates}} object
-#' @param betaType the type of beta to plot. Can be "betaAdp" for the adapted
-#' model or "betaOrg" for the single pause site model. Defaults to "betaAdp".
+#' @param label_x the x-axis label
+#' @param label_y the y-axis label
+#' @param xlim the x-axis limits
+#' @param ylim the y-axis limits
 #' @param file the path to a file to save the plot to
-#' @param width the width of the plot in inches
-#' @param height the height of the plot in inches
-#' @param dpi the resolution of the plot in dpi
 #'
 #' @return an \code{\link{ggplot2}} object
 #'
 #' @rdname TranscriptionRates-class
 #' @export
 setGeneric("plotBetaVsChi", function(
-    object, betaType = "betaAdp",
-    file = NULL, width = 8, height = 6, dpi = 300) {
+    object, label_x, label_y, xlim = NULL, ylim = NULL,
+    file = NULL) {
     standardGeneric("plotBetaVsChi")
 })
 #' @rdname TranscriptionRates-class
 setMethod("plotBetaVsChi", "TranscriptionRates",
-    function(object, betaType = "betaAdp", file = NULL,
-        width = 8, height = 6, dpi = 300) {
+    function(object, label_x, label_y, xlim = NULL, ylim = NULL, file = NULL) {
         cr <- rates(object)
 
-        if (!betaType %in% c("betaAdp", "betaOrg")) {
-            stop("betaType must be either 'betaAdp' or 'betaOrg'")
-        }
-
-        # Set y-axis label based on beta type
-        yLabel <- if (betaType == "betaAdp") {
-            "Pause Escape Rate (betaAdp)"
-        } else {
-            "Pause Escape Rate (betaOrg)"
-        }
-
-        titleText <- if (betaType == "betaAdp") {
-            "Gene Activity vs Pause Escape Rate (Adapted Model)"
-        } else {
-            "Gene Activity vs Pause Escape Rate (Single Pause Site)"
-        }
-
-        p <- ggplot(cr, aes(x = .data$chi, y = !!sym(betaType))) +
-            geom_point(alpha = 0.7, color = "#CC79A7") +
-            geom_smooth(method = "loess", se = TRUE, color = "red") +
-            labs(
-                x = "Gene Body RNAP Density (chi)",
-                y = yLabel,
-                title = titleText
-            ) +
-            theme_bw() +
+       p <- ggplot(cr,
+              aes(x = log10(.data$betaAdp), y = log10(.data$chi))) +
+              geom_pointdensity(adjust = 0.3, size = 0.6) +
+              labs(
+                x     = expression(log[10] ~ beta),
+                y     = expression(log[10] ~ chi),
+                color = "Density"
+              ) +
             theme(
-                plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+            axis.title = element_text(size = 14),
+            axis.text  = element_text(size = 14),
+            strip.text = element_text(size = 14),
+            legend.title =  element_text(size = 10),
+            legend.text  = element_text(size = 8),
+            legend.key.size = unit(0.4, "cm"),
+            legend.spacing = unit(0.2, "cm")
+
             )
+
+            if (!is.null(xlim) || !is.null(ylim)) {
+                p <- p + coord_cartesian(xlim = xlim, ylim = ylim)
+            }
+
+        if (!is.null(file)) {
+            ggsave(file, p, width = 3.5, height = 3)
+        }
+        return(p)
+    }
+)
+
+
+#' @title Plot Scatter with Point Density
+#'
+#' @description
+#' Creates a scatter plot colored by local point density for any two columns in
+#' the rates tibble, with optional log10 transformation on either axis. When a
+#' discrete \code{color_var} is supplied the points are colored by that variable
+#' instead of by density.
+#'
+#' @param object an \code{\linkS4class{TranscriptionRates}} object
+#' @param xvar character; column name in \code{rates(object)} for the x-axis
+#' @param yvar character; column name in \code{rates(object)} for the y-axis
+#' @param xlab x-axis label (string or \code{expression}); defaults to
+#'   \code{xvar} with a \code{log10()} prefix when \code{log_x = TRUE}
+#' @param ylab y-axis label (string or \code{expression}); same rules as
+#'   \code{xlab}
+#' @param log_x logical; apply \code{log10} to x before plotting
+#' @param log_y logical; apply \code{log10} to y before plotting
+#' @param color_var optional character; column name for discrete color grouping;
+#'   when supplied \code{geom_point} is used instead of
+#'   \code{geom_pointdensity}
+#' @param color_values optional named character vector passed to
+#'   \code{scale_color_manual} when \code{color_var} is set
+#' @param color_lab legend title for the color scale; defaults to
+#'   \code{"Density"} or \code{color_var}
+#' @param xlim optional numeric(2); forwarded to \code{coord_cartesian}
+#' @param ylim optional numeric(2); forwarded to \code{coord_cartesian}
+#' @param file optional file path to save the plot
+#' @param width plot width in inches
+#' @param height plot height in inches
+#' @param dpi plot resolution
+#'
+#' @return a \code{\link[ggplot2]{ggplot}} object
+#'
+#' @rdname TranscriptionRates-class
+#' @export
+setGeneric("plotScatterDensity", function(
+    object, xvar, yvar,
+    xlab = NULL, ylab = NULL,
+    log_x = FALSE, log_y = FALSE,
+    color_var = NULL, color_values = NULL, color_lab = NULL,
+    xlim = NULL, ylim = NULL,
+    file = NULL, width = 3.5, height = 3, dpi = 300) {
+    standardGeneric("plotScatterDensity")
+})
+#' @rdname TranscriptionRates-class
+setMethod("plotScatterDensity", "TranscriptionRates",
+    function(object, xvar, yvar,
+             xlab = NULL, ylab = NULL,
+             log_x = FALSE, log_y = FALSE,
+             color_var = NULL, color_values = NULL, color_lab = NULL,
+             xlim = NULL, ylim = NULL,
+             file = NULL, width = 3.5, height = 3, dpi = 300) {
+        cr <- rates(object)
+
+        x_vals <- if (log_x) log10(cr[[xvar]]) else cr[[xvar]]
+        y_vals <- if (log_y) log10(cr[[yvar]]) else cr[[yvar]]
+        plot_df <- data.frame(x = x_vals, y = y_vals)
+
+        if (is.null(xlab)) xlab <- if (log_x) paste0("log10(", xvar, ")") else xvar
+        if (is.null(ylab)) ylab <- if (log_y) paste0("log10(", yvar, ")") else yvar
+
+        if (!is.null(color_var)) {
+            plot_df$color_group <- cr[[color_var]]
+            if (is.null(color_lab)) color_lab <- color_var
+            p <- ggplot(plot_df, aes(x = .data$x, y = .data$y,
+                                     color = .data$color_group)) +
+                geom_point(size = 0.8, alpha = 0.7)
+            if (!is.null(color_values)) {
+                p <- p + scale_color_manual(values = color_values)
+            }
+        } else {
+            if (is.null(color_lab)) color_lab <- "Density"
+            p <- ggplot(plot_df, aes(x = .data$x, y = .data$y)) +
+                geom_pointdensity(adjust = 0.3, size = 0.6)
+        }
+
+        p <- p +
+            labs(x = xlab, y = ylab, color = color_lab) +
+            theme(
+                axis.title      = element_text(size = 14),
+                axis.text       = element_text(size = 14),
+                strip.text      = element_text(size = 14),
+                legend.title    = element_text(size = 10),
+                legend.text     = element_text(size = 8),
+                legend.key.size = unit(0.4, "cm"),
+                legend.spacing  = unit(0.2, "cm")
+            )
+
+        if (!is.null(xlim) || !is.null(ylim)) {
+            p <- p + coord_cartesian(xlim = xlim, ylim = ylim)
+        }
 
         if (!is.null(file)) {
             ggsave(file, p, width = width, height = height, dpi = dpi)
@@ -375,7 +469,6 @@ setMethod("plotBetaVsChi", "TranscriptionRates",
         return(p)
     }
 )
-
 
 #' @title Plot pause site contour map
 #'
@@ -396,9 +489,9 @@ setMethod("plotBetaVsChi", "TranscriptionRates",
 #' load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
 #' package = "STADyUM"))
 #' expRates <- estimateTranscriptionRates(system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 #' bigwigMinus = system.file("extdata",
-#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+#' "PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
 #'     pauseRegions = bw_pause_filtered,
 #'     geneBodyRegions = bw_gb_filtered,
 #'     name = "Control"

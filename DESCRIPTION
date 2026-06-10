@@ -1,7 +1,7 @@
 Package: STADyUM
 Type: Package
 Title: Statistical Transcriptome Analysis under a Dynamic Unified Model
-Version: 1.1.3
+Version: 1.1.4
 Authors@R: 
     c(
         person("Yixin", "Zhao", 
@@ -33,7 +33,7 @@ Description: STADyUM is a package with functionality for analyzing nascent
     initiation in the model.
 URL: https://github.com/rhassett-cshl/STADyUM
 BugReports: https://github.com/rhassett-cshl/STADyUM
-biocViews: StatisticalMethod, Transcriptomics, Transcription, Sequencing
+biocViews: StatisticalMethod, Transcriptomics, Transcription, Sequencing, Preprocessing
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: false
@@ -55,14 +55,19 @@ Imports:
     rtracklayer,
     tidyr,
     rlang,
-    MASS
+    MASS,
+    plyranges,
+    pracma,
+    ggpointdensity
 LinkingTo:
     Rcpp
-Suggests: 
+Suggests:
     testthat (>= 3.0.0),
     knitr,
     rmarkdown,
-    devtools
+    devtools,
+    ggpubr,
+    cowplot
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 Depends: R (>= 4.5.0)

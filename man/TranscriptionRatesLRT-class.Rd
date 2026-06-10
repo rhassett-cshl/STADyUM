@@ -14,6 +14,18 @@
 \alias{chiTbl,TranscriptionRatesLRT-method}
 \alias{betaTbl}
 \alias{betaTbl,TranscriptionRatesLRT-method}
+\alias{lrtTbl}
+\alias{lrtTbl,TranscriptionRatesLRT-method}
+\alias{mergeBetaChiLRTStats}
+\alias{mergeBetaChiLRTStats,TranscriptionRatesLRT-method}
+\alias{plotBetaQuantileHeatmap}
+\alias{plotBetaQuantileHeatmap,TranscriptionRatesLRT-method}
+\alias{plotBetaScatter}
+\alias{plotBetaScatter,TranscriptionRatesLRT-method}
+\alias{plotDeltaBetaSigma}
+\alias{plotDeltaBetaSigma,TranscriptionRatesLRT-method}
+\alias{plotFksdDensity}
+\alias{plotFksdDensity,TranscriptionRatesLRT-method}
 \alias{plotPauseSiteContourMapTwoConditions}
 \alias{plotPauseSiteContourMapTwoConditions,TranscriptionRatesLRT-method}
 \alias{BetaViolinPlot}
@@ -50,6 +62,112 @@ chiTbl(object)
 betaTbl(object)
 
 \S4method{betaTbl}{TranscriptionRatesLRT}(object)
+
+lrtTbl(object)
+
+\S4method{lrtTbl}{TranscriptionRatesLRT}(object)
+
+mergeBetaChiLRTStats(
+  object,
+  scale_factor,
+  lfc_threshold = 0.5,
+  prefix1 = "control",
+  prefix2 = "treatment"
+)
+
+\S4method{mergeBetaChiLRTStats}{TranscriptionRatesLRT}(
+  object,
+  scale_factor,
+  lfc_threshold = 0.5,
+  prefix1 = "control",
+  prefix2 = "treatment"
+)
+
+plotBetaQuantileHeatmap(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  fill_label = "Gene count",
+  show_text = TRUE,
+  text_size = 5,
+  show_legend = FALSE
+)
+
+\S4method{plotBetaQuantileHeatmap}{TranscriptionRatesLRT}(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  fill_label = "Gene count",
+  show_text = TRUE,
+  text_size = 5,
+  show_legend = FALSE
+)
+
+plotBetaScatter(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  label_x = -6,
+  label_y = -1,
+  x_lim = c(-6, -1),
+  y_lim = c(-6, -1)
+)
+
+\S4method{plotBetaScatter}{TranscriptionRatesLRT}(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  label_x = -6,
+  label_y = -1,
+  x_lim = c(-6, -1),
+  y_lim = c(-6, -1)
+)
+
+plotDeltaBetaSigma(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  filter_lfc = FALSE
+)
+
+\S4method{plotDeltaBetaSigma}{TranscriptionRatesLRT}(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  filter_lfc = FALSE
+)
+
+plotFksdDensity(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  cutoff_cd4 = NULL,
+  cutoff_cd14 = NULL
+)
+
+\S4method{plotFksdDensity}{TranscriptionRatesLRT}(
+  object,
+  file = NULL,
+  width = 8,
+  height = 6,
+  dpi = 300,
+  cutoff_cd4 = NULL,
+  cutoff_cd14 = NULL
+)
 
 plotPauseSiteContourMapTwoConditions(
   object,
@@ -91,6 +209,16 @@ based on total or spike-in reads or NULL if not provided. Defaults to NULL.}
 
 \item{object}{an \code{\linkS4class{TranscriptionRatesLRT}} object}
 
+\item{scale_factor}{a numeric scale factor used to normalize chi between
+the two samples (e.g. a spike-in based library size ratio)}
+
+\item{lfc_threshold}{the threshold for the log2 fold change used to
+categorize beta and chi changes}
+
+\item{prefix1}{the prefix for the first sample's joined rate columns}
+
+\item{prefix2}{the prefix for the second sample's joined rate columns}
+
 \item{file}{the path to a file to save the plot to}
 
 \item{width}{the width of the plot in inches}
@@ -98,6 +226,33 @@ based on total or spike-in reads or NULL if not provided. Defaults to NULL.}
 \item{height}{the height of the plot in inches}
 
 \item{dpi}{the resolution of the plot in dpi}
+
+\item{fill_label}{the label for the fill legend}
+
+\item{show_text}{whether to display the gene count in each tile}
+
+\item{text_size}{the size of the gene count labels}
+
+\item{show_legend}{whether to display the fill legend}
+
+\item{label_x}{the x position of the correlation label}
+
+\item{label_y}{the y position of the correlation label}
+
+\item{x_lim}{the x-axis limits}
+
+\item{y_lim}{the y-axis limits}
+
+\item{filter_lfc}{if \code{TRUE}, restricts to genes with
+\code{abs(lfc) < 5} before computing the correlation and plotting}
+
+\item{cutoff_cd4}{the fkSD cutoff between "Sharp" and "Broad" for the
+first sample. If \code{NULL} (the default), computed via
+\code{\link{getSdGroupCutoff}}}
+
+\item{cutoff_cd14}{the fkSD cutoff between "Sharp" and "Broad" for the
+second sample. If \code{NULL} (the default), computed via
+\code{\link{getSdGroupCutoff}}}
 }
 \value{
 a \code{\linkS4class{TranscriptionRatesLRT}} object
@@ -105,6 +260,18 @@ a \code{\linkS4class{TranscriptionRatesLRT}} object
 tbl_df
 
 tbl_df
+
+tbl_df
+
+tbl_df
+
+a \code{\link{ggplot2}} object
+
+a \code{\link{ggplot2}} object
+
+a \code{\link{ggplot2}} object
+
+a \code{\link{ggplot2}} object
 
 an \code{\link{ggplot2}} object
 
@@ -142,6 +309,52 @@ Accessor for the chi table from a TranscriptionRatesLRT object.
 
 Accessor for the beta table from a TranscriptionRatesLRT object.
 
+Accessor for the merged per-gene LRT summary table from a
+TranscriptionRatesLRT object. This table is built automatically by
+\code{\link{likelihoodRatioTest}} via \code{\link{mergeBetaChiLRTStats}}
+and is the table consumed by the package's LRT plotting methods (e.g.
+\code{\link{plotBetaQuantileHeatmap}}, \code{\link{plotBetaScatter}},
+\code{\link{plotDeltaBetaSigma}}, \code{\link{plotFksdDensity}}).
+
+Builds a single per-gene summary tibble from a TranscriptionRatesLRT
+object's beta LRT results, joined with per-sample rate groupings, and
+enriched with derived chi LRT statistics (mean and log2 fold change between
+samples, scaled by \code{scale_factor}), as well as derived pause-site
+shape statistics (\code{pause_change}, \code{deltaSD}, \code{deltaMean})
+used by the package's LRT plotting methods. This is the table populated
+automatically in the \code{lrtTbl} slot by \code{\link{likelihoodRatioTest}}.
+
+Plot a heatmap comparing quantile-based beta groupings (Q1-Q5) between two
+conditions, with tiles showing the number of genes that fall into each
+combination of groups. Ported from \code{plot_beta_quantile_heatmap} in
+\code{1_2_LRT_viz.R}. Operates on the \code{lrtTbl} slot of a
+\code{\linkS4class{TranscriptionRatesLRT}} object, as populated by
+\code{\link{likelihoodRatioTest}}.
+
+Plot a scatter of log10(beta1) vs log10(beta2), colored by betaCategory,
+comparing pause-escape rate estimates between two conditions. Ported from
+\code{plot_beta_scatter} in \code{1_2_LRT_viz.R}. Operates on the
+\code{lrtTbl} slot of a \code{\linkS4class{TranscriptionRatesLRT}} object,
+as populated by \code{\link{likelihoodRatioTest}}.
+
+Plot a 2D density scatter of the log2 fold change in beta (\code{lfc})
+against the normalized change in pause site standard deviation
+(\code{deltaSD}) between two conditions, annotated with the Spearman
+correlation. Ported from \code{plot_delta_beta_sigma} in
+\code{1_2_LRT_viz.R}. Operates on the \code{lrtTbl} slot of a
+\code{\linkS4class{TranscriptionRatesLRT}} object, as populated by
+\code{\link{likelihoodRatioTest}}.
+
+Plot a 2D density of pause site standard deviation (\code{fkSD}) between
+two conditions, with quadrant labels showing how many genes have stable or
+changing pause-site sharpness between conditions. Ported from
+\code{plot_fksd_density} in \code{1_2_LRT_viz.R}. Operates on the
+\code{lrtTbl} slot of a \code{\linkS4class{TranscriptionRatesLRT}} object,
+as populated by \code{\link{likelihoodRatioTest}}, restricted to genes with
+a non-missing \code{sdGroup} call in both samples. Sharp/broad cutoffs
+default to \code{\link{getSdGroupCutoff}} computed on that restricted table
+when not supplied explicitly.
+
 Plot a contour map with mean pause site position on the x-axis and pause site
 standard deviation on the y-axis. The plot is a comparison between two
 conditions.
@@ -156,17 +369,17 @@ Plot a MA plot for log fold change treated/control vs log mean beta*zeta.
 load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
 package = "STADyUM"))
 transcriptionRates1 <- estimateTranscriptionRates(system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 bigwigMinus = system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 bigwigMinus = system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"
@@ -181,17 +394,17 @@ print(lrts)
 load(system.file("extdata", "granges_for_read_counting_DLD1_chr21.RData",
 package = "STADyUM"))
 transcriptionRates1 <- estimateTranscriptionRates(system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 bigwigMinus = system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Control"
 )
 transcriptionRates2 <- estimateTranscriptionRates(system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_plus_chr21_subset.bw", package = "STADyUM"),
 bigwigMinus = system.file("extdata",
-"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21.bw", package = "STADyUM"),
+"PROseq-DLD1-aoi-NELFC_Auxin_Ctrl-SE_minus_chr21_subset.bw", package = "STADyUM"),
     pauseRegions = bw_pause_filtered,
     geneBodyRegions = bw_gb_filtered,
     name = "Treated"

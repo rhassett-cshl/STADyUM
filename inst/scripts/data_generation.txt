@@ -17,3 +17,11 @@ DATA GENERATION STEPS:
     * Import GTF file into GRanges object
     * Extract pause regions and gene body regions into separate GRanges objects
 
+4 - Subset example data
+    * The "*_subset.bw" bigwig files included in inst/extdata/ are
+      restricted to chr21:41,100,000-46,700,000 (hg19), covering 47 of
+      the original 95 genes in granges_for_read_counting_DLD1_chr21.RData
+    * bw_pause_filtered and bw_gb_filtered in
+      granges_for_read_counting_DLD1_chr21.RData were filtered to the
+      same 47 genes, keeping only genes whose pause and gene-body
+      ranges fall entirely within that region
