@@ -4,7 +4,7 @@ test_that("Simulated Transcription Rates Likelihood Ratio Test works as intented
     alpha=0.5, beta=1, zeta=2000, zetaSd=1000, zetaMin=1500, zetaMax=2500, cellNum=100, polSize=33, addSpace=17, time=30, timesToRecord=c(10,20,30))
 
     simpol2 <- simulatePolymerase(k=100, ksd=25, kMin=75, kMax=200,
-    geneLen=1950, alpha=0.5, beta=10, zeta=2000, zetaSd=1000, zetaMin=1500,
+    geneLen=1950, alpha=0.5, beta=4, zeta=2000, zetaSd=1000, zetaMin=1500,
     zetaMax=2500, cellNum=100, polSize=33, addSpace=17, time=30,
     timesToRecord=c(10,20,30))
 

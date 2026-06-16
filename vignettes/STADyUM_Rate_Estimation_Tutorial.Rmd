@@ -23,7 +23,7 @@ This tutorial demonstrates how to use the **STADyUM** package to estimate transc
 
 In this workflow, we will:
 
-1. Identify transcription start sites (TSSs) for each gene by keeping the upstream most TSS per gene from annotations
+1. Identify transcription start sites (TSSs) for each gene by keeping the TSS with the maximum score in the annotations
 2. Construct read-counting regions for pause sites and gene bodies
 3. Apply STADyUM to estimate key kinetic parameters e(release rate, elongation rate, activity)
 4. Visualize the relationships between estimated transcription parameters
@@ -95,11 +95,11 @@ head(cd4_tsn)
 
 ## Select Single TSS per Gene
 
-When multiple TSSs exist for a single gene, we retain only the most upstream TSS. This ensures consistent TSS usage across the analysis. The "most upstream" is defined as the TSS with the smallest genomic coordinate on the plus strand and the largest coordinate on the minus strand.
+When multiple TSSs exist for a single gene, we retain only the TSS with the maximum score. If multiple TSSs have the same score, select the most upstream TSS to break the tie. This ensures consistent TSS usage across the analysis. The "most upstream" is defined as the TSS with the smallest genomic coordinate on the plus strand and the largest coordinate on the minus strand.
 
 ```{r select-single-tss}
 # Process CD4 data: select most upstream TSS per gene
-cd4_tsn <- STADyUM:::keep_upstream_tss(cd4_tsn)
+cd4_tsn <- STADyUM:::keep_max_tsn(cd4_tsn)
 
 cat("CD4 TSS sites:", length(cd4_tsn), "\n")
 ```
@@ -110,7 +110,7 @@ cat("CD4 TSS sites:", length(cd4_tsn), "\n")
 
 ## Load Transcript Annotations
 
-We load the full transcript annotation to define gene bodies. From these, we extract the transcription termination sites (TTS) to define the 3' boundary of gene bodies.
+We load the full transcript annotation to define gene bodies. From these, we extract the transcription termination sites (TTS) to define the 3' boundary of gene bodies. 
 
 ```{r load-transcripts}
 # Load transcript model for all genes
@@ -133,6 +133,8 @@ For STADyUM analysis, we define two counting regions:
 - **Gene body region**: the elongating polymerase region 
 
 Here, we anchor at the transcription termination site (3' end) and define regions relative to those anchors.
+The default parameters for building the read count regions using `STADyUM:::build_readcount_regions(bw_tsn, transcripts, tsn_cutoff=5, gb_min_length=6000, gb_trim_len=1250, gb_max_length=90000, kmax=200)` is as shown. 
+We filter out low-signal TSNs with low scores before creating pause windows. The gene body is defined as the region from 1,250bp downstream of the TSS to 90 kbp downstream of the TSS. For genes shorter than 90kb, the gene body extends from 1,250bp downstream of the TSS to the TES.
 
 ```{r define-count-regions}
 # Anchor at 3' end (transcription termination site) and set width to 1

@@ -1,4 +1,23 @@
 ####################################### for 1_EstimateRates part ####################################
+
+# Select TSS with maximum score per gene
+# If multiple TSSs with the same score, select the one with the most upstream TSS to break ties
+# On "+" strand the most upstream TSS has the smallest coordinate;
+# on "-" strand it has the largest coordinate.
+keep_max_tsn <- function(tsn, tsn_cutoff = 5) {
+  as.data.frame(tsn) %>%
+    dplyr::filter(score >= tsn_cutoff) %>%
+    dplyr::group_by(ensembl_gene_id) %>%
+    dplyr::arrange(
+      dplyr::desc(score),
+      ifelse(strand == "+", start, -start),
+      .by_group = TRUE
+    ) %>%
+    dplyr::slice_head(n = 1) %>%
+    dplyr::ungroup() %>%
+    as_granges()
+}
+
 # Select the single most upstream TSS per gene (strand-aware).
 # On "+" strand the most upstream TSS has the smallest coordinate;
 # on "-" strand it has the largest coordinate.
@@ -19,7 +38,8 @@ build_readcount_regions <- function(bw_tsn,
                                     transcripts,
                                     tsn_cutoff    = 5,
                                     gb_min_length = 6000,
-                                    trim_len      = 2000,
+                                    gb_trim_len   = 1250,
+                                    gb_max_length = 90000,
                                     kmax          = 200) {
   if (!inherits(bw_tsn, "GRanges"))
     stop("bw_tsn must be a GRanges.")
@@ -40,7 +60,7 @@ build_readcount_regions <- function(bw_tsn,
 
   # Derive one TTS position (3' end, width = 1) per gene from the transcript annotation
   gngrng <- transcripts %>%
-    dplyr::group_by(ensembl_gene_id) %>%
+    plyranges::group_by(ensembl_gene_id) %>%
     plyranges::reduce_ranges_directed() %>%
     sort()
   bw_tts <- gngrng %>%
@@ -48,23 +68,42 @@ build_readcount_regions <- function(bw_tsn,
     mutate(width = 1)
 
   # Build gene bodies spanning from TSN to TTS, apply length filter and trim
-  generate_gene_body <- function(bw_tsn, bw_tts, bw_pause, gb_min_length, trim_len) {
+  generate_gene_body <- function(bw_tsn,
+                               bw_tts,
+                               bw_pause,
+                               gb_min_length,
+                               gb_trim_len,
+                               gb_max_length) {
     idx_tts <- match(bw_pause$ensembl_gene_id, bw_tts$ensembl_gene_id)
     idx_tsn <- match(bw_pause$ensembl_gene_id, bw_tsn$ensembl_gene_id)
-    keep    <- !is.na(idx_tts) & !is.na(idx_tsn)
-    if (!any(keep)) stop("No overlapping genes between TSN/TTS and pause set.")
+
+    keep <- !is.na(idx_tts) & !is.na(idx_tsn)
+    if (!any(keep)) {
+      stop("No overlapping genes between TSN/TTS and pause set.")
+    }
 
     bw_tts_filtered <- bw_tts[idx_tts[keep]]
     bw_tsn_filtered <- bw_tsn[idx_tsn[keep]]
 
-    gb         <- punion(bw_tsn_filtered, bw_tts_filtered, fill.gap = TRUE)
-    gb$gene_id <- bw_tsn_filtered$ensembl_gene_id
-    gb_filt    <- gb[width(gb) > gb_min_length]
-    gb_filt    <- gb_filt - trim_len
-    gb_filt
+    gb_full <- punion(bw_tsn_filtered, bw_tts_filtered, fill.gap = TRUE)
+    gb_full$gene_id <- bw_tsn_filtered$ensembl_gene_id
+
+    min_full_width <- gb_min_length + 2 * gb_trim_len
+    gb_full <- gb_full[width(gb_full) >= min_full_width]
+    # Exclude 1,250 bp near TSS and 1,250 bp near transcript end
+    gb_trimmed <- gb_full - gb_trim_len
+
+    # Cap at 90 kb from the TSS-proximal side
+    gb_capped <- resize(
+      gb_trimmed,
+      width = pmin(width(gb_trimmed), gb_max_length),
+      fix = "start"
+    )
+
+    gb_capped
   }
 
-  bw_gb_filtered <- generate_gene_body(bw_tsn, bw_tts, bw_pause, gb_min_length, trim_len)
+  bw_gb_filtered <- generate_gene_body(bw_tsn, bw_tts, bw_pause, gb_min_length, gb_trim_len, gb_max_length)
 
   # Match pause regions to the filtered gene bodies
   match_idx         <- match(bw_gb_filtered$gene_id, bw_pause$ensembl_gene_id)

@@ -58,7 +58,8 @@ Imports:
     MASS,
     plyranges,
     pracma,
-    ggpointdensity
+    ggpointdensity,
+    BiocFileCache
 LinkingTo:
     Rcpp
 Suggests:
