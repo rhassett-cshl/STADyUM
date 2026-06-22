@@ -42,7 +42,7 @@ The focus of this tutorial will be on using our simulator, SimPol, for simulatin
 
 # Installation
 
-```{r install, eval = FALSE}
+```r
 if (!requireNamespace("BiocManager", quietly=TRUE))
     install.packages("BiocManager")
 BiocManager::install("STADyUM")

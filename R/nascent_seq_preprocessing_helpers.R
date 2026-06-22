@@ -60,7 +60,7 @@ build_readcount_regions <- function(bw_tsn,
 
   # Derive one TTS position (3' end, width = 1) per gene from the transcript annotation
   gngrng <- transcripts %>%
-    plyranges::group_by(ensembl_gene_id) %>%
+    dplyr::group_by(ensembl_gene_id) %>%
     plyranges::reduce_ranges_directed() %>%
     sort()
   bw_tts <- gngrng %>%

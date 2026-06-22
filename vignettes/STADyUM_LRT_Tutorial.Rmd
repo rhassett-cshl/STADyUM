@@ -33,19 +33,24 @@ This example uses human PRO-seq data from two immunologically distinct cell type
 
 ![Overview of the comparative probabilistic framework for promoter-proximal pausing analysis across conditions, cell types, and species. The framework uses likelihood-ratio tests to quantify changes in pause-escape kinetics and pausing distributions from nascent RNA sequencing data](lrt_figures.png){width=75%}
 
----
+***
 
 # Setup
 
 ## Load Required Libraries and Data
 
 ```{r setup, message=FALSE, warning=FALSE}
-knitr::opts_chunk$set(dpi = 72, fig.width = 5, fig.height = 4)
+has_connectivity <- requireNamespace("BiocFileCache", quietly = TRUE) &&
+    curl::has_internet()
+knitr::opts_chunk$set(dpi = 72, fig.width = 5, fig.height = 4,
+                      eval = has_connectivity)
+if (!has_connectivity)
+    message("No internet connection; vignette code not evaluated.")
 
 library(STADyUM)           # For transcription rate estimation
 library(GenomicRanges)     # For genomic data manipulation
-library(dplyr) 
-library(plyranges)        
+library(dplyr)
+library(plyranges)
 #library(tidyverse)         # For data manipulation and visualization
 library(ggplot2)           # For plotting
 library(pracma)
@@ -53,13 +58,6 @@ library(BiocFileCache)
 ```
 
 ```{r file-paths}
-
-# Required by Bioconductor to check for connection
-if (!requireNamespace("BiocFileCache", quietly = TRUE) ||
-    !curl::has_internet()) {
-  knitr::opts_chunk$set(eval = FALSE)
-  message("No internet connection; vignette code not evaluated.")
-}
 
 bfc <- BiocFileCache(ask = FALSE)
 zip_path <- bfcrpath(bfc, "https://zenodo.org/records/20618059/files/lrt_vignette_data.zip")
@@ -73,7 +71,7 @@ scale_factor <- 38359083 / 33294862
 
 ```
 
----
+***
 
 # Running STADyUM
 
@@ -117,7 +115,7 @@ lrt <- likelihoodRatioTest(cd4_rate, cd14_rate, scale_factor)
 head(lrtTbl(lrt))
 ```
 
----
+***
 
 # Visualization
 
