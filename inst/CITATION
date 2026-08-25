@@ -1,22 +1,22 @@
 citHeader("To cite this package in publications use:")
 
 citEntry(entry = "Article",
-         title = "STADyUM",
+         title = "A comparative analysis of promoter-proximal pausing reveals kinetic and distributional dimensions of variation",
          author = personList(
-           person(given = "Yixin", family = "Zhao", role = c("aut", "cre")),
-           person(given = "Lingjie", family = "Liu", role = "ctb"),
            person(given = "Xin", family = "Zeng", email = "zeng@cshl.edu", role = "ctb"),
+           person(given = "Gilad", family = "Barshad", role = c("ctb")),
            person(given = "Rebecca", family = "Hassett", email = "hassett@cshl.edu", role = "ctb"),
-           person(given = "Adam", family = "Siepel", role = "ctb")
+           person(given = "Edward J.", family = "Rice", role = "ctb"),
+           person(given = "Charles G.", family = "Danko", role = "ctb"),
+           person(given = "Adam", family = "Siepel", role = "ctb"),
+           person(given = "Yixin", family = "Zhao", role = c("aut", "cre")),
          ),
-         journal = "Nucleic Acids Research",
-         year = 2023,
-         volume = "51",
-         number = "21",
-         pages = "e106",
-         doi = "10.1093/nar/gkad843",
+         journal = "bioRxiv",
+         year = 2026,
+         doi = "10.64898/2026.06.01.729264",
          textVersion = 
 "This is the recommended citation for the STADyUM Bioconductor package:\n
-Yixin Zhao, Lingjie Liu, Rebecca Hassett, Adam Siepel, Model-based
-characterization of the equilibrium dynamics of transcription initiation and 
-Issue 21, 27 November 2023, Page e106, https://doi.org/10.1093/nar/gkad843")
+Xin Zeng, Gilad Barshad, Rebecca Hassett, Edward J. Rice, Charles G. Danko,
+Adam Siepel, Yixin Zhao, A comparative analysis of promoter-proximal pausing
+reveals kinetic and distributional dimensions of variation, bioRxiv, 2026,
+https://doi.org/10.64898/2026.06.01.729264")
